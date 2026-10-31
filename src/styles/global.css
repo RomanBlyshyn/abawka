@@ -22,7 +22,7 @@
   --sale: light-dark(#c62828, #ff8a80); /* ціна зі знижкою */
   --badge-ink: #1f1b2e; /* текст на жовтому — темний в обох темах */
 
-  --tint-pink: light-dark(#ffe3ef, #3b2133);
+  --tint-pink: light-dark(#ffd2e4, #3b2133); /* насиченіше за інші: світло-рожевий на білому виглядав прозорим */
   --tint-yellow: light-dark(#fff1cc, #3a3022);
   --tint-red: light-dark(#ffe1dc, #3e2526);
   --tint-blue: light-dark(#dcecff, #1f2b42);
@@ -37,7 +37,7 @@
   --dot: light-dark(rgb(31 27 46 / 0.25), rgb(255 255 255 / 0.3));
   /* Контур кольорових плиток — насиченіший відтінок кольору самої плитки (ставиться класом .tint-*). */
   --tile-border: var(--line);
-  --tint-pink-border: light-dark(#ef8fb7, #7a3a62);
+  --tint-pink-border: light-dark(#e2729f, #7a3a62);
   --tint-yellow-border: light-dark(#e8bf55, #7a6335);
   --tint-red-border: light-dark(#ee9888, #7d4040);
   --tint-blue-border: light-dark(#86b6ee, #3e5f92);
