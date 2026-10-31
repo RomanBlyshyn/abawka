@@ -1,0 +1,33 @@
+# Секрети
+.env
+.env.*
+!.env.example
+*.local.json
+.claude/settings.local.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+
+# Дані, логи
+*.log
+*.sqlite
+*.db
+
+# Системне
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Службові файли Playwright
+.playwright-mcp/
+
+# Astro
+.astro/
+.netlify/

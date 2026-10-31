@@ -1,0 +1,22 @@
+{
+  "name": "abawka",
+  "version": "1.0.0",
+  "description": "ABAWKA toy shop: multilingual catalog with Telegram order requests",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check"
+  },
+  "author": "Roman <rb281926@gmail.com>",
+  "type": "module",
+  "dependencies": {
+    "@astrojs/check": "^0.9.12",
+    "astro": "^7.4.4",
+    "typescript": "^6.0.3"
+  },
+  "private": true,
+  "devDependencies": {
+    "@playwright/test": "^1.64.1"
+  }
+}

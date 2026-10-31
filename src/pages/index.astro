@@ -1,0 +1,19 @@
+---
+import { LOCALES, DEFAULT_LOCALE } from '../i18n/config';
+---
+<!doctype html>
+<html lang={DEFAULT_LOCALE}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ABAWKA</title>
+    <meta http-equiv="refresh" content={`1; url=/${DEFAULT_LOCALE}/`} />
+    <script is:inline define:vars={{ LOCALES, DEFAULT_LOCALE }}>
+      // Мова з браузера; якщо такої немає — польська. meta refresh підстраховує без JS.
+      const wanted = (navigator.languages || [navigator.language]).map((l) => l.slice(0, 2).toLowerCase());
+      const lang = wanted.find((l) => LOCALES.includes(l)) || DEFAULT_LOCALE;
+      location.replace(`/${lang}/`);
+    </script>
+  </head>
+  <body></body>
+</html>
