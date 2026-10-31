@@ -70,6 +70,16 @@ main:focus { outline: none; }
   background: var(--ink); color: var(--bg); font-weight: 800;
 }
 .skip:focus { top: 8px; }
+
+.toast {
+  position: fixed; left: 50%; bottom: 20px; translate: -50% 0; z-index: 50;
+  display: flex; align-items: center; gap: 16px; padding: 12px 18px; max-width: calc(100% - 32px);
+  border-radius: 999px; background: var(--ink); color: var(--bg); font-weight: 700; box-shadow: var(--shadow-hover);
+  animation: toast-in 0.2s ease-out;
+}
+.toast[hidden] { display: none; }
+.toast a { color: inherit; text-decoration: underline; white-space: nowrap; }
+@keyframes toast-in { from { opacity: 0; translate: -50% 12px; } }
 img { max-width: 100%; height: auto; display: block; }
 a { color: inherit; text-decoration: none; }
 button, input, select { font: inherit; color: inherit; }

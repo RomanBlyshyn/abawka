@@ -1,0 +1,16 @@
+---
+import Base from '../../../layouts/Base.astro';
+import CatalogView from '../../../components/CatalogView.astro';
+import { LOCALES, type Locale } from '../../../i18n/config';
+import { getCategories, pick, type Category } from '../../../lib/data';
+
+export function getStaticPaths() {
+  return LOCALES.flatMap((lang) => getCategories().map((category) => ({ params: { lang, category: category.slug }, props: { category } })));
+}
+
+const locale = Astro.params.lang as Locale;
+const { category } = Astro.props as { category: Category };
+---
+<Base locale={locale} title={pick(category.name, locale)}>
+  <CatalogView locale={locale} category={category} />
+</Base>

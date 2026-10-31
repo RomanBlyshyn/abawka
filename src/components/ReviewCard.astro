@@ -1,0 +1,30 @@
+---
+import Icon from './Icon.astro';
+import type { Locale } from '../i18n/config';
+import { getProducts, pick, type Review } from '../lib/data';
+import { href } from '../lib/format';
+
+interface Props { review: Review; locale: Locale; showProduct?: boolean }
+const { review: r, locale, showProduct = true } = Astro.props;
+const product = showProduct ? getProducts().find((p) => p.slug === r.product) : undefined;
+---
+<figure class="review">
+  <div class="stars" role="img" aria-label={`${r.rating}/5`}>
+    {Array.from({ length: 5 }, (_, i) => <Icon name="star" size={16} class={i < r.rating ? 'on' : 'off'} />)}
+  </div>
+  <blockquote>{pick(r.text, locale)}</blockquote>
+  <figcaption>
+    <strong>{r.author}</strong>, {r.country}
+    {product && <> · <a href={href(locale, `product/${product.slug}/`)}>{pick(product.name, locale)}</a></>}
+  </figcaption>
+</figure>
+
+<style>
+  .review { margin: 0; padding: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); display: grid; gap: 10px; align-content: start; }
+  .stars { display: flex; gap: 2px; }
+  .stars :global(.on) { color: #f5a623; }
+  .stars :global(.off) { color: var(--line); }
+  blockquote { margin: 0; font-weight: 600; }
+  figcaption { font-size: 14px; color: var(--ink-2); }
+  figcaption a { color: var(--accent-text); font-weight: 700; }
+</style>

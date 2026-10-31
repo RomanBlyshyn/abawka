@@ -1,0 +1,311 @@
+---
+import Breadcrumbs from './Breadcrumbs.astro';
+import Icon from './Icon.astro';
+import ProductCard from './ProductCard.astro';
+import { Image } from 'astro:assets';
+import mascot from '../assets/mascot.webp';
+import { LOCALES, type Locale } from '../i18n/config';
+import { plural, useTranslations } from '../i18n';
+import { getCategories, getProducts, pick, type Category } from '../lib/data';
+import { AGE_GROUPS } from '../lib/age';
+import { href } from '../lib/format';
+
+interface Props { locale: Locale; category?: Category }
+const { locale, category } = Astro.props;
+const t = useTranslations(locale);
+const categories = getCategories();
+const products = getProducts().filter((p) => !category || p.category === category.slug);
+const title = category ? pick(category.name, locale) : t('catalog.all');
+
+// Пошук іде по назвах усіма мовами і без діакритики: «kapibara» знайде «Kapybara», «capibara» і «капібара».
+const norm = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+const searchText = (p: (typeof products)[number]) => {
+  const cat = categories.find((c) => c.slug === p.category);
+  return norm(LOCALES.flatMap((l) => [p.name[l] ?? '', cat?.name[l] ?? '']).join(' '));
+};
+// Популярність: хіти першими, далі за кількістю відгуків × рейтинг.
+const popularity = (p: (typeof products)[number]) => (p.hit ? 1000 : 0) + p.reviews * p.rating;
+
+// Форми множини для лічильника на клієнті.
+const pluralForms = Object.fromEntries(['zero', 'one', 'two', 'few', 'many', 'other'].map((f) => [f, t(`catalog.items.${f}`)]));
+---
+<div class="wrap">
+  <Breadcrumbs locale={locale} items={category ? [{ label: t('catalog.title'), path: 'catalog/' }, { label: title }] : [{ label: t('catalog.title') }]} />
+  <h1 class="title">{title}</h1>
+  <p class="search-line" data-search-line hidden>
+    <span data-search-text></span>
+    <a href="?" data-clear-search>{t('catalog.clearSearch')} ×</a>
+  </p>
+
+  <div class="layout">
+    <button class="btn btn-light filters-toggle" type="button" aria-expanded="false" aria-controls="filters" data-filters-toggle>
+      <Icon name="filter" size={18} /> {t('catalog.filters')} <span class="active-count" data-active-count hidden></span>
+    </button>
+
+    <aside class="filters" id="filters" data-filters-panel>
+      <nav class="block" aria-label={t('catalog.category')}>
+        <h2>{t('catalog.category')}</h2>
+        <ul class="cat-list">
+          <li><a href={href(locale, 'catalog/')} aria-current={!category ? 'page' : undefined}>{t('catalog.all')}</a></li>
+          {categories.map((c) => (
+            <li><a href={href(locale, `catalog/${c.slug}/`)} aria-current={category?.slug === c.slug ? 'page' : undefined}><Icon name={c.icon} size={16} />{pick(c.name, locale)}</a></li>
+          ))}
+        </ul>
+      </nav>
+
+      <form class="block-form" data-filters>
+        <fieldset class="block">
+          <legend>{t('catalog.age')}</legend>
+          {AGE_GROUPS.map((g) => (
+            <label class="check"><input type="checkbox" name="age[]" value={g.key} /> {g.label} {t('home.age.years')}</label>
+          ))}
+        </fieldset>
+
+        <fieldset class="block">
+          <legend>{t('catalog.price')}, €</legend>
+          <div class="price-row">
+            <label><span class="sr-only">{t('catalog.price')} {t('catalog.priceFrom')}</span><input type="number" name="min" min="0" step="1" inputmode="numeric" placeholder={t('catalog.priceFrom')} /></label>
+            <span aria-hidden="true">—</span>
+            <label><span class="sr-only">{t('catalog.price')} {t('catalog.priceTo')}</span><input type="number" name="max" min="0" step="1" inputmode="numeric" placeholder={t('catalog.priceTo')} /></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="block">
+          <legend class="sr-only">{t('catalog.filters')}</legend>
+          <label class="check"><input type="checkbox" name="stock" value="1" /> {t('catalog.onlyInStock')}</label>
+          <label class="check"><input type="checkbox" name="sale" value="1" /> {t('catalog.onlySale')}</label>
+        </fieldset>
+
+        <button class="reset" type="button" data-reset>{t('catalog.reset')}</button>
+        <button class="btn show-results" type="submit" data-close-filters>{t('catalog.showResults')}</button>
+      </form>
+    </aside>
+
+    <section class="results" aria-labelledby="found">
+      <div class="toolbar">
+        <h2 id="found" class="found" aria-live="polite" data-found>{t('catalog.found').replace('{n}', plural(locale, 'catalog.items', products.length))}</h2>
+        <label class="sort">
+          <span>{t('catalog.sort')}</span>
+          <select name="sort" data-sort>
+            <option value="popular">{t('catalog.sort.popular')}</option>
+            <option value="price-asc">{t('catalog.sort.priceAsc')}</option>
+            <option value="price-desc">{t('catalog.sort.priceDesc')}</option>
+            <option value="new">{t('catalog.sort.new')}</option>
+          </select>
+        </label>
+      </div>
+
+      <ul class="grid" data-grid>
+        {products.map((p) => (
+          <li
+            data-item
+            data-age={p.ageMin}
+            data-price={p.price}
+            data-stock={p.stock}
+            data-sale={p.oldPrice && p.oldPrice > p.price ? 1 : 0}
+            data-new={p.new ? 1 : 0}
+            data-pop={popularity(p)}
+            data-search={searchText(p)}
+          >
+            <ProductCard product={p} locale={locale} />
+          </li>
+        ))}
+      </ul>
+
+      <div class="empty" data-empty hidden>
+        <Image src={mascot} alt="" widths={[160, 320]} sizes="160px" class="empty-bear" />
+        <h2>{t('catalog.empty.title')}</h2>
+        <p>{t('catalog.empty.text')}</p>
+        <button class="btn" type="button" data-reset>{t('catalog.reset')}</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script is:inline type="application/json" id="catalog-i18n" set:html={JSON.stringify({
+  locale,
+  found: t('catalog.found'),
+  searchFor: t('catalog.searchFor'),
+  forms: pluralForms,
+})} />
+
+<script>
+  const cfg = JSON.parse(document.getElementById('catalog-i18n')!.textContent!);
+  const form = document.querySelector<HTMLFormElement>('[data-filters]')!;
+  const sortSel = document.querySelector<HTMLSelectElement>('[data-sort]')!;
+  const grid = document.querySelector<HTMLElement>('[data-grid]')!;
+  const items = [...grid.querySelectorAll<HTMLElement>('[data-item]')];
+  const found = document.querySelector<HTMLElement>('[data-found]')!;
+  const empty = document.querySelector<HTMLElement>('[data-empty]')!;
+  const activeCount = document.querySelector<HTMLElement>('[data-active-count]')!;
+  const searchLine = document.querySelector<HTMLElement>('[data-search-line]')!;
+  const AGE_MAX: Record<string, number> = { '0-2': 2, '3-5': 5, '6-8': 8, '9-99': 99 };
+
+  const norm = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
+  const plural = (n: number) => `${n} ${cfg.forms[new Intl.PluralRules(cfg.locale).select(n)] ?? cfg.forms.other}`;
+  const num = (v: FormDataEntryValue | null) => (v === null || v === '' ? null : Math.max(0, Number(v)));
+
+  // Стан із URL → у форму (працює і для посилань з головної: ?age=3-5, ?sale=1, ?q=меч).
+  const params = new URLSearchParams(location.search);
+  const q = params.get('q') ?? '';
+  const ages = (params.get('age') ?? '').split(',').filter((a) => a in AGE_MAX);
+  form.querySelectorAll<HTMLInputElement>('input[name="age[]"]').forEach((i) => (i.checked = ages.includes(i.value)));
+  for (const n of ['min', 'max']) {
+    const v = params.get(n);
+    if (v !== null && Number.isFinite(Number(v))) form.querySelector<HTMLInputElement>(`input[name=${n}]`)!.value = v;
+  }
+  for (const n of ['stock', 'sale']) form.querySelector<HTMLInputElement>(`input[name=${n}]`)!.checked = params.get(n) === '1';
+  if ([...sortSel.options].some((o) => o.value === params.get('sort'))) sortSel.value = params.get('sort')!;
+  const headerSearch = document.querySelector<HTMLInputElement>('#q');
+  if (headerSearch) headerSearch.value = q;
+  if (q) {
+    searchLine.hidden = false;
+    searchLine.querySelector('[data-search-text]')!.textContent = cfg.searchFor.replace('{q}', q);
+  }
+
+  function apply() {
+    const data = new FormData(form);
+    const selAges = data.getAll('age[]').map(String);
+    const min = num(data.get('min'));
+    const max = num(data.get('max'));
+    const onlyStock = data.has('stock');
+    const onlySale = data.has('sale');
+    const words = norm(q).split(/\s+/).filter(Boolean);
+
+    let visible = 0;
+    for (const el of items) {
+      const d = el.dataset;
+      const priceMajor = Number(d.price) / 100;
+      const ok =
+        (!selAges.length || selAges.some((a) => Number(d.age) <= AGE_MAX[a])) &&
+        (min === null || priceMajor >= min) &&
+        (max === null || priceMajor <= max) &&
+        (!onlyStock || Number(d.stock) > 0) &&
+        (!onlySale || d.sale === '1') &&
+        words.every((w) => d.search!.includes(w));
+      el.hidden = !ok;
+      if (ok) visible++;
+    }
+
+    // Сортування: переставляємо вузли; товари без наявності завжди в кінці.
+    const key = sortSel.value;
+    const score = (el: HTMLElement) => {
+      const d = el.dataset;
+      if (key === 'price-asc') return Number(d.price);
+      if (key === 'price-desc') return -Number(d.price);
+      if (key === 'new') return -Number(d.new) * 1e6 - Number(d.pop);
+      return -Number(d.pop);
+    };
+    [...items]
+      .sort((a, b) => Number(a.dataset.stock === '0') - Number(b.dataset.stock === '0') || score(a) - score(b))
+      .forEach((el) => grid.appendChild(el));
+
+    found.textContent = cfg.found.replace('{n}', plural(visible));
+    empty.hidden = visible > 0;
+    grid.hidden = visible === 0;
+
+    const active = selAges.length + (min !== null ? 1 : 0) + (max !== null ? 1 : 0) + Number(onlyStock) + Number(onlySale);
+    activeCount.hidden = active === 0;
+    activeCount.textContent = String(active);
+
+    // Стан → в URL, щоб відфільтрованим каталогом можна було поділитися.
+    const next = new URLSearchParams();
+    if (q) next.set('q', q);
+    if (selAges.length) next.set('age', selAges.join(','));
+    if (min !== null) next.set('min', String(min));
+    if (max !== null) next.set('max', String(max));
+    if (onlyStock) next.set('stock', '1');
+    if (onlySale) next.set('sale', '1');
+    if (key !== 'popular') next.set('sort', key);
+    const qs = next.toString();
+    history.replaceState(null, '', qs ? `?${qs}` : location.pathname);
+  }
+
+  form.addEventListener('submit', (e) => e.preventDefault());
+  form.addEventListener('input', apply);
+  form.addEventListener('change', apply);
+  sortSel.addEventListener('change', apply);
+  document.querySelectorAll('[data-reset]').forEach((b) => b.addEventListener('click', () => {
+    form.reset();
+    apply();
+  }));
+  document.querySelector<HTMLAnchorElement>('[data-clear-search]')!.addEventListener('click', (e) => {
+    e.preventDefault();
+    params.delete('q');
+    location.search = params.toString();
+  });
+
+  // Мобільна панель фільтрів.
+  const toggle = document.querySelector<HTMLButtonElement>('[data-filters-toggle]')!;
+  const panel = document.querySelector<HTMLElement>('[data-filters-panel]')!;
+  const setOpen = (open: boolean) => {
+    toggle.setAttribute('aria-expanded', String(open));
+    panel.classList.toggle('open', open);
+  };
+  toggle.addEventListener('click', () => setOpen(toggle.getAttribute('aria-expanded') !== 'true'));
+  document.querySelector('[data-close-filters]')!.addEventListener('click', () => {
+    setOpen(false);
+    toggle.focus();
+  });
+
+  apply();
+</script>
+
+<style>
+  .title { font-size: clamp(26px, 4vw, 36px); font-weight: 900; margin-bottom: 8px; }
+  .search-line { margin: 0 0 8px; display: flex; flex-wrap: wrap; gap: 6px 12px; font-weight: 700; }
+  .search-line[hidden] { display: none; }
+  .search-line a { color: var(--accent-text); }
+
+  .layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 28px; align-items: start; margin-top: 16px; }
+  .filters-toggle { display: none; }
+
+  .filters { position: sticky; top: 16px; display: grid; gap: 4px; }
+  .block { border: 0; margin: 0; padding: 14px 0; border-bottom: 1px solid var(--line); min-width: 0; }
+  .block h2, .block legend { font-size: 15px; font-weight: 800; margin-bottom: 8px; padding: 0; }
+  .cat-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  .cat-list a { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 10px; font-weight: 600; }
+  .cat-list a:hover { background: var(--accent-soft); }
+  .cat-list [aria-current] { background: var(--accent-soft); color: var(--accent-text); font-weight: 800; }
+  .check { display: flex; align-items: center; gap: 10px; min-height: 36px; font-weight: 600; cursor: pointer; }
+  .check input { width: 20px; height: 20px; accent-color: var(--pink-600); }
+  .price-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; }
+  .price-row input {
+    width: 100%; min-height: 40px; padding: 6px 10px; border: 2px solid var(--line); border-radius: 10px; background: var(--surface);
+  }
+  .price-row input:focus { border-color: var(--pink-500); outline: none; }
+  .reset { margin-top: 12px; border: 0; background: none; color: var(--accent-text); font-weight: 800; cursor: pointer; padding: 8px 0; text-align: left; }
+  .reset:hover { text-decoration: underline; }
+  .show-results { display: none; }
+
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+  .found { margin: 0; font-size: 16px; font-weight: 700; color: var(--ink-2); }
+  .sort { display: flex; align-items: center; gap: 8px; font-weight: 700; min-width: 0; max-width: 100%; }
+  .sort select {
+    min-width: 0; max-width: 100%; flex: 1 1 auto; /* найдовший варіант («Precio: de menor a mayor») не має розпирати екран 320px */
+    min-height: 40px; padding: 6px 12px; border: 2px solid var(--line); border-radius: 999px; background: var(--surface); font-weight: 700; cursor: pointer;
+  }
+
+  .grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .grid > li { display: flex; }
+  .grid > li > :global(*) { flex: 1; }
+  .grid[hidden], [data-item][hidden] { display: none; }
+
+  .empty { text-align: center; padding: 32px 16px; display: grid; justify-items: center; gap: 8px; }
+  .empty[hidden] { display: none; }
+  .empty-bear { width: 140px; height: auto; }
+  .empty p { margin: 0 0 8px; color: var(--ink-2); font-weight: 600; }
+
+  .active-count { min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--pink-600); color: #fff; font-size: 12px; display: inline-grid; place-items: center; }
+  .active-count[hidden] { display: none; }
+
+  @media (max-width: 1100px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+    .filters-toggle { display: inline-flex; justify-self: start; border: 2px solid var(--accent-border); }
+    .filters { display: none; position: static; padding: 4px 16px 16px; border: 2px solid var(--accent-border); border-radius: var(--radius); background: var(--surface); }
+    .filters.open { display: grid; }
+    .show-results { display: inline-flex; width: 100%; margin-top: 8px; }
+  }
+  @media (max-width: 640px) { .grid { gap: 10px; } }
+</style>

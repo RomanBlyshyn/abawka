@@ -42,5 +42,46 @@ const rest = Astro.url.pathname.split('/').slice(2).join('/');
       <slot />
     </main>
     <Footer locale={locale} />
+
+    <div class="toast" role="status" aria-live="polite" data-toast hidden>
+      <span>{t('cart.added')}</span>
+      <a href={`/${locale}/cart/`}>{t('cart.goTo')} →</a>
+    </div>
+
+    <script>
+      import { addToCart, cartCount, CART_EVENT } from '../lib/cart-client';
+
+      const counter = document.querySelector<HTMLElement>('[data-cart-count]');
+      const renderCount = () => {
+        if (!counter) return;
+        const n = cartCount();
+        counter.textContent = String(n);
+        counter.hidden = n === 0;
+      };
+      renderCount();
+      window.addEventListener(CART_EVENT, renderCount);
+      window.addEventListener('storage', (e) => { if (e.key === 'cart') renderCount(); }); // інша вкладка
+
+      const toast = document.querySelector<HTMLElement>('[data-toast]')!;
+      let hideTimer: ReturnType<typeof setTimeout>;
+      const showToast = () => {
+        toast.hidden = false;
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(() => (toast.hidden = true), 4000);
+      };
+
+      // Делегування: працює для всіх кнопок «У кошик» і «Швидка заявка» на будь-якій сторінці.
+      document.addEventListener('click', (e) => {
+        const btn = (e.target as Element).closest<HTMLButtonElement>('[data-add-to-cart], [data-quick-order]');
+        if (!btn) return;
+        const slug = btn.dataset.addToCart ?? btn.dataset.quickOrder!;
+        const qtyInput = btn.dataset.qtyInput ? document.querySelector<HTMLInputElement>(btn.dataset.qtyInput) : null;
+        const qty = Math.max(1, Math.floor(Number(qtyInput?.value) || 1));
+        addToCart(slug, qty, Number(btn.dataset.stock) || 1);
+        // Тимчасово (до форми заявки на сторінці товару): швидка заявка веде одразу в кошик.
+        if (btn.dataset.quickOrder) location.href = (toast.querySelector('a') as HTMLAnchorElement).href;
+        else showToast();
+      });
+    </script>
   </body>
 </html>

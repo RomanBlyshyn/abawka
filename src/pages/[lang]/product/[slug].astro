@@ -1,0 +1,193 @@
+---
+import Base from '../../../layouts/Base.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import Icon from '../../../components/Icon.astro';
+import ProductCard from '../../../components/ProductCard.astro';
+import ReviewCard from '../../../components/ReviewCard.astro';
+import { LOCALES, type Locale } from '../../../i18n/config';
+import { plural, useTranslations } from '../../../i18n';
+import { BASE_CURRENCY, getCategories, getProducts, getReviews, pick, type Product } from '../../../lib/data';
+import { MAX_QTY } from '../../../lib/cart-client';
+import { formatPrice, href } from '../../../lib/format';
+
+export function getStaticPaths() {
+  return LOCALES.flatMap((lang) => getProducts().map((product) => ({ params: { lang, slug: product.slug }, props: { product } })));
+}
+
+const locale = Astro.params.lang as Locale;
+const { product: p } = Astro.props as { product: Product };
+const t = useTranslations(locale);
+const name = pick(p.name, locale);
+const category = getCategories().find((c) => c.slug === p.category)!;
+const oldPrice = p.oldPrice && p.oldPrice > p.price ? p.oldPrice : undefined;
+const discount = oldPrice ? Math.round((1 - p.price / oldPrice) * 100) : 0;
+const inStock = p.stock > 0;
+const maxQty = Math.min(p.stock, MAX_QTY);
+const rating = new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(p.rating);
+const reviews = getReviews().filter((r) => r.product === p.slug);
+// Схожі: спершу з тієї ж категорії, потім хіти; тільки ті, що є в наявності.
+const others = getProducts().filter((o) => o.slug !== p.slug && o.stock > 0);
+const related = [...others.filter((o) => o.category === p.category), ...others.filter((o) => o.category !== p.category && o.hit)].slice(0, 4);
+---
+<Base locale={locale} title={name}>
+  <div class="wrap">
+    <Breadcrumbs locale={locale} items={[
+      { label: t('catalog.title'), path: 'catalog/' },
+      { label: pick(category.name, locale), path: `catalog/${category.slug}/` },
+      { label: name },
+    ]} />
+
+    <div class="product">
+      <div class={`gallery tint-${category.tint}`}>
+        <div class="ph"><Icon name={category.icon} size={120} /><span>{t('card.photoSoon')}</span></div>
+        <div class="badges">
+          {discount > 0 && <span class="badge sale">−{discount}%</span>}
+          {p.hit && <span class="badge hit">{t('card.hit')}</span>}
+          {p.new && <span class="badge new">{t('card.new')}</span>}
+        </div>
+      </div>
+
+      <div class="info">
+        <h1>{name}</h1>
+        <div class="meta">
+          {p.reviews > 0 && (
+            <a class="rating" href="#reviews"><Icon name="star" size={18} /> {rating} <span>· {plural(locale, 'card.reviews', p.reviews)}</span></a>
+          )}
+          <span class="age">{t('card.age').replace('{n}', String(p.ageMin))}</span>
+        </div>
+
+        <div class="price-box">
+          <div class="prices">
+            {oldPrice && <s class="old"><span class="sr-only">{t('card.oldPrice')}: </span>{formatPrice(oldPrice, BASE_CURRENCY, locale)}</s>}
+            <span class:list={['price', { sale: oldPrice }]}>{formatPrice(p.price, BASE_CURRENCY, locale)}</span>
+          </div>
+          <p class:list={['stock', { out: !inStock }]}>{inStock ? t('product.inStock') : t('card.outOfStock')}</p>
+
+          {inStock && (
+            <div class="buy">
+              <div class="qty" role="group" aria-label={t('product.qty')}>
+                <button type="button" data-step="-1" aria-label={t('product.less')}>−</button>
+                <input id="qty" type="number" inputmode="numeric" min="1" max={maxQty} value="1" aria-label={t('product.qty')} />
+                <button type="button" data-step="1" aria-label={t('product.more')}>+</button>
+              </div>
+              <button class="btn add" type="button" data-add-to-cart={p.slug} data-stock={p.stock} data-qty-input="#qty">
+                <Icon name="cart" size={20} /> {t('card.toCart')}
+              </button>
+              <button class="btn btn-light quick" type="button" data-quick-order={p.slug} data-stock={p.stock} data-qty-input="#qty">
+                {t('product.quickOrder')}
+              </button>
+            </div>
+          )}
+          <p class="note"><Icon name="phone" size={18} /> {t('product.howNote')}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="details">
+      <section aria-labelledby="desc-h">
+        <h2 id="desc-h">{t('product.description')}</h2>
+        <p class="muted">{t('product.descriptionSoon')}</p>
+      </section>
+      <section aria-labelledby="specs-h">
+        <h2 id="specs-h">{t('product.specs')}</h2>
+        <dl class="specs">
+          <dt>{t('catalog.category')}</dt><dd><a href={href(locale, `catalog/${category.slug}/`)}>{pick(category.name, locale)}</a></dd>
+          <dt>{t('catalog.age')}</dt><dd>{t('card.age').replace('{n}', String(p.ageMin))}</dd>
+          <dt>{t('product.availability')}</dt><dd>{inStock ? t('product.inStock') : t('card.outOfStock')}</dd>
+        </dl>
+      </section>
+    </div>
+
+    <section class="section" id="reviews" aria-labelledby="rev-h">
+      <div class="section-head"><h2 id="rev-h">{t('product.reviews')}</h2></div>
+      {reviews.length ? (
+        <div class="reviews">{reviews.map((r) => <ReviewCard review={r} locale={locale} showProduct={false} />)}</div>
+      ) : (
+        <p class="muted">{t('product.noReviews')}</p>
+      )}
+    </section>
+
+    {related.length > 0 && (
+      <section class="section" aria-labelledby="rel-h">
+        <div class="section-head"><h2 id="rel-h">{t('product.related')}</h2></div>
+        <div class="related">{related.map((r) => <ProductCard product={r} locale={locale} />)}</div>
+      </section>
+    )}
+  </div>
+</Base>
+
+<script>
+  // Кількість: кнопки −/+ і ручне введення в межах 1..max.
+  const input = document.querySelector<HTMLInputElement>('#qty');
+  if (input) {
+    const max = Number(input.max);
+    const clamp = () => { input.value = String(Math.min(max, Math.max(1, Math.floor(Number(input.value) || 1)))); };
+    document.querySelectorAll<HTMLButtonElement>('[data-step]').forEach((b) => b.addEventListener('click', () => {
+      input.value = String(Number(input.value) + Number(b.dataset.step));
+      clamp();
+    }));
+    input.addEventListener('change', clamp);
+  }
+</script>
+
+<style>
+  .product { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; margin-top: 16px; align-items: start; }
+  .gallery { position: relative; border-radius: var(--radius); border: 2px solid var(--tint-border, var(--line)); aspect-ratio: 1; display: grid; place-items: center; }
+  .ph { display: grid; justify-items: center; gap: 12px; color: var(--ink-2); font-weight: 700; }
+  .ph :global(svg) { color: var(--ink); opacity: 0.5; }
+  .badges { position: absolute; top: 14px; left: 14px; display: flex; gap: 6px; }
+  .badge { padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 900; }
+  .badge.sale { background: var(--red); color: #fff; }
+  .badge.hit { background: var(--yellow); color: var(--badge-ink); }
+  .badge.new { background: var(--green); color: #fff; }
+
+  .info h1 { font-size: clamp(24px, 3.4vw, 36px); font-weight: 900; }
+  .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-top: 10px; font-weight: 700; color: var(--ink-2); }
+  .rating { display: inline-flex; align-items: center; gap: 4px; color: var(--ink); }
+  .rating :global(svg) { color: #f5a623; }
+  .rating span { color: var(--ink-2); }
+  .rating:hover span { text-decoration: underline; }
+  .age { padding: 4px 12px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-text); }
+
+  .price-box { margin-top: 20px; padding: 22px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); display: grid; gap: 12px; }
+  .prices { display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px; }
+  .price { font-size: 34px; font-weight: 900; }
+  .price.sale { color: var(--sale); }
+  .old { color: var(--ink-2); font-size: 18px; }
+  .stock { margin: 0; font-weight: 800; color: var(--green); }
+  :global(:root[data-theme='dark']) .stock:not(.out) { color: #7fd38a; }
+  .stock.out { color: var(--ink-2); }
+
+  .buy { display: flex; flex-wrap: wrap; gap: 10px; }
+  .qty { display: inline-flex; align-items: center; border: 2px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .qty button { width: 44px; height: 44px; border: 0; background: none; font-size: 22px; font-weight: 800; cursor: pointer; }
+  .qty button:hover { background: var(--accent-soft); }
+  .qty input { width: 48px; height: 44px; border: 0; text-align: center; font-weight: 800; background: transparent; -moz-appearance: textfield; appearance: textfield; }
+  .qty input::-webkit-inner-spin-button, .qty input::-webkit-outer-spin-button { -webkit-appearance: none; }
+  .add { flex: 1; min-width: 160px; }
+  .quick { flex-basis: 100%; border: 2px solid var(--accent-border); }
+  .note { margin: 0; display: flex; gap: 8px; align-items: flex-start; font-size: 14px; color: var(--ink-2); font-weight: 600; }
+  .note :global(svg) { flex: none; color: var(--accent-text); margin-top: 2px; }
+
+  .details { display: grid; grid-template-columns: 2fr 1fr; gap: 40px; margin-top: 40px; }
+  .details h2 { font-size: 22px; margin-bottom: 10px; }
+  .muted { color: var(--ink-2); font-weight: 600; }
+  .specs { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; margin: 0; }
+  .specs dt { color: var(--ink-2); font-weight: 600; }
+  .specs dd { margin: 0; font-weight: 700; }
+  .specs a { color: var(--accent-text); }
+
+  .reviews { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .related { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+  @media (max-width: 960px) {
+    .related { grid-template-columns: repeat(2, 1fr); }
+    .reviews { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 760px) {
+    .product, .details { grid-template-columns: 1fr; gap: 20px; }
+    .gallery { aspect-ratio: 4 / 3; }
+    .price { font-size: 28px; }
+  }
+  @media (max-width: 640px) { .related { gap: 10px; } }
+</style>

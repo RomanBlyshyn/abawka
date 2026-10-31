@@ -1,0 +1,27 @@
+---
+import type { Locale } from '../i18n/config';
+import { useTranslations } from '../i18n';
+import { href } from '../lib/format';
+
+interface Props { locale: Locale; items: { label: string; path?: string }[] }
+const { locale, items } = Astro.props;
+const t = useTranslations(locale);
+const all = [{ label: t('nav.home'), path: '' }, ...items];
+---
+<nav class="crumbs" aria-label={t('nav.breadcrumbs')}>
+  <ol>
+    {all.map((c, i) => (
+      <li>
+        {i < all.length - 1 && c.path !== undefined ? <a href={href(locale, c.path)}>{c.label}</a> : <span aria-current="page">{c.label}</span>}
+      </li>
+    ))}
+  </ol>
+</nav>
+
+<style>
+  .crumbs { margin-block: 16px 8px; font-size: 14px; font-weight: 600; color: var(--ink-2); }
+  ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+  li:not(:last-child)::after { content: '›'; margin-left: 6px; color: var(--ink-2); }
+  a:hover { color: var(--accent-text); text-decoration: underline; }
+  [aria-current] { color: var(--ink); }
+</style>

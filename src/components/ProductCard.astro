@@ -47,7 +47,7 @@ const inStock = p.stock > 0;
         <span class:list={['price', { sale: oldPrice }]}>{formatPrice(p.price, BASE_CURRENCY, locale)}</span>
       </div>
       {inStock ? (
-        <button class="btn add" type="button" data-add-to-cart={p.slug} aria-label={`${t('card.toCart')}: ${pick(p.name, locale)}`}>
+        <button class="btn add" type="button" data-add-to-cart={p.slug} data-stock={p.stock} aria-label={`${t('card.toCart')}: ${pick(p.name, locale)}`}>
           <Icon name="cart" size={20} />
         </button>
       ) : (
