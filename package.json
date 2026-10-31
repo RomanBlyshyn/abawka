@@ -6,7 +6,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "check": "astro check"
+    "check": "astro check",
+    "check:i18n": "node scripts/check-i18n.mjs"
   },
   "author": "Roman <rb281926@gmail.com>",
   "type": "module",
