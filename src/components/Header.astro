@@ -1,0 +1,147 @@
+---
+import Icon from './Icon.astro';
+import Logo from './Logo.astro';
+import { LOCALES, LOCALE_NAMES, type Locale } from '../i18n/config';
+import { useTranslations } from '../i18n';
+import { getCategories, pick } from '../lib/data';
+import { href } from '../lib/format';
+
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+const categories = getCategories();
+// Шлях без префікса мови, щоб перемикач вів на ту саму сторінку іншою мовою.
+const rest = Astro.url.pathname.split('/').slice(2).join('/');
+const CURRENCIES = ['EUR', 'PLN', 'UAH', 'USD'];
+---
+<header class="site-header">
+  <div class="topbar">
+    <div class="wrap topbar-in">
+      <span><Icon name="truck" size={18} /> {t('topbar.shipping')}</span>
+      <span class="topbar-how"><Icon name="phone" size={16} /> {t('topbar.how')}</span>
+    </div>
+  </div>
+
+  <div class="wrap main-row">
+    <a href={href(locale)} class="logo-link" aria-label={t('header.home')}><Logo /></a>
+
+    <form class="search" role="search" action={href(locale, 'catalog/')}>
+      <label class="sr-only" for="q">{t('header.search')}</label>
+      <input id="q" name="q" type="search" placeholder={t('header.search')} autocomplete="off" />
+      <button type="submit" aria-label={t('header.searchButton')}><Icon name="search" size={20} /></button>
+    </form>
+
+    <div class="tools">
+      <details class="dd">
+        <summary aria-label={t('header.language')}><Icon name="globe" size={18} /><span>{locale.toUpperCase()}</span><Icon name="chevron-down" size={14} /></summary>
+        <ul class="dd-menu">
+          {LOCALES.map((l) => (
+            <li><a href={`/${l}/${rest}`} hreflang={l} lang={l} aria-current={l === locale ? 'true' : undefined}>{LOCALE_NAMES[l]}</a></li>
+          ))}
+        </ul>
+      </details>
+
+      <details class="dd">
+        <summary aria-label={t('header.currency')}><span data-currency-label>EUR</span><Icon name="chevron-down" size={14} /></summary>
+        <ul class="dd-menu">
+          {CURRENCIES.map((c) => <li><button type="button" data-set-currency={c}>{c}</button></li>)}
+        </ul>
+      </details>
+
+      <a class="cart" href={href(locale, 'cart/')}>
+        <Icon name="cart" size={22} />
+        <span class="cart-label">{t('header.cart')}</span>
+        <span class="cart-count" data-cart-count hidden>0</span>
+      </a>
+    </div>
+  </div>
+
+  <nav class="cats" aria-label={t('header.catalog')}>
+    <div class="wrap cats-in">
+      {categories.map((c) => (
+        <a href={href(locale, `catalog/${c.slug}/`)} class="cat-link"><Icon name={c.icon} size={18} />{pick(c.name, locale)}</a>
+      ))}
+    </div>
+  </nav>
+</header>
+
+<script>
+  // Закрити інші випадаючі списки при відкритті одного і при кліку поза ними.
+  const dds = [...document.querySelectorAll<HTMLDetailsElement>('.dd')];
+  dds.forEach((d) => d.addEventListener('toggle', () => { if (d.open) dds.forEach((o) => { if (o !== d) o.open = false; }); }));
+  document.addEventListener('click', (e) => dds.forEach((d) => { if (!d.contains(e.target as Node)) d.open = false; }));
+
+  // Вибір валюти поки тільки запам'ятовується; перерахунок цін — етап 6.
+  const label = document.querySelector('[data-currency-label]');
+  const saved = (() => { try { return localStorage.getItem('currency'); } catch { return null; } })();
+  if (saved && label) label.textContent = saved;
+  document.querySelectorAll<HTMLButtonElement>('[data-set-currency]').forEach((b) => b.addEventListener('click', () => {
+    const c = b.dataset.setCurrency!;
+    try { localStorage.setItem('currency', c); } catch { /* приватний режим */ }
+    if (label) label.textContent = c;
+    b.closest('details')!.open = false;
+  }));
+</script>
+
+<style>
+  .site-header { background: #fff; border-bottom: 1px solid var(--line); position: relative; z-index: 10; }
+  .topbar { background: var(--pink-50); color: var(--ink-2); font-size: 13px; font-weight: 600; }
+  .topbar-in { display: flex; justify-content: space-between; gap: 12px; padding-block: 6px; }
+  .topbar-in span { display: inline-flex; align-items: center; gap: 6px; }
+  .topbar :global(svg) { color: var(--pink-600); }
+
+  .main-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 24px; padding-block: 14px; }
+
+  .search { display: flex; border: 2px solid var(--pink-100); border-radius: 999px; overflow: hidden; background: #fff; transition: border-color 0.15s; }
+  .search:focus-within { border-color: var(--pink-500); }
+  .search input { flex: 1; min-width: 0; border: 0; padding: 10px 18px; outline: none; background: transparent; }
+  .search button { border: 0; background: var(--pink-600); color: #fff; padding: 0 18px; cursor: pointer; }
+  .search button:hover { background: var(--pink-700); }
+
+  .tools { display: flex; align-items: center; gap: 8px; }
+  .dd { position: relative; }
+  .dd summary {
+    list-style: none; display: inline-flex; align-items: center; gap: 4px;
+    min-height: 44px; padding: 0 10px; border-radius: 999px; cursor: pointer; font-weight: 700;
+  }
+  .dd summary::-webkit-details-marker { display: none; }
+  .dd summary:hover, .dd[open] summary { background: var(--pink-50); }
+  .dd-menu {
+    position: absolute; right: 0; top: calc(100% + 6px); min-width: 160px; margin: 0; padding: 6px; list-style: none;
+    background: #fff; border-radius: var(--radius-sm); box-shadow: var(--shadow-hover); border: 1px solid var(--line);
+  }
+  .dd-menu a, .dd-menu button {
+    display: block; width: 100%; text-align: left; padding: 8px 12px; border: 0; background: none; border-radius: 8px; cursor: pointer; font-weight: 600;
+  }
+  .dd-menu a:hover, .dd-menu button:hover { background: var(--pink-50); }
+  .dd-menu [aria-current] { color: var(--pink-700); font-weight: 800; }
+
+  .cart {
+    position: relative; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px;
+    border-radius: 999px; background: var(--pink-600); color: #fff; font-weight: 800;
+  }
+  .cart:hover { background: var(--pink-700); }
+  .cart-count {
+    position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px;
+    background: var(--yellow); color: var(--ink); font-size: 12px; font-weight: 900; display: grid; place-items: center;
+  }
+  .cart-count[hidden] { display: none; }
+
+  .cats { border-top: 1px solid var(--line); }
+  .cats-in { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; padding-block: 6px; }
+  .cats-in::-webkit-scrollbar { display: none; }
+  .cat-link {
+    flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px; font-weight: 700; white-space: nowrap;
+  }
+  .cat-link:hover { background: var(--pink-50); color: var(--pink-700); }
+
+  @media (max-width: 860px) {
+    .topbar-in .topbar-how { display: none; }
+    .main-row { grid-template-columns: 1fr auto; gap: 10px 8px; padding-block: 10px; }
+    .search { grid-column: 1 / -1; grid-row: 2; }
+    .cart-label { display: none; }
+    .cart { padding: 0 12px; }
+    .dd summary { padding: 0 6px; }
+  }
+  @media (max-width: 380px) { .dd summary :global(svg:first-child) { display: none; } }
+</style>

@@ -1,0 +1,96 @@
+---
+import { Image } from 'astro:assets';
+import Icon from './Icon.astro';
+import mascot from '../assets/mascot.webp';
+import type { Locale } from '../i18n/config';
+import { useTranslations } from '../i18n';
+import { getSlides } from '../lib/data';
+import { href } from '../lib/format';
+
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+const slides = getSlides();
+---
+<section class="hero" aria-roledescription="carousel" data-slider>
+  <div class="track" data-track>
+    {slides.map((s, i) => (
+      <div class={`slide tint-${s.tint}`} role="group" aria-roledescription="slide" aria-label={`${i + 1} / ${slides.length}`}>
+        <div class="text">
+          <h2>{t(`slide.${s.key}.title`)}</h2>
+          <p>{t(`slide.${s.key}.text`)}</p>
+          <a class="btn" href={href(locale, s.href)}>{t(`slide.${s.key}.cta`)}</a>
+        </div>
+        {s.mascot && (
+          <Image src={mascot} alt="" class="mascot" widths={[220, 440]} sizes="(max-width: 640px) 140px, 220px" loading={i === 0 ? 'eager' : 'lazy'} />
+        )}
+      </div>
+    ))}
+  </div>
+  <button class="nav prev" type="button" data-prev aria-label={t('slider.prev')}><Icon name="chevron-left" /></button>
+  <button class="nav next" type="button" data-next aria-label={t('slider.next')}><Icon name="chevron-right" /></button>
+  <div class="dots">
+    {slides.map((_, i) => <button type="button" data-dot={i} aria-label={`${t('slider.goto')} ${i + 1}`} aria-current={i === 0 ? 'true' : undefined} />)}
+  </div>
+</section>
+
+<script>
+  // Слайдер на CSS scroll-snap: свайп працює сам, JS лише для кнопок, крапок і автопрокрутки.
+  document.querySelectorAll<HTMLElement>('[data-slider]').forEach((root) => {
+    const track = root.querySelector<HTMLElement>('[data-track]')!;
+    const dots = [...root.querySelectorAll<HTMLButtonElement>('[data-dot]')];
+    const count = dots.length;
+    const current = () => Math.round(track.scrollLeft / track.clientWidth);
+    const go = (i: number) => track.scrollTo({ left: ((i + count) % count) * track.clientWidth, behavior: 'smooth' });
+
+    root.querySelector('[data-prev]')!.addEventListener('click', () => go(current() - 1));
+    root.querySelector('[data-next]')!.addEventListener('click', () => go(current() + 1));
+    dots.forEach((d, i) => d.addEventListener('click', () => go(i)));
+    track.addEventListener('scroll', () => {
+      const i = current();
+      dots.forEach((d, j) => d.toggleAttribute('aria-current', i === j));
+    }, { passive: true });
+
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    let paused = false;
+    root.addEventListener('pointerenter', () => (paused = true));
+    root.addEventListener('pointerleave', () => (paused = false));
+    root.addEventListener('focusin', () => (paused = true));
+    root.addEventListener('focusout', () => (paused = false));
+    setInterval(() => { if (!paused && !document.hidden) go(current() + 1); }, 6000);
+  });
+</script>
+
+<style>
+  .hero { position: relative; border-radius: var(--radius); overflow: hidden; }
+  .track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; scroll-behavior: smooth; }
+  .track::-webkit-scrollbar { display: none; }
+  .slide {
+    flex: 0 0 100%; scroll-snap-align: start; min-height: 300px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 32px 72px;
+  }
+  .text { max-width: 520px; display: grid; gap: 12px; justify-items: start; }
+  .text h2 { font-size: clamp(26px, 4vw, 44px); font-weight: 900; }
+  .text p { margin: 0; font-size: clamp(15px, 1.6vw, 19px); color: var(--ink-2); font-weight: 600; }
+  .mascot { width: 220px; height: auto; flex: none; }
+
+  .nav {
+    position: absolute; top: 50%; translate: 0 -50%; width: 44px; height: 44px; border-radius: 50%; border: 0;
+    background: #fff; box-shadow: var(--shadow); display: grid; place-items: center; cursor: pointer;
+  }
+  .nav:hover { color: var(--pink-700); }
+  .prev { left: 12px; }
+  .next { right: 12px; }
+
+  .dots { position: absolute; bottom: 12px; left: 50%; translate: -50% 0; display: flex; gap: 2px; }
+  /* Кнопка 24px для зручного натиску, видима крапка всередині. */
+  .dots button { width: 24px; height: 24px; border: 0; background: none; padding: 0; cursor: pointer; display: grid; place-items: center; }
+  .dots button::after { content: ''; width: 8px; height: 8px; border-radius: 999px; background: rgb(31 27 46 / 0.25); transition: width 0.2s; }
+  .dots button[aria-current]::after { width: 20px; background: var(--pink-600); }
+
+  @media (max-width: 640px) {
+    .slide { min-height: 240px; padding: 24px 20px 40px; }
+    .mascot { width: 120px; }
+    .nav { display: none; }
+  }
+</style>

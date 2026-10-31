@@ -1,0 +1,92 @@
+---
+import Icon from './Icon.astro';
+import { type Locale } from '../i18n/config';
+import { plural, useTranslations } from '../i18n';
+import { BASE_CURRENCY, getCategories, pick, type Product } from '../lib/data';
+import { formatPrice, href } from '../lib/format';
+
+interface Props { product: Product; locale: Locale }
+const { product: p, locale } = Astro.props;
+const t = useTranslations(locale);
+const category = getCategories().find((c) => c.slug === p.category);
+const discount = p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
+const url = href(locale, `product/${p.slug}/`);
+const inStock = p.stock > 0;
+---
+<article class="card">
+  <a href={url} class="media" tabindex="-1" aria-hidden="true">
+    <!-- Заглушка, поки нема фото: колір і іконка категорії. -->
+    <div class={`ph tint-${category?.tint ?? 'pink'}`}>
+      <Icon name={category?.icon ?? 'star'} size={64} />
+      <span>{t('card.photoSoon')}</span>
+    </div>
+    <div class="badges">
+      {discount > 0 && <span class="badge sale">−{discount}%</span>}
+      {p.hit && <span class="badge hit">{t('card.hit')}</span>}
+      {p.new && <span class="badge new">{t('card.new')}</span>}
+    </div>
+  </a>
+
+  <div class="body">
+    <h3 class="name"><a href={url}>{pick(p.name, locale)}</a></h3>
+    <div class="meta">
+      <span class="age">{t('card.age').replace('{n}', String(p.ageMin))}</span>
+      {p.reviews > 0 && (
+        <span class="rating"><Icon name="star" size={14} />{p.rating.toFixed(1)} <span class="muted">· {plural(locale, 'card.reviews', p.reviews)}</span></span>
+      )}
+    </div>
+    <div class="buy">
+      <div class="prices">
+        {p.oldPrice && <s class="old"><span class="sr-only">{t('card.oldPrice')}: </span>{formatPrice(p.oldPrice, BASE_CURRENCY, locale)}</s>}
+        <span class:list={['price', { sale: p.oldPrice }]}>{formatPrice(p.price, BASE_CURRENCY, locale)}</span>
+      </div>
+      {inStock ? (
+        <button class="btn add" type="button" data-add-to-cart={p.slug} aria-label={`${t('card.toCart')}: ${pick(p.name, locale)}`}>
+          <Icon name="cart" size={20} />
+        </button>
+      ) : (
+        <span class="oos">{t('card.outOfStock')}</span>
+      )}
+    </div>
+  </div>
+</article>
+
+<style>
+  .card {
+    display: flex; flex-direction: column; background: #fff; border: 1px solid var(--line); border-radius: var(--radius);
+    overflow: hidden; transition: box-shadow 0.2s, transform 0.2s;
+  }
+  .card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+
+  .media { position: relative; display: block; }
+  .ph { aspect-ratio: 1; display: grid; place-content: center; justify-items: center; gap: 8px; color: var(--ink-2); font-size: 13px; font-weight: 700; }
+  .ph :global(svg) { color: var(--ink); opacity: 0.55; }
+
+  .badges { position: absolute; top: 10px; left: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .badge { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 900; }
+  .badge.sale { background: var(--red); color: #fff; }
+  .badge.hit { background: var(--yellow); color: var(--ink); }
+  .badge.new { background: var(--green); color: #fff; }
+
+  .body { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px 14px; flex: 1; }
+  .name { font-size: 16px; font-weight: 700; line-height: 1.3; }
+  .name a:hover { color: var(--pink-700); }
+  .meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; color: var(--ink-2); font-weight: 600; }
+  .rating { display: inline-flex; align-items: center; gap: 3px; color: var(--ink); }
+  .rating :global(svg) { color: #f5a623; }
+  .muted { color: var(--ink-2); }
+
+  .buy { margin-top: auto; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 4px 8px; }
+  .prices { display: flex; flex-direction: column; }
+  .old { font-size: 13px; color: var(--ink-2); }
+  .price { font-size: 20px; font-weight: 900; }
+  .price.sale { color: var(--red); }
+  .add { width: 44px; height: 44px; padding: 0; flex: none; }
+  .oos { font-size: 13px; font-weight: 700; color: var(--ink-2); }
+
+  @media (max-width: 480px) {
+    .body { padding: 10px; }
+    .name { font-size: 14px; }
+    .price { font-size: 17px; }
+  }
+</style>

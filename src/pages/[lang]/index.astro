@@ -1,7 +1,12 @@
 ---
 import Base from '../../layouts/Base.astro';
+import HeroSlider from '../../components/HeroSlider.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import Icon from '../../components/Icon.astro';
 import { LOCALES, type Locale } from '../../i18n/config';
 import { useTranslations } from '../../i18n';
+import { getCategories, getProducts, getReviews, pick } from '../../lib/data';
+import { href } from '../../lib/format';
 
 export function getStaticPaths() {
   return LOCALES.map((lang) => ({ params: { lang } }));
@@ -9,8 +14,138 @@ export function getStaticPaths() {
 
 const locale = Astro.params.lang as Locale;
 const t = useTranslations(locale);
+const categories = getCategories();
+const products = getProducts();
+// Хіти першими (мечі — за брифом), далі решта в наявності.
+const hits = [...products].sort((a, b) => Number(b.hit) - Number(a.hit) || Number(b.stock > 0) - Number(a.stock > 0)).slice(0, 8);
+const reviews = getReviews();
+const AGES = [
+  { label: '0–2', q: '0-2', tint: 'pink' },
+  { label: '3–5', q: '3-5', tint: 'yellow' },
+  { label: '6–8', q: '6-8', tint: 'blue' },
+  { label: '9+', q: '9-99', tint: 'green' },
+];
+const steps = [
+  { icon: 'cart', n: 1 },
+  { icon: 'chat', n: 2 },
+  { icon: 'phone', n: 3 },
+];
 ---
-<Base locale={locale} title={t('home.title')}>
-  <h1>ABAWKA</h1>
-  <p>{t('home.soon')}</p>
+<Base locale={locale} title={t('header.home')}>
+  <div class="wrap">
+    <div class="section"><HeroSlider locale={locale} /></div>
+
+    <section class="section" aria-labelledby="cats-h">
+      <div class="section-head"><h2 id="cats-h">{t('home.categories')}</h2></div>
+      <div class="cat-grid">
+        {categories.map((c) => (
+          <a class={`cat tint-${c.tint}`} href={href(locale, `catalog/${c.slug}/`)}>
+            <span class="cat-icon"><Icon name={c.icon} size={36} /></span>
+            <span class="cat-name">{pick(c.name, locale)}</span>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="age-h">
+      <div class="section-head"><h2 id="age-h">{t('home.age')}</h2></div>
+      <div class="ages">
+        {AGES.map((a) => (
+          <a class={`age tint-${a.tint}`} href={href(locale, `catalog/?age=${a.q}`)}>
+            <strong>{a.label}</strong><span>{t('home.age.years')}</span>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="hits-h">
+      <div class="section-head">
+        <h2 id="hits-h">{t('home.hits')}</h2>
+        <a class="link-more" href={href(locale, 'catalog/')}>{t('home.all')} →</a>
+      </div>
+      <div class="grid">{hits.map((p) => <ProductCard product={p} locale={locale} />)}</div>
+    </section>
+
+    <section class="section how" aria-labelledby="how-h">
+      <div class="section-head"><h2 id="how-h">{t('home.how')}</h2></div>
+      <ol class="steps">
+        {steps.map((s) => (
+          <li>
+            <span class="step-icon"><Icon name={s.icon} size={28} /><b>{s.n}</b></span>
+            <div>
+              <h3>{t(`home.how.${s.n}.title`)}</h3>
+              <p>{t(`home.how.${s.n}.text`)}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <section class="section" aria-labelledby="rev-h">
+      <div class="section-head"><h2 id="rev-h">{t('home.reviews')}</h2></div>
+      <div class="reviews">
+        {reviews.map((r) => {
+          const product = products.find((p) => p.slug === r.product);
+          return (
+            <figure class="review">
+              <div class="stars" aria-label={`${r.rating}/5`}>
+                {Array.from({ length: 5 }, (_, i) => <Icon name="star" size={16} class={i < r.rating ? 'on' : 'off'} />)}
+              </div>
+              <blockquote>{pick(r.text, locale)}</blockquote>
+              <figcaption>
+                <strong>{r.author}</strong>, {r.country}
+                {product && <> · <a href={href(locale, `product/${product.slug}/`)}>{pick(product.name, locale)}</a></>}
+              </figcaption>
+            </figure>
+          );
+        })}
+      </div>
+    </section>
+  </div>
 </Base>
+
+<style>
+  .cat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .cat {
+    display: grid; justify-items: center; gap: 10px; padding: 20px 12px; border-radius: var(--radius); text-align: center; font-weight: 800;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .cat:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); }
+  .cat-icon { width: 64px; height: 64px; border-radius: 50%; background: #fff; display: grid; place-items: center; }
+
+  .ages { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .age { display: flex; align-items: baseline; justify-content: center; gap: 6px; padding: 18px; border-radius: var(--radius); font-weight: 700; }
+  .age strong { font-size: 28px; font-weight: 900; }
+  .age:hover { box-shadow: var(--shadow-hover); }
+
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+  .how { background: var(--bg-soft); border-radius: var(--radius); padding: 28px; }
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .steps li { display: flex; gap: 14px; align-items: flex-start; }
+  .step-icon { position: relative; flex: none; width: 56px; height: 56px; border-radius: 50%; background: var(--pink-100); color: var(--pink-700); display: grid; place-items: center; }
+  .step-icon b { position: absolute; top: -4px; right: -4px; width: 22px; height: 22px; border-radius: 50%; background: var(--pink-600); color: #fff; font-size: 12px; display: grid; place-items: center; }
+  .steps h3 { font-size: 17px; margin-bottom: 4px; }
+  .steps p { margin: 0; color: var(--ink-2); font-weight: 600; }
+
+  .reviews { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .review { margin: 0; padding: 20px; border: 1px solid var(--line); border-radius: var(--radius); display: grid; gap: 10px; align-content: start; }
+  .stars { display: flex; gap: 2px; }
+  .stars :global(.on) { color: #f5a623; }
+  .stars :global(.off) { color: var(--line); }
+  blockquote { margin: 0; font-weight: 600; }
+  figcaption { font-size: 14px; color: var(--ink-2); }
+  figcaption a { color: var(--pink-700); font-weight: 700; }
+
+  @media (max-width: 960px) {
+    .cat-grid { grid-template-columns: repeat(5, minmax(120px, 1fr)); overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
+    .grid { grid-template-columns: repeat(3, 1fr); }
+    .steps, .reviews { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .ages { grid-template-columns: repeat(2, 1fr); }
+    .how { padding: 20px; }
+    .section { margin-block: 28px; }
+  }
+</style>

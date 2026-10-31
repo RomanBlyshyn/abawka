@@ -1,0 +1,52 @@
+---
+import Icon from './Icon.astro';
+import Logo from './Logo.astro';
+import type { Locale } from '../i18n/config';
+import { useTranslations } from '../i18n';
+import { getCategories, pick } from '../lib/data';
+import { href } from '../lib/format';
+
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+const year = new Date().getFullYear();
+const help = [
+  ['how-to-order/', 'footer.how'],
+  ['delivery/', 'footer.delivery'],
+  ['returns/', 'footer.returns'],
+  ['contacts/', 'footer.contacts'],
+  ['terms/', 'footer.terms'],
+  ['privacy/', 'footer.privacy'],
+];
+---
+<footer class="site-footer">
+  <div class="wrap cols">
+    <div class="brand">
+      <Logo />
+      <p>{t('meta.description')}</p>
+      <a class="btn btn-light tg" href="https://t.me/abawka" rel="noopener" target="_blank"><Icon name="telegram" size={20} /> {t('footer.contactUs')}</a>
+    </div>
+    <nav aria-label={t('footer.shop')}>
+      <h2>{t('footer.shop')}</h2>
+      <ul>{getCategories().map((c) => <li><a href={href(locale, `catalog/${c.slug}/`)}>{pick(c.name, locale)}</a></li>)}</ul>
+    </nav>
+    <nav aria-label={t('footer.help')}>
+      <h2>{t('footer.help')}</h2>
+      <ul>{help.map(([path, key]) => <li><a href={href(locale, path)}>{t(key!)}</a></li>)}</ul>
+    </nav>
+  </div>
+  <div class="wrap legal">© {year} ABAWKA. {t('footer.rights')}</div>
+</footer>
+
+<style>
+  .site-footer { margin-top: 64px; background: var(--pink-50); padding-top: 40px; }
+  .cols { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 32px; }
+  .brand p { color: var(--ink-2); max-width: 380px; font-weight: 600; }
+  .tg { border: 2px solid var(--pink-100); }
+  h2 { font-size: 16px; margin-bottom: 10px; }
+  ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  ul a { color: var(--ink-2); font-weight: 600; }
+  ul a:hover { color: var(--pink-700); }
+  .legal { padding-block: 20px; margin-top: 32px; border-top: 1px solid var(--pink-100); font-size: 13px; color: var(--ink-2); }
+  @media (max-width: 720px) { .cols { grid-template-columns: 1fr 1fr; } .brand { grid-column: 1 / -1; } }
+</style>

@@ -1,0 +1,40 @@
+{
+  "_note": "Тестові дані до етапу 2 (база). Ціни й рейтинги — заглушки, власник введе справжні в адмінці. Відгуки demo:true прибираються до запуску.",
+  "baseCurrency": "EUR",
+  "categories": [
+    { "slug": "swords", "icon": "sword", "tint": "red", "name": { "pl": "Miecze", "en": "Swords", "uk": "Мечі" } },
+    { "slug": "interactive", "icon": "rabbit", "tint": "yellow", "name": { "pl": "Zabawki interaktywne", "en": "Interactive toys", "uk": "Інтерактивні іграшки" } },
+    { "slug": "flying", "icon": "helicopter", "tint": "blue", "name": { "pl": "Latające zabawki", "en": "Flying toys", "uk": "Літаючі іграшки" } },
+    { "slug": "balloons", "icon": "balloon", "tint": "pink", "name": { "pl": "Balony", "en": "Balloons", "uk": "Повітряні кульки" } },
+    { "slug": "board-games", "icon": "chess", "tint": "green", "name": { "pl": "Gry planszowe", "en": "Board games", "uk": "Настільні ігри" } }
+  ],
+  "products": [
+    { "slug": "toy-sword", "category": "swords", "price": 1999, "oldPrice": 2499, "ageMin": 3, "stock": 12, "hit": true, "new": false, "rating": 4.8, "reviews": 3,
+      "name": { "pl": "Miecz zabawkowy", "en": "Toy sword", "uk": "Іграшковий меч" } },
+    { "slug": "knight-sword", "category": "swords", "price": 2499, "ageMin": 3, "stock": 8, "hit": true, "new": false, "rating": 4.9, "reviews": 2,
+      "name": { "pl": "Miecz rycerski", "en": "Knight sword", "uk": "Меч лицаря" } },
+    { "slug": "walking-capybara", "category": "interactive", "price": 2999, "ageMin": 3, "stock": 5, "hit": true, "new": true, "rating": 5, "reviews": 1,
+      "name": { "pl": "Chodząca kapibara na baterie", "en": "Walking capybara (battery)", "uk": "Капібара, що ходить, на батарейках" } },
+    { "slug": "walking-rabbit", "category": "interactive", "price": 2799, "ageMin": 3, "stock": 0, "hit": false, "new": true, "rating": 0, "reviews": 0,
+      "name": { "pl": "Chodzący królik na baterie", "en": "Walking rabbit (battery)", "uk": "Кролик, що ходить, на батарейках" } },
+    { "slug": "slingshot-helicopter", "category": "flying", "price": 899, "oldPrice": 1199, "ageMin": 6, "stock": 30, "hit": true, "new": false, "rating": 4.6, "reviews": 2,
+      "name": { "pl": "Helikopter z procą", "en": "Slingshot helicopter", "uk": "Гелікоптер з рогаткою" } },
+    { "slug": "bobo-balloon", "category": "balloons", "price": 599, "ageMin": 3, "stock": 50, "hit": false, "new": false, "rating": 4.7, "reviews": 1,
+      "name": { "pl": "Balon Bobo", "en": "Bobo balloon", "uk": "Bobo кулька" } },
+    { "slug": "chess", "category": "board-games", "price": 3499, "ageMin": 6, "stock": 4, "hit": false, "new": false, "rating": 0, "reviews": 0,
+      "name": { "pl": "Szachy", "en": "Chess set", "uk": "Шахи" } }
+  ],
+  "slides": [
+    { "key": "hits", "tint": "pink", "href": "catalog/swords/", "mascot": true },
+    { "key": "new", "tint": "yellow", "href": "catalog/interactive/", "mascot": false },
+    { "key": "sale", "tint": "blue", "href": "catalog/?sale=1", "mascot": false }
+  ],
+  "reviews": [
+    { "demo": true, "author": "Anna", "country": "PL", "rating": 5, "product": "toy-sword",
+      "text": { "pl": "Syn nie wypuszcza miecza z rąk. Szybki kontakt i wysyłka.", "en": "My son won't let go of the sword. Quick contact and shipping.", "uk": "Син не випускає меч з рук. Швидко зв'язались і відправили." } },
+    { "demo": true, "author": "Olena", "country": "UA", "rating": 5, "product": "walking-capybara",
+      "text": { "pl": "Kapibara to hit wśród dzieci na podwórku!", "en": "The capybara is a hit with all the kids in the yard!", "uk": "Капібара — хіт серед усіх дітей у дворі!" } },
+    { "demo": true, "author": "Tomáš", "country": "CZ", "rating": 4, "product": "slingshot-helicopter",
+      "text": { "pl": "Lata naprawdę wysoko. Polecam na lato.", "en": "Flies really high. Great for summer.", "uk": "Літає дуже високо. Раджу на літо." } }
+  ]
+}
