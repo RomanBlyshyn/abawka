@@ -113,7 +113,7 @@ const steps = [
     transition: transform 0.2s, box-shadow 0.2s;
   }
   .cat:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); }
-  .cat-icon { width: 64px; height: 64px; border-radius: 50%; background: #fff; display: grid; place-items: center; }
+  .cat-icon { width: 64px; height: 64px; border-radius: 50%; background: var(--surface); display: grid; place-items: center; }
 
   .ages { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
   .age { display: flex; align-items: baseline; justify-content: center; gap: 6px; padding: 18px; border-radius: var(--radius); font-weight: 700; }
@@ -125,7 +125,7 @@ const steps = [
   .how { background: var(--bg-soft); border-radius: var(--radius); padding: 28px; }
   .steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
   .steps li { display: flex; gap: 14px; align-items: flex-start; }
-  .step-icon { position: relative; flex: none; width: 56px; height: 56px; border-radius: 50%; background: var(--pink-100); color: var(--pink-700); display: grid; place-items: center; }
+  .step-icon { position: relative; flex: none; width: 56px; height: 56px; border-radius: 50%; background: var(--accent-border); color: var(--accent-text); display: grid; place-items: center; }
   .step-icon b { position: absolute; top: -4px; right: -4px; width: 22px; height: 22px; border-radius: 50%; background: var(--pink-600); color: #fff; font-size: 12px; display: grid; place-items: center; }
   .steps h3 { font-size: 17px; margin-bottom: 4px; }
   .steps p { margin: 0; color: var(--ink-2); font-weight: 600; }
@@ -137,7 +137,7 @@ const steps = [
   .stars :global(.off) { color: var(--line); }
   blockquote { margin: 0; font-weight: 600; }
   figcaption { font-size: 14px; color: var(--ink-2); }
-  figcaption a { color: var(--pink-700); font-weight: 700; }
+  figcaption a { color: var(--accent-text); font-weight: 700; }
 
   @media (max-width: 960px) {
     .cat-grid { grid-template-columns: repeat(5, minmax(120px, 1fr)); overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }

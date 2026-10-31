@@ -55,5 +55,6 @@
   "card.reviews.other": "reviews",
   "home.title": "Toy shop",
   "a11y.skip": "Skip to content",
-  "slider.label": "Deals and new arrivals"
+  "slider.label": "Deals and new arrivals",
+  "header.darkTheme": "Dark theme"
 }

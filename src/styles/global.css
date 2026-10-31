@@ -1,34 +1,45 @@
 @import '@fontsource-variable/nunito';
 
+/* Тема: без вибору — як у системі; тумблер ставить data-theme на <html>. */
+:root { color-scheme: light dark; }
+:root[data-theme='light'] { color-scheme: light; }
+:root[data-theme='dark'] { color-scheme: dark; }
+
 :root {
-  /* Основний — рожевий (бриф). Кольори з лого — тільки для дрібних акцентів. Усі пари тексту перевірені на WCAG AA. */
-  --pink-700: #b81b5c;
-  --pink-600: #d6246e;
-  --pink-500: #ec4f8e;
-  --pink-100: #ffd9e8;
-  --pink-50: #fff0f6;
+  /* Основний — рожевий (бриф). Кольори з лого — тільки для дрібних акцентів.
+     light-dark(світла, темна). Усі пари тексту в обох темах перевірені на WCAG AA. */
+  --pink-700: #b81b5c; /* hover кнопок */
+  --pink-600: #d6246e; /* кнопки, білий текст 4.84 */
+  --pink-500: #ec4f8e; /* фокус, рамки */
+  --accent-text: light-dark(#b81b5c, #ff8fbd); /* рожевий текст і посилання */
+  --accent-soft: light-dark(#fff0f6, #33202f); /* рожеві фони, hover */
+  --accent-border: light-dark(#ffd9e8, #4a2540);
 
   --yellow: #ffc94d;
   --red: #c62828;
   --green: #2e7d32;
   --blue: #1565c0;
+  --sale: light-dark(#c62828, #ff8a80); /* ціна зі знижкою */
+  --badge-ink: #1f1b2e; /* текст на жовтому — темний в обох темах */
 
-  --tint-pink: #ffe3ef;
-  --tint-yellow: #fff1cc;
-  --tint-red: #ffe1dc;
-  --tint-blue: #dcecff;
-  --tint-green: #dff3e1;
+  --tint-pink: light-dark(#ffe3ef, #3b2133);
+  --tint-yellow: light-dark(#fff1cc, #3a3022);
+  --tint-red: light-dark(#ffe1dc, #3e2526);
+  --tint-blue: light-dark(#dcecff, #1f2b42);
+  --tint-green: light-dark(#dff3e1, #1f3429);
 
-  --ink: #1f1b2e;
-  --ink-2: #5b5670;
-  --line: #ece7f0;
-  --bg: #ffffff;
-  --bg-soft: #faf7fb;
+  --ink: light-dark(#1f1b2e, #f5eff9);
+  --ink-2: light-dark(#5b5670, #bdb3cc);
+  --line: light-dark(#ece7f0, #352c44);
+  --bg: light-dark(#ffffff, #17121f);
+  --bg-soft: light-dark(#faf7fb, #1d1727);
+  --surface: light-dark(#ffffff, #221b2d); /* картки, шапка, меню */
+  --dot: light-dark(rgb(31 27 46 / 0.25), rgb(255 255 255 / 0.3));
 
   --radius: 16px;
   --radius-sm: 10px;
-  --shadow: 0 2px 10px rgb(31 27 46 / 0.06);
-  --shadow-hover: 0 8px 24px rgb(31 27 46 / 0.12);
+  --shadow: 0 2px 10px light-dark(rgb(31 27 46 / 0.06), rgb(0 0 0 / 0.35));
+  --shadow-hover: 0 8px 24px light-dark(rgb(31 27 46 / 0.12), rgb(0 0 0 / 0.5));
   --wrap: 1240px;
   --gutter: 16px;
 
@@ -49,7 +60,7 @@ main:focus { outline: none; }
 
 .skip {
   position: absolute; left: 8px; top: -100px; z-index: 100; padding: 10px 16px; border-radius: var(--radius-sm);
-  background: var(--ink); color: #fff; font-weight: 800;
+  background: var(--ink); color: var(--bg); font-weight: 800;
 }
 .skip:focus { top: 8px; }
 img { max-width: 100%; height: auto; display: block; }
@@ -61,7 +72,7 @@ h1, h2, h3 { line-height: 1.2; margin: 0; font-weight: 800; }
 .section { margin-block: 40px; }
 .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
 .section-head h2 { font-size: clamp(22px, 3vw, 28px); }
-.link-more { color: var(--pink-700); font-weight: 700; }
+.link-more { color: var(--accent-text); font-weight: 700; }
 .link-more:hover { text-decoration: underline; }
 
 .btn {
@@ -75,8 +86,8 @@ h1, h2, h3 { line-height: 1.2; margin: 0; font-weight: 800; }
 .btn:hover { background: var(--pink-700); }
 .btn:active { transform: scale(0.98); }
 .btn[disabled] { background: var(--line); color: var(--ink-2); cursor: not-allowed; }
-.btn-light { background: #fff; color: var(--pink-700); }
-.btn-light:hover { background: var(--pink-50); }
+.btn-light { background: var(--surface); color: var(--accent-text); }
+.btn-light:hover { background: var(--accent-soft); }
 
 :focus-visible { outline: 3px solid var(--pink-500); outline-offset: 2px; border-radius: 6px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

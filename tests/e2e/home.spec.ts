@@ -98,6 +98,46 @@ test('cart and language controls have accessible names on mobile', async ({ page
   await expect(page.locator('.dd summary').first()).toHaveAccessibleName(/UK/);
 });
 
+test.describe('dark theme', () => {
+  test('follows the system before any choice', async ({ browser }) => {
+    const page = await browser.newPage({ colorScheme: 'dark' });
+    await page.goto('/en/');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await page.close();
+  });
+
+  test('toggle switches, is remembered after reload and across languages', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.goto('/en/');
+    const toggle = page.getByRole('button', { name: 'Dark theme' });
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    const lightBg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    await toggle.click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).not.toBe(lightBg);
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await page.goto('/uk/');
+    await expect(page.getByRole('button', { name: 'Темна тема' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  test('theme is set before first paint (no white flash)', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'dark' });
+    // Зупиняємо всі скрипти-модулі: тема має стояти вже від inline-скрипта в <head>.
+    await page.route('**/*.js', (route) => route.abort());
+    await page.goto('/en/');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  });
+
+  test('no layout overflow in dark mode', async ({ browser }) => {
+    const page = await browser.newPage({ colorScheme: 'dark', viewport: { width: 320, height: 800 } });
+    await page.goto('/ru/');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
+    await page.close();
+  });
+});
+
 test('currency switch stays hidden until prices can be converted', async ({ page }) => {
   await page.goto('/en/');
   await expect(page.locator('[data-currency-label]')).toHaveCount(0);

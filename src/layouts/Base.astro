@@ -21,6 +21,15 @@ const rest = Astro.url.pathname.split('/').slice(2).join('/');
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title} · ABAWKA</title>
     <meta name="description" content={description ?? t('meta.description')} />
+    <script is:inline>
+      // До першого малювання: збережений вибір або тема системи. Інакше темна тема блимала б білим.
+      (() => {
+        let theme = null;
+        try { theme = localStorage.getItem('theme'); } catch {}
+        if (theme !== 'light' && theme !== 'dark') theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
     <meta name="theme-color" content="#d6246e" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     {LOCALES.map((l) => <link rel="alternate" hreflang={l} href={new URL(`/${l}/${rest}`, Astro.site)} />)}

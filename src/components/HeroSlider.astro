@@ -85,16 +85,16 @@ const slides = getSlides();
 
   .nav {
     position: absolute; top: 50%; translate: 0 -50%; width: 44px; height: 44px; border-radius: 50%; border: 0;
-    background: #fff; box-shadow: var(--shadow); display: grid; place-items: center; cursor: pointer;
+    background: var(--surface); box-shadow: var(--shadow); display: grid; place-items: center; cursor: pointer;
   }
-  .nav:hover { color: var(--pink-700); }
+  .nav:hover { color: var(--accent-text); }
   .prev { left: 12px; }
   .next { right: 12px; }
 
   .dots { position: absolute; bottom: 12px; left: 50%; translate: -50% 0; display: flex; gap: 2px; }
   /* Кнопка 24px для зручного натиску, видима крапка всередині. */
   .dots button { width: 24px; height: 24px; border: 0; background: none; padding: 0; cursor: pointer; display: grid; place-items: center; }
-  .dots button::after { content: ''; width: 8px; height: 8px; border-radius: 999px; background: rgb(31 27 46 / 0.25); transition: width 0.2s; }
+  .dots button::after { content: ''; width: 8px; height: 8px; border-radius: 999px; background: var(--dot); transition: width 0.2s; }
   .dots button[aria-current]::after { width: 20px; background: var(--pink-600); }
 
   @media (max-width: 640px) {
