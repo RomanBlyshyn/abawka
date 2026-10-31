@@ -54,5 +54,8 @@
   "card.reviews.one": "відгук",
   "card.reviews.few": "відгуки",
   "card.reviews.many": "відгуків",
-  "card.reviews.other": "відгуку"
+  "card.reviews.other": "відгуку",
+  "home.title": "Магазин іграшок",
+  "a11y.skip": "Перейти до вмісту",
+  "slider.label": "Акції та новинки"
 }

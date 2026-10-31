@@ -52,5 +52,8 @@
   "footer.contactUs": "Message us",
   "footer.rights": "All rights reserved.",
   "card.reviews.one": "review",
-  "card.reviews.other": "reviews"
+  "card.reviews.other": "reviews",
+  "home.title": "Toy shop",
+  "a11y.skip": "Skip to content",
+  "slider.label": "Deals and new arrivals"
 }

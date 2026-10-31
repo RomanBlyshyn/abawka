@@ -54,5 +54,8 @@
   "card.reviews.one": "opinia",
   "card.reviews.few": "opinie",
   "card.reviews.many": "opinii",
-  "card.reviews.other": "opinii"
+  "card.reviews.other": "opinii",
+  "home.title": "Sklep z zabawkami",
+  "a11y.skip": "Przejdź do treści",
+  "slider.label": "Promocje i nowości"
 }

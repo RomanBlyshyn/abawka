@@ -31,3 +31,7 @@ desktop.ini
 # Astro
 .astro/
 .netlify/
+
+# Playwright
+test-results/
+playwright-report/

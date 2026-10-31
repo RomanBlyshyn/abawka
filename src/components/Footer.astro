@@ -48,5 +48,8 @@ const help = [
   ul a { color: var(--ink-2); font-weight: 600; }
   ul a:hover { color: var(--pink-700); }
   .legal { padding-block: 20px; margin-top: 32px; border-top: 1px solid var(--pink-100); font-size: 13px; color: var(--ink-2); }
-  @media (max-width: 720px) { .cols { grid-template-columns: 1fr 1fr; } .brand { grid-column: 1 / -1; } }
+  ul a { overflow-wrap: anywhere; }
+  @media (max-width: 720px) { .cols { grid-template-columns: repeat(2, minmax(0, 1fr)); } .brand { grid-column: 1 / -1; } }
+  /* Довгі слова («конфиденциальности», «Ochrana osobních údajů») не влазять у пів екрана 320px. */
+  @media (max-width: 400px) { .cols { grid-template-columns: minmax(0, 1fr); gap: 24px; } }
 </style>

@@ -22,11 +22,14 @@ const rest = Astro.url.pathname.split('/').slice(2).join('/');
     <title>{title} · ABAWKA</title>
     <meta name="description" content={description ?? t('meta.description')} />
     <meta name="theme-color" content="#d6246e" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     {LOCALES.map((l) => <link rel="alternate" hreflang={l} href={new URL(`/${l}/${rest}`, Astro.site)} />)}
+    <link rel="alternate" hreflang="x-default" href={new URL(`/${rest}`, Astro.site)} />
   </head>
   <body>
+    <a class="skip" href="#main">{t('a11y.skip')}</a>
     <Header locale={locale} />
-    <main>
+    <main id="main" tabindex="-1">
       <slot />
     </main>
     <Footer locale={locale} />

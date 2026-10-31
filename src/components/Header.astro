@@ -13,6 +13,8 @@ const categories = getCategories();
 // Шлях без префікса мови, щоб перемикач вів на ту саму сторінку іншою мовою.
 const rest = Astro.url.pathname.split('/').slice(2).join('/');
 const CURRENCIES = ['EUR', 'PLN', 'UAH', 'USD'];
+// Вимкнено до етапу 6: без перерахунку цін вибір валюти показував би неправду.
+const CURRENCY_SWITCH = false;
 ---
 <header class="site-header">
   <div class="topbar">
@@ -33,7 +35,7 @@ const CURRENCIES = ['EUR', 'PLN', 'UAH', 'USD'];
 
     <div class="tools">
       <details class="dd">
-        <summary aria-label={t('header.language')}><Icon name="globe" size={18} /><span>{locale.toUpperCase()}</span><Icon name="chevron-down" size={14} /></summary>
+        <summary><Icon name="globe" size={18} /><span class="sr-only">{t('header.language')}: </span><span>{locale.toUpperCase()}</span><Icon name="chevron-down" size={14} /></summary>
         <ul class="dd-menu">
           {LOCALES.map((l) => (
             <li><a href={`/${l}/${rest}`} hreflang={l} lang={l} aria-current={l === locale ? 'true' : undefined}>{LOCALE_NAMES[l]}</a></li>
@@ -41,12 +43,14 @@ const CURRENCIES = ['EUR', 'PLN', 'UAH', 'USD'];
         </ul>
       </details>
 
-      <details class="dd">
-        <summary aria-label={t('header.currency')}><span data-currency-label>EUR</span><Icon name="chevron-down" size={14} /></summary>
-        <ul class="dd-menu">
-          {CURRENCIES.map((c) => <li><button type="button" data-set-currency={c}>{c}</button></li>)}
-        </ul>
-      </details>
+      {CURRENCY_SWITCH && (
+        <details class="dd">
+          <summary aria-label={t('header.currency')}><span data-currency-label>EUR</span><Icon name="chevron-down" size={14} /></summary>
+          <ul class="dd-menu">
+            {CURRENCIES.map((c) => <li><button type="button" data-set-currency={c}>{c}</button></li>)}
+          </ul>
+        </details>
+      )}
 
       <a class="cart" href={href(locale, 'cart/')}>
         <Icon name="cart" size={22} />
@@ -70,11 +74,19 @@ const CURRENCIES = ['EUR', 'PLN', 'UAH', 'USD'];
   const dds = [...document.querySelectorAll<HTMLDetailsElement>('.dd')];
   dds.forEach((d) => d.addEventListener('toggle', () => { if (d.open) dds.forEach((o) => { if (o !== d) o.open = false; }); }));
   document.addEventListener('click', (e) => dds.forEach((d) => { if (!d.contains(e.target as Node)) d.open = false; }));
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const open = dds.find((d) => d.open);
+    if (!open) return;
+    open.open = false;
+    open.querySelector('summary')!.focus();
+  });
 
   // Вибір валюти поки тільки запам'ятовується; перерахунок цін — етап 6.
   const label = document.querySelector('[data-currency-label]');
+  const allowed = [...document.querySelectorAll<HTMLButtonElement>('[data-set-currency]')].map((b) => b.dataset.setCurrency);
   const saved = (() => { try { return localStorage.getItem('currency'); } catch { return null; } })();
-  if (saved && label) label.textContent = saved;
+  if (saved && label && allowed.includes(saved)) label.textContent = saved;
   document.querySelectorAll<HTMLButtonElement>('[data-set-currency]').forEach((b) => b.addEventListener('click', () => {
     const c = b.dataset.setCurrency!;
     try { localStorage.setItem('currency', c); } catch { /* приватний режим */ }
@@ -139,7 +151,8 @@ const CURRENCIES = ['EUR', 'PLN', 'UAH', 'USD'];
     .topbar-in .topbar-how { display: none; }
     .main-row { grid-template-columns: 1fr auto; gap: 10px 8px; padding-block: 10px; }
     .search { grid-column: 1 / -1; grid-row: 2; }
-    .cart-label { display: none; }
+    /* Не display:none — інакше на телефоні кошик лишається без назви для читалок екрана. */
+    .cart-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     .cart { padding: 0 12px; }
     .dd summary { padding: 0 6px; }
   }

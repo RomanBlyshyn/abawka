@@ -52,5 +52,8 @@
   "footer.contactUs": "Schreiben Sie uns",
   "footer.rights": "Alle Rechte vorbehalten.",
   "card.reviews.one": "Bewertung",
-  "card.reviews.other": "Bewertungen"
+  "card.reviews.other": "Bewertungen",
+  "home.title": "Spielzeugladen",
+  "a11y.skip": "Zum Inhalt springen",
+  "slider.label": "Angebote und Neuheiten"
 }

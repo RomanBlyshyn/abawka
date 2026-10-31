@@ -16,8 +16,9 @@ const locale = Astro.params.lang as Locale;
 const t = useTranslations(locale);
 const categories = getCategories();
 const products = getProducts();
-// Хіти першими (мечі — за брифом), далі решта в наявності.
-const hits = [...products].sort((a, b) => Number(b.hit) - Number(a.hit) || Number(b.stock > 0) - Number(a.stock > 0)).slice(0, 8);
+// Тільки те, що можна замовити: спершу хіти (мечі — за брифом), добираємо новинками, щоб ряд не був порожнім.
+const available = products.filter((p) => p.stock > 0);
+const hits = [...available.filter((p) => p.hit), ...available.filter((p) => !p.hit && p.new)].slice(0, 8);
 const reviews = getReviews();
 const AGES = [
   { label: '0–2', q: '0-2', tint: 'pink' },
@@ -31,8 +32,9 @@ const steps = [
   { icon: 'phone', n: 3 },
 ];
 ---
-<Base locale={locale} title={t('header.home')}>
+<Base locale={locale} title={t('home.title')}>
   <div class="wrap">
+    <h1 class="sr-only">ABAWKA — {t('home.title')}</h1>
     <div class="section"><HeroSlider locale={locale} /></div>
 
     <section class="section" aria-labelledby="cats-h">
@@ -88,7 +90,7 @@ const steps = [
           const product = products.find((p) => p.slug === r.product);
           return (
             <figure class="review">
-              <div class="stars" aria-label={`${r.rating}/5`}>
+              <div class="stars" role="img" aria-label={`${r.rating}/5`}>
                 {Array.from({ length: 5 }, (_, i) => <Icon name="star" size={16} class={i < r.rating ? 'on' : 'off'} />)}
               </div>
               <blockquote>{pick(r.text, locale)}</blockquote>

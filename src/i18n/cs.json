@@ -54,5 +54,8 @@
   "card.reviews.one": "recenze",
   "card.reviews.few": "recenze",
   "card.reviews.many": "recenze",
-  "card.reviews.other": "recenzí"
+  "card.reviews.other": "recenzí",
+  "home.title": "Obchod s hračkami",
+  "a11y.skip": "Přejít na obsah",
+  "slider.label": "Akce a novinky"
 }

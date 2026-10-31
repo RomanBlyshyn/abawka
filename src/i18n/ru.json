@@ -54,5 +54,8 @@
   "card.reviews.one": "отзыв",
   "card.reviews.few": "отзыва",
   "card.reviews.many": "отзывов",
-  "card.reviews.other": "отзыва"
+  "card.reviews.other": "отзыва",
+  "home.title": "Магазин игрушек",
+  "a11y.skip": "Перейти к содержимому",
+  "slider.label": "Акции и новинки"
 }

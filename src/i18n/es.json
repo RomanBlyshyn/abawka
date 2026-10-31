@@ -53,5 +53,8 @@
   "footer.rights": "Todos los derechos reservados.",
   "card.reviews.one": "opinión",
   "card.reviews.many": "opiniones",
-  "card.reviews.other": "opiniones"
+  "card.reviews.other": "opiniones",
+  "home.title": "Tienda de juguetes",
+  "a11y.skip": "Ir al contenido",
+  "slider.label": "Ofertas y novedades"
 }

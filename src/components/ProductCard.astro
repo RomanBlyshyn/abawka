@@ -9,36 +9,42 @@ interface Props { product: Product; locale: Locale }
 const { product: p, locale } = Astro.props;
 const t = useTranslations(locale);
 const category = getCategories().find((c) => c.slug === p.category);
-const discount = p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
+// Стара ціна показується тільки якщо вона справді вища — захист від помилки в даних.
+const oldPrice = p.oldPrice && p.oldPrice > p.price ? p.oldPrice : undefined;
+const discount = oldPrice ? Math.round((1 - p.price / oldPrice) * 100) : 0;
+const rating = new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(p.rating);
 const url = href(locale, `product/${p.slug}/`);
 const inStock = p.stock > 0;
 ---
 <article class="card">
-  <a href={url} class="media" tabindex="-1" aria-hidden="true">
-    <!-- Заглушка, поки нема фото: колір і іконка категорії. -->
-    <div class={`ph tint-${category?.tint ?? 'pink'}`}>
-      <Icon name={category?.icon ?? 'star'} size={64} />
-      <span>{t('card.photoSoon')}</span>
-    </div>
+  <div class="media">
+    <!-- Дублює посилання з назви, тому прихована від клавіатури й читалок; бейджі — поза нею, щоб їх було чути. -->
+    <a href={url} tabindex="-1" aria-hidden="true">
+      <!-- Заглушка, поки нема фото: колір і іконка категорії. -->
+      <div class={`ph tint-${category?.tint ?? 'pink'}`}>
+        <Icon name={category?.icon ?? 'star'} size={64} />
+        <span>{t('card.photoSoon')}</span>
+      </div>
+    </a>
     <div class="badges">
       {discount > 0 && <span class="badge sale">−{discount}%</span>}
       {p.hit && <span class="badge hit">{t('card.hit')}</span>}
       {p.new && <span class="badge new">{t('card.new')}</span>}
     </div>
-  </a>
+  </div>
 
   <div class="body">
     <h3 class="name"><a href={url}>{pick(p.name, locale)}</a></h3>
     <div class="meta">
       <span class="age">{t('card.age').replace('{n}', String(p.ageMin))}</span>
       {p.reviews > 0 && (
-        <span class="rating"><Icon name="star" size={14} />{p.rating.toFixed(1)} <span class="muted">· {plural(locale, 'card.reviews', p.reviews)}</span></span>
+        <span class="rating"><Icon name="star" size={14} />{rating} <span class="muted">· {plural(locale, 'card.reviews', p.reviews)}</span></span>
       )}
     </div>
     <div class="buy">
       <div class="prices">
-        {p.oldPrice && <s class="old"><span class="sr-only">{t('card.oldPrice')}: </span>{formatPrice(p.oldPrice, BASE_CURRENCY, locale)}</s>}
-        <span class:list={['price', { sale: p.oldPrice }]}>{formatPrice(p.price, BASE_CURRENCY, locale)}</span>
+        {oldPrice && <s class="old"><span class="sr-only">{t('card.oldPrice')}: </span>{formatPrice(oldPrice, BASE_CURRENCY, locale)}</s>}
+        <span class:list={['price', { sale: oldPrice }]}>{formatPrice(p.price, BASE_CURRENCY, locale)}</span>
       </div>
       {inStock ? (
         <button class="btn add" type="button" data-add-to-cart={p.slug} aria-label={`${t('card.toCart')}: ${pick(p.name, locale)}`}>
@@ -62,7 +68,8 @@ const inStock = p.stock > 0;
   .ph { aspect-ratio: 1; display: grid; place-content: center; justify-items: center; gap: 8px; color: var(--ink-2); font-size: 13px; font-weight: 700; }
   .ph :global(svg) { color: var(--ink); opacity: 0.55; }
 
-  .badges { position: absolute; top: 10px; left: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .media > a { display: block; }
+  .badges { pointer-events: none; position: absolute; top: 10px; left: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
   .badge { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 900; }
   .badge.sale { background: var(--red); color: #fff; }
   .badge.hit { background: var(--yellow); color: var(--ink); }

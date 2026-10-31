@@ -7,7 +7,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
-    "check:i18n": "node scripts/check-i18n.mjs"
+    "check:i18n": "node scripts/check-i18n.mjs",
+    "test:e2e": "playwright test"
   },
   "author": "Roman <rb281926@gmail.com>",
   "type": "module",

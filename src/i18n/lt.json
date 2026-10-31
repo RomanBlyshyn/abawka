@@ -54,5 +54,8 @@
   "card.reviews.one": "atsiliepimas",
   "card.reviews.few": "atsiliepimai",
   "card.reviews.many": "atsiliepimo",
-  "card.reviews.other": "atsiliepimų"
+  "card.reviews.other": "atsiliepimų",
+  "home.title": "Žaislų parduotuvė",
+  "a11y.skip": "Pereiti prie turinio",
+  "slider.label": "Akcijos ir naujienos"
 }

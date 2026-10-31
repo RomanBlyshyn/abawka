@@ -53,5 +53,8 @@
   "footer.rights": "Tous droits réservés.",
   "card.reviews.one": "avis",
   "card.reviews.many": "avis",
-  "card.reviews.other": "avis"
+  "card.reviews.other": "avis",
+  "home.title": "Boutique de jouets",
+  "a11y.skip": "Aller au contenu",
+  "slider.label": "Promos et nouveautés"
 }

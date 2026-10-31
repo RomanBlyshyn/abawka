@@ -12,7 +12,7 @@ const { locale } = Astro.props;
 const t = useTranslations(locale);
 const slides = getSlides();
 ---
-<section class="hero" aria-roledescription="carousel" data-slider>
+<section class="hero" aria-roledescription="carousel" aria-label={t('slider.label')} data-slider>
   <div class="track" data-track>
     {slides.map((s, i) => (
       <div class={`slide tint-${s.tint}`} role="group" aria-roledescription="slide" aria-label={`${i + 1} / ${slides.length}`}>
@@ -22,7 +22,7 @@ const slides = getSlides();
           <a class="btn" href={href(locale, s.href)}>{t(`slide.${s.key}.cta`)}</a>
         </div>
         {s.mascot && (
-          <Image src={mascot} alt="" class="mascot" widths={[220, 440]} sizes="(max-width: 640px) 140px, 220px" loading={i === 0 ? 'eager' : 'lazy'} />
+          <Image src={mascot} alt="" class="mascot" widths={[120, 220, 240, 440]} sizes="(max-width: 640px) 120px, 220px" loading={i === 0 ? 'eager' : 'lazy'} />
         )}
       </div>
     ))}
@@ -40,30 +40,39 @@ const slides = getSlides();
     const track = root.querySelector<HTMLElement>('[data-track]')!;
     const dots = [...root.querySelectorAll<HTMLButtonElement>('[data-dot]')];
     const count = dots.length;
-    const current = () => Math.round(track.scrollLeft / track.clientWidth);
-    const go = (i: number) => track.scrollTo({ left: ((i + count) % count) * track.clientWidth, behavior: 'smooth' });
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Індекс зберігаємо самі: під час плавної прокрутки scrollLeft ще старий, і швидкі кліки губилися б.
+    let index = 0;
+    const mark = () => dots.forEach((d, j) => d.toggleAttribute('aria-current', index === j));
+    const go = (i: number) => {
+      index = (i + count) % count;
+      mark();
+      track.scrollTo({ left: index * track.clientWidth, behavior: reduced ? 'auto' : 'smooth' });
+    };
 
-    root.querySelector('[data-prev]')!.addEventListener('click', () => go(current() - 1));
-    root.querySelector('[data-next]')!.addEventListener('click', () => go(current() + 1));
+    root.querySelector('[data-prev]')!.addEventListener('click', () => go(index - 1));
+    root.querySelector('[data-next]')!.addEventListener('click', () => go(index + 1));
     dots.forEach((d, i) => d.addEventListener('click', () => go(i)));
+    // Свайп пальцем: підхоплюємо слайд, коли прокрутка зупинилась.
+    let settle: ReturnType<typeof setTimeout>;
     track.addEventListener('scroll', () => {
-      const i = current();
-      dots.forEach((d, j) => d.toggleAttribute('aria-current', i === j));
+      clearTimeout(settle);
+      settle = setTimeout(() => { index = Math.round(track.scrollLeft / track.clientWidth); mark(); }, 120);
     }, { passive: true });
 
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (reduced) return;
     let paused = false;
     root.addEventListener('pointerenter', () => (paused = true));
     root.addEventListener('pointerleave', () => (paused = false));
     root.addEventListener('focusin', () => (paused = true));
     root.addEventListener('focusout', () => (paused = false));
-    setInterval(() => { if (!paused && !document.hidden) go(current() + 1); }, 6000);
+    setInterval(() => { if (!paused && !document.hidden) go(index + 1); }, 6000);
   });
 </script>
 
 <style>
   .hero { position: relative; border-radius: var(--radius); overflow: hidden; }
-  .track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; scroll-behavior: smooth; }
+  .track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
   .track::-webkit-scrollbar { display: none; }
   .slide {
     flex: 0 0 100%; scroll-snap-align: start; min-height: 300px;
