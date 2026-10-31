@@ -35,8 +35,13 @@
   --bg-soft: light-dark(#faf7fb, #1d1727);
   --surface: light-dark(#ffffff, #221b2d); /* картки, шапка, меню */
   --dot: light-dark(rgb(31 27 46 / 0.25), rgb(255 255 255 / 0.3));
-  /* Контур кольорових плиток: напівпрозорий, тож на кожному фоні виходить темніший відтінок того ж кольору. */
-  --tile-border: light-dark(rgb(31 27 46 / 0.12), rgb(255 255 255 / 0.12));
+  /* Контур кольорових плиток — насиченіший відтінок кольору самої плитки (ставиться класом .tint-*). */
+  --tile-border: var(--line);
+  --tint-pink-border: light-dark(#ef8fb7, #7a3a62);
+  --tint-yellow-border: light-dark(#e8bf55, #7a6335);
+  --tint-red-border: light-dark(#ee9888, #7d4040);
+  --tint-blue-border: light-dark(#86b6ee, #3e5f92);
+  --tint-green-border: light-dark(#8ccb96, #3f6f4c);
 
   --radius: 16px;
   --radius-sm: 10px;
@@ -94,11 +99,11 @@ h1, h2, h3 { line-height: 1.2; margin: 0; font-weight: 800; }
 :focus-visible { outline: 3px solid var(--pink-500); outline-offset: 2px; border-radius: 6px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-.tint-pink { background: var(--tint-pink); }
-.tint-yellow { background: var(--tint-yellow); }
-.tint-red { background: var(--tint-red); }
-.tint-blue { background: var(--tint-blue); }
-.tint-green { background: var(--tint-green); }
+.tint-pink { background: var(--tint-pink); --tint-border: var(--tint-pink-border); }
+.tint-yellow { background: var(--tint-yellow); --tint-border: var(--tint-yellow-border); }
+.tint-red { background: var(--tint-red); --tint-border: var(--tint-red-border); }
+.tint-blue { background: var(--tint-blue); --tint-border: var(--tint-blue-border); }
+.tint-green { background: var(--tint-green); --tint-border: var(--tint-green-border); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }

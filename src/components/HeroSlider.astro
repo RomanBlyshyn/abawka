@@ -71,11 +71,12 @@ const slides = getSlides();
 </script>
 
 <style>
-  .hero { position: relative; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--tile-border); }
+  .hero { position: relative; border-radius: var(--radius); overflow: hidden; }
   .track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
   .track::-webkit-scrollbar { display: none; }
   .slide {
     flex: 0 0 100%; scroll-snap-align: start; min-height: 300px;
+    border: 2px solid var(--tint-border, var(--tile-border)); border-radius: var(--radius); /* контур кольору свого слайда */
     display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 32px 72px;
   }
   .text { max-width: 520px; display: grid; gap: 12px; justify-items: start; }

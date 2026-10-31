@@ -142,9 +142,13 @@ test('coloured tiles have an outline in both themes', async ({ browser }) => {
   for (const colorScheme of ['light', 'dark'] as const) {
     const page = await browser.newPage({ colorScheme });
     await page.goto('/en/');
-    for (const sel of ['.hero', '.cat', '.age']) {
-      const border = await page.locator(sel).first().evaluate((e) => getComputedStyle(e).borderTopWidth);
-      expect(border, `${sel} in ${colorScheme}`).toBe('1px');
+    for (const sel of ['.slide', '.cat', '.age']) {
+      const { width, color, bg } = await page.locator(sel).first().evaluate((e) => {
+        const s = getComputedStyle(e);
+        return { width: s.borderTopWidth, color: s.borderTopColor, bg: s.backgroundColor };
+      });
+      expect(width, `${sel} in ${colorScheme}`).toBe('2px');
+      expect(color, `${sel} border must differ from its fill`).not.toBe(bg);
     }
     await page.close();
   }
