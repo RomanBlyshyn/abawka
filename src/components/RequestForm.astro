@@ -1,0 +1,317 @@
+---
+import delivery from '../data/delivery.json';
+import type { Locale } from '../i18n/config';
+import { useTranslations } from '../i18n';
+import { LIMITS, METHODS } from '../lib/request';
+import { href } from '../lib/format';
+
+interface Props {
+  locale: Locale;
+  /** cart — товари з кошика; single — один товар зі сторінки (швидка заявка). */
+  mode: 'cart' | 'single';
+  slug?: string;
+}
+const { locale, mode, slug } = Astro.props;
+const t = useTranslations(locale);
+const id = (name: string) => `${mode}-${name}`;
+
+const regionNames = new Intl.DisplayNames([locale], { type: 'region' });
+const collator = new Intl.Collator(locale);
+const countries = [
+  ...delivery.priority,
+  ...delivery.countries.filter((c) => !delivery.priority.includes(c)).sort((a, b) => collator.compare(regionNames.of(a)!, regionNames.of(b)!)),
+].map((code) => ({ code, name: regionNames.of(code)! }));
+const defaultCountry = (delivery.defaultCountry as Record<string, string>)[locale] ?? '';
+
+// Назви перевізників: бренди як є, а Нова пошта / Укрпошта / кур'єр — перекладені.
+const carrierName = (c: string) => (delivery.brandNames as Record<string, string>)[c] ?? t(`form.delivery.${c}`);
+const carrierNames = Object.fromEntries(
+  [...new Set(Object.values(delivery.carriers).flat())].map((c) => [c, carrierName(c)]),
+);
+const carriersFor = (country: string) => (delivery.carriers as Record<string, string[]>)[country] ?? delivery.carriers['*'];
+
+const methodLabel: Record<string, string> = {
+  call: t('form.method.call'), telegram: 'Telegram', viber: 'Viber', whatsapp: 'WhatsApp', email: t('form.contact.email'),
+};
+const [consentBefore, consentRest] = t('form.consent').split('{terms}');
+const [consentMiddle, consentAfter] = (consentRest ?? '').split('{privacy}');
+
+const cfg = {
+  mode,
+  locale,
+  countries: delivery.countries,
+  carriers: delivery.carriers,
+  carrierNames,
+  discuss: t('form.delivery.discuss'),
+  thanks: href(locale, 'thanks/'),
+  labels: { phone: t('form.contact.phone'), telegram: t('form.contact.telegram'), email: t('form.contact.email') },
+  errors: {
+    name: t('form.error.name'), phone: t('form.error.phone'), telegram: t('form.error.telegram'), email: t('form.error.email'),
+    country: t('form.error.country'), consent: t('form.error.consent'), empty: t('form.error.empty'),
+  },
+};
+---
+<form class="request" novalidate data-request-form data-mode={mode} data-slug={slug}>
+  <h2 class="form-title">{t('form.title')}</h2>
+
+  <div class="alert" role="alert" data-alert hidden></div>
+
+  <div class="field">
+    <label for={id('name')}>{t('form.name')}</label>
+    <input id={id('name')} name="name" type="text" autocomplete="name" maxlength={LIMITS.name} required aria-describedby={id('name-err')} />
+    <p class="err" id={id('name-err')} data-err="name" hidden></p>
+  </div>
+
+  <fieldset class="field">
+    <legend>{t('form.method')}</legend>
+    <div class="chips">
+      {METHODS.map((m, i) => (
+        <label class="chip"><input type="radio" name="method" value={m} checked={i === 0} /><span>{methodLabel[m]}</span></label>
+      ))}
+    </div>
+  </fieldset>
+
+  <div class="field">
+    <label for={id('contact')} data-contact-label>{t('form.contact.phone')}</label>
+    <input id={id('contact')} name="contact" type="tel" autocomplete="tel" maxlength={LIMITS.contact} required aria-describedby={`${id('contact-hint')} ${id('contact-err')}`} />
+    <p class="hint" id={id('contact-hint')} data-contact-hint>{t('form.contact.phoneHint')}</p>
+    <p class="err" id={id('contact-err')} data-err="contact" hidden></p>
+  </div>
+
+  <div class="row">
+    <div class="field">
+      <label for={id('country')}>{t('form.country')}</label>
+      <select id={id('country')} name="country" required autocomplete="country" aria-describedby={id('country-err')}>
+        <option value="">{t('form.country.choose')}</option>
+        {countries.map((c, i) => (
+          <>
+            <option value={c.code} selected={c.code === defaultCountry}>{c.name}</option>
+            {i === delivery.priority.length - 1 && <option disabled>──────────</option>}
+          </>
+        ))}
+      </select>
+      <p class="err" id={id('country-err')} data-err="country" hidden></p>
+    </div>
+    <div class="field">
+      <label for={id('delivery')}>{t('form.delivery')}</label>
+      <select id={id('delivery')} name="delivery">
+        <option value="discuss">{t('form.delivery.discuss')}</option>
+        {carriersFor(defaultCountry).map((c) => <option value={c}>{carrierNames[c]}</option>)}
+      </select>
+    </div>
+  </div>
+
+  <div class="field">
+    <label for={id('comment')}>{t('form.comment')}</label>
+    <textarea id={id('comment')} name="comment" rows="3" maxlength={LIMITS.comment}></textarea>
+  </div>
+
+  <!-- Пастка для ботів: людина цього поля не бачить і не заповнює. -->
+  <div class="hp" aria-hidden="true">
+    <label for={id('website')}>Website</label>
+    <input id={id('website')} name="website" type="text" tabindex="-1" autocomplete="off" />
+  </div>
+
+  <div class="field">
+    <label class="consent">
+      <input type="checkbox" name="consent" required aria-describedby={id('consent-err')} />
+      <span>
+        {consentBefore}<a href={href(locale, 'terms/')} target="_blank">{t('form.consent.terms')}</a>{consentMiddle}<a href={href(locale, 'privacy/')} target="_blank">{t('form.consent.privacy')}</a>{consentAfter}
+      </span>
+    </label>
+    <p class="err" id={id('consent-err')} data-err="consent" hidden></p>
+  </div>
+
+  <button class="btn submit" type="submit" data-submit>
+    <span data-submit-label>{t('form.submit')}</span>
+    <span data-sending hidden>{t('form.sending')}</span>
+  </button>
+  {!import.meta.env.PUBLIC_REQUEST_URL && <p class="demo">{t('form.demo')}</p>}
+</form>
+
+<script is:inline type="application/json" data-request-cfg set:html={JSON.stringify({ ...cfg, summaryError: t('form.error.summary'), sendError: t('form.error.send'), phoneHint: t('form.contact.phoneHint') })} />
+
+<script>
+  import { contactKind, validateRequest, type Errors, type Method, type RequestLine } from '../lib/request';
+  import { readCart, writeCart } from '../lib/cart-client';
+  import { submitRequest } from '../lib/request-client';
+
+  const DRAFT_KEY = 'request-draft';
+  const FIELDS = ['name', 'method', 'contact', 'country', 'delivery', 'comment'] as const;
+
+  document.querySelectorAll<HTMLFormElement>('[data-request-form]').forEach((form) => {
+    const cfg = JSON.parse(form.nextElementSibling!.textContent!);
+    const el = <T extends Element = HTMLInputElement>(sel: string) => form.querySelector<T>(sel)!;
+    const contact = el('[name=contact]');
+    const country = el<HTMLSelectElement>('[name=country]');
+    const deliverySel = el<HTMLSelectElement>('[name=delivery]');
+    const alertBox = el<HTMLElement>('[data-alert]');
+    let tried = false;
+
+    const method = () => (form.querySelector<HTMLInputElement>('[name=method]:checked')?.value ?? 'call') as Method;
+
+    // Поле контакту підлаштовується під спосіб зв'язку: тип клавіатури, автозаповнення, підпис.
+    function syncContact() {
+      const kind = contactKind(method());
+      el<HTMLElement>('[data-contact-label]').textContent = cfg.labels[kind];
+      contact.type = kind === 'email' ? 'email' : kind === 'phone' ? 'tel' : 'text';
+      contact.autocomplete = kind === 'email' ? 'email' : kind === 'phone' ? 'tel' : 'off';
+      el<HTMLElement>('[data-contact-hint]').hidden = kind !== 'phone';
+    }
+
+    // Способи доставки залежать від країни (кур'єр по Вроцлаву — лише для Польщі).
+    function syncDelivery() {
+      const list: string[] = cfg.carriers[country.value] ?? cfg.carriers['*'];
+      const keep = deliverySel.value;
+      deliverySel.replaceChildren(
+        new Option(cfg.discuss, 'discuss'),
+        ...list.map((c) => new Option(cfg.carrierNames[c], c)),
+      );
+      deliverySel.value = list.includes(keep) ? keep : 'discuss';
+    }
+
+    // Чернетка: якщо сторінку оновили чи закрили вкладку — введене не пропадає.
+    const saveDraft = () => {
+      const data = Object.fromEntries(FIELDS.map((f) => [f, f === 'method' ? method() : el<HTMLInputElement>(`[name=${f}]`).value]));
+      try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify(data)); } catch { /* приватний режим */ }
+    };
+    try {
+      const draft = JSON.parse(sessionStorage.getItem(DRAFT_KEY) ?? 'null');
+      if (draft) {
+        for (const f of FIELDS) {
+          if (typeof draft[f] !== 'string') continue;
+          if (f === 'method') { const r = form.querySelector<HTMLInputElement>(`[name=method][value="${CSS.escape(draft.method)}"]`); if (r) r.checked = true; }
+          else if (f === 'delivery') continue; // відновимо після списку для країни
+          else el<HTMLInputElement>(`[name=${f}]`).value = draft[f];
+        }
+        syncDelivery();
+        if ([...deliverySel.options].some((o) => o.value === draft.delivery)) deliverySel.value = draft.delivery;
+      }
+    } catch { /* зіпсована чернетка — ігноруємо */ }
+    syncContact();
+
+    function lines(): RequestLine[] {
+      // Товарів, яких уже немає (кошик показує їх червоним), у заявку не беремо; сервер усе одно перевірить залишки.
+      if (cfg.mode === 'cart') return readCart().filter((l) => !document.querySelector(`[data-line="${CSS.escape(l.slug)}"][data-stock="0"]`));
+      const qty = Math.max(1, Math.floor(Number(document.querySelector<HTMLInputElement>('#qty')?.value) || 1));
+      return [{ slug: form.dataset.slug!, qty }];
+    }
+
+    function collect() {
+      return {
+        name: el('[name=name]').value,
+        method: method(),
+        contact: contact.value,
+        country: country.value,
+        delivery: deliverySel.value,
+        comment: el<HTMLTextAreaElement>('[name=comment]').value.trim(),
+        consent: el('[name=consent]').checked,
+        lines: lines(),
+      };
+    }
+
+    function showErrors(errors: Errors) {
+      for (const field of ['name', 'contact', 'country', 'consent'] as const) {
+        const msg = form.querySelector<HTMLElement>(`[data-err=${field}]`)!;
+        const input = el(`[name=${field}]`);
+        const code = errors[field];
+        msg.hidden = !code;
+        msg.textContent = code ? cfg.errors[code] : '';
+        input.setAttribute('aria-invalid', String(!!code));
+      }
+    }
+
+    const showAlert = (text: string | null) => {
+      alertBox.hidden = !text;
+      alertBox.textContent = text ?? '';
+    };
+
+    form.addEventListener('input', () => {
+      saveDraft();
+      if (tried) showErrors(validateRequest(collect(), cfg.countries));
+    });
+    form.addEventListener('change', (e) => {
+      const name = (e.target as HTMLInputElement).name;
+      if (name === 'method') syncContact();
+      if (name === 'country') syncDelivery();
+      saveDraft();
+      if (tried) showErrors(validateRequest(collect(), cfg.countries));
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      tried = true;
+      const input = collect();
+      const errors = validateRequest(input, cfg.countries);
+      showErrors(errors);
+      if (Object.keys(errors).length) {
+        showAlert(errors.lines ? cfg.errors.empty : cfg.summaryError);
+        const firstInvalid = form.querySelector<HTMLElement>('[aria-invalid=true]');
+        (firstInvalid ?? alertBox).focus();
+        return;
+      }
+
+      showAlert(null);
+      const submit = el<HTMLButtonElement>('[data-submit]');
+      submit.disabled = true;
+      el<HTMLElement>('[data-submit-label]').hidden = true;
+      el<HTMLElement>('[data-sending]').hidden = false;
+      try {
+        const res = await submitRequest({ ...input, locale: cfg.locale, website: el('[name=website]').value });
+        if (cfg.mode === 'cart') writeCart([]);
+        try { sessionStorage.removeItem(DRAFT_KEY); } catch { /* немає доступу — не страшно */ }
+        const url = new URL(cfg.thanks, location.href);
+        url.searchParams.set('n', res.id);
+        if (res.demo) url.searchParams.set('demo', '1');
+        location.href = url.toString();
+      } catch {
+        // Не надіслано: усе введене лишається у формі, кнопку можна натиснути ще раз.
+        showAlert(cfg.sendError);
+        alertBox.focus();
+        submit.disabled = false;
+        el<HTMLElement>('[data-submit-label]').hidden = false;
+        el<HTMLElement>('[data-sending]').hidden = true;
+      }
+    });
+  });
+</script>
+
+<style>
+  .request { display: grid; gap: 16px; }
+  .form-title { font-size: 22px; }
+  .alert { padding: 12px 16px; border-radius: var(--radius-sm); background: var(--tint-red); border: 2px solid var(--tint-red-border); font-weight: 700; }
+  .alert[hidden] { display: none; }
+  .alert:focus { outline: 3px solid var(--pink-500); }
+
+  .field { display: grid; gap: 6px; border: 0; margin: 0; padding: 0; min-width: 0; }
+  .field > label, legend { font-weight: 800; padding: 0; margin-bottom: 2px; }
+  input[type='text'], input[type='tel'], input[type='email'], select, textarea {
+    width: 100%; min-height: 46px; padding: 10px 14px; border: 2px solid var(--line); border-radius: 12px; background: var(--surface);
+  }
+  textarea { resize: vertical; min-height: 90px; }
+  input:focus, select:focus, textarea:focus { border-color: var(--pink-500); outline: none; }
+  [aria-invalid='true'] { border-color: var(--red) !important; }
+  :global(:root[data-theme='dark']) [aria-invalid='true'] { border-color: var(--sale) !important; }
+  .hint { margin: 0; font-size: 13px; color: var(--ink-2); font-weight: 600; }
+  .hint[hidden] { display: none; }
+  .err { margin: 0; font-size: 14px; font-weight: 700; color: var(--sale); }
+  .err[hidden] { display: none; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { position: relative; cursor: pointer; }
+  .chip input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+  .chip span { display: inline-flex; align-items: center; min-height: 40px; padding: 6px 16px; border: 2px solid var(--line); border-radius: 999px; font-weight: 700; }
+  .chip input:checked + span { border-color: var(--pink-600); background: var(--accent-soft); color: var(--accent-text); }
+  .chip input:focus-visible + span { outline: 3px solid var(--pink-500); outline-offset: 2px; }
+
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .consent { display: flex; gap: 10px; align-items: flex-start; font-weight: 600; cursor: pointer; }
+  .consent input { width: 22px; height: 22px; flex: none; margin-top: 1px; accent-color: var(--pink-600); }
+  .consent a { color: var(--accent-text); text-decoration: underline; }
+  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .submit { width: 100%; min-height: 52px; font-size: 17px; }
+  .submit[disabled] { opacity: 0.7; cursor: progress; }
+  .demo { margin: 0; font-size: 13px; color: var(--ink-2); font-weight: 600; text-align: center; }
+
+  @media (max-width: 560px) { .row { grid-template-columns: 1fr; } }
+</style>

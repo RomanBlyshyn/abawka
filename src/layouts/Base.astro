@@ -9,8 +9,10 @@ interface Props {
   locale: Locale;
   title: string;
   description?: string;
+  /** Службові сторінки (кошик, «Дякуємо») не потрібні в пошуку. */
+  noindex?: boolean;
 }
-const { locale, title, description } = Astro.props;
+const { locale, title, description, noindex = false } = Astro.props;
 const t = useTranslations(locale);
 const rest = Astro.url.pathname.split('/').slice(2).join('/');
 ---
@@ -32,6 +34,7 @@ const rest = Astro.url.pathname.split('/').slice(2).join('/');
     </script>
     <meta name="theme-color" content="#d6246e" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    {noindex && <meta name="robots" content="noindex" />}
     {LOCALES.map((l) => <link rel="alternate" hreflang={l} href={new URL(`/${l}/${rest}`, Astro.site)} />)}
     <link rel="alternate" hreflang="x-default" href={new URL(`/${rest}`, Astro.site)} />
   </head>
@@ -70,17 +73,14 @@ const rest = Astro.url.pathname.split('/').slice(2).join('/');
         hideTimer = setTimeout(() => (toast.hidden = true), 4000);
       };
 
-      // Делегування: працює для всіх кнопок «У кошик» і «Швидка заявка» на будь-якій сторінці.
+      // Делегування: працює для всіх кнопок «У кошик» на будь-якій сторінці.
       document.addEventListener('click', (e) => {
-        const btn = (e.target as Element).closest<HTMLButtonElement>('[data-add-to-cart], [data-quick-order]');
+        const btn = (e.target as Element).closest<HTMLButtonElement>('[data-add-to-cart]');
         if (!btn) return;
-        const slug = btn.dataset.addToCart ?? btn.dataset.quickOrder!;
         const qtyInput = btn.dataset.qtyInput ? document.querySelector<HTMLInputElement>(btn.dataset.qtyInput) : null;
         const qty = Math.max(1, Math.floor(Number(qtyInput?.value) || 1));
-        addToCart(slug, qty, Number(btn.dataset.stock) || 1);
-        // Тимчасово (до форми заявки на сторінці товару): швидка заявка веде одразу в кошик.
-        if (btn.dataset.quickOrder) location.href = (toast.querySelector('a') as HTMLAnchorElement).href;
-        else showToast();
+        addToCart(btn.dataset.addToCart!, qty, Number(btn.dataset.stock) || 1);
+        showToast();
       });
     </script>
   </body>

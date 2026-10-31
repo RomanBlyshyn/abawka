@@ -1,0 +1,47 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../../layouts/Base.astro';
+import mascot from '../../assets/mascot.webp';
+import { LOCALES, type Locale } from '../../i18n/config';
+import { useTranslations } from '../../i18n';
+import { href } from '../../lib/format';
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
+}
+
+const locale = Astro.params.lang as Locale;
+const t = useTranslations(locale);
+---
+<Base locale={locale} title={t('thanks.title')} noindex>
+  <div class="wrap thanks">
+    <Image src={mascot} alt="" widths={[200, 400]} sizes="200px" class="bear" loading="eager" />
+    <h1>{t('thanks.title')}</h1>
+    <p class="number" data-number hidden data-template={t('thanks.number')}></p>
+    <p class="text">{t('thanks.text')}</p>
+    <p class="demo" data-demo hidden>{t('form.demo')}</p>
+    <a class="btn" href={href(locale, 'catalog/')}>{t('thanks.continue')}</a>
+  </div>
+</Base>
+
+<script>
+  // Номер беремо з адреси, але показуємо лише якщо він схожий на справжній (без HTML і довгих рядків).
+  const params = new URLSearchParams(location.search);
+  const n = params.get('n') ?? '';
+  const el = document.querySelector<HTMLElement>('[data-number]')!;
+  if (/^[A-Z0-9-]{1,20}$/i.test(n)) {
+    el.textContent = el.dataset.template!.replace('{n}', n);
+    el.hidden = false;
+  }
+  document.querySelector<HTMLElement>('[data-demo]')!.hidden = params.get('demo') !== '1';
+</script>
+
+<style>
+  .thanks { display: grid; justify-items: center; text-align: center; gap: 12px; padding-block: 40px 20px; max-width: 640px; }
+  .bear { width: 180px; height: auto; }
+  h1 { font-size: clamp(28px, 5vw, 40px); font-weight: 900; }
+  .number { margin: 0; padding: 8px 18px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-text); font-weight: 900; font-size: 18px; }
+  .number[hidden], .demo[hidden] { display: none; }
+  .text { margin: 0 0 8px; color: var(--ink-2); font-weight: 600; font-size: 17px; }
+  .demo { margin: 0 0 8px; font-size: 14px; color: var(--ink-2); padding: 8px 14px; border: 2px dashed var(--line); border-radius: var(--radius-sm); }
+</style>

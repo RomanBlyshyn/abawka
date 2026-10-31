@@ -1,0 +1,18 @@
+{
+  "_note": "Країни й способи доставки для форми заявки. На етапі 4 переїде в базу й редагуватиметься в адмінці.",
+  "priority": ["PL", "UA"],
+  "countries": ["PL", "UA", "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL", "PT", "RO", "SK", "SI", "ES", "SE", "GB", "CH", "NO"],
+  "defaultCountry": { "pl": "PL", "uk": "UA", "ru": "UA", "de": "DE", "cs": "CZ", "lt": "LT", "es": "ES", "fr": "FR" },
+  "carriers": {
+    "PL": ["inpost", "dpd", "dhl", "orlen", "poczta-polska", "nova-poshta", "courier-wroclaw"],
+    "UA": ["nova-poshta", "ukrposhta"],
+    "*": ["dhl", "dpd", "nova-poshta"]
+  },
+  "brandNames": {
+    "inpost": "InPost (Paczkomat)",
+    "dpd": "DPD",
+    "dhl": "DHL",
+    "orlen": "Orlen Paczka",
+    "poczta-polska": "Poczta Polska"
+  }
+}

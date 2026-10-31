@@ -4,6 +4,7 @@ import Breadcrumbs from '../../../components/Breadcrumbs.astro';
 import Icon from '../../../components/Icon.astro';
 import ProductCard from '../../../components/ProductCard.astro';
 import ReviewCard from '../../../components/ReviewCard.astro';
+import RequestForm from '../../../components/RequestForm.astro';
 import { LOCALES, type Locale } from '../../../i18n/config';
 import { plural, useTranslations } from '../../../i18n';
 import { BASE_CURRENCY, getCategories, getProducts, getReviews, pick, type Product } from '../../../lib/data';
@@ -73,7 +74,7 @@ const related = [...others.filter((o) => o.category === p.category), ...others.f
               <button class="btn add" type="button" data-add-to-cart={p.slug} data-stock={p.stock} data-qty-input="#qty">
                 <Icon name="cart" size={20} /> {t('card.toCart')}
               </button>
-              <button class="btn btn-light quick" type="button" data-quick-order={p.slug} data-stock={p.stock} data-qty-input="#qty">
+              <button class="btn btn-light quick" type="button" data-quick-order={p.slug} data-price={p.price} data-currency={BASE_CURRENCY} aria-haspopup="dialog">
                 {t('product.quickOrder')}
               </button>
             </div>
@@ -107,6 +108,20 @@ const related = [...others.filter((o) => o.category === p.category), ...others.f
       )}
     </section>
 
+    {inStock && (
+      <dialog class="quick" aria-labelledby="quick-h" data-quick-dialog>
+        <div class="quick-head">
+          <h2 id="quick-h">{t('product.quickOrder')}</h2>
+          <button type="button" class="close" data-quick-close aria-label={t('quick.close')}><span aria-hidden="true">×</span></button>
+        </div>
+        <p class="quick-line">
+          <span>{name} × <b data-quick-qty>1</b></span>
+          <strong data-quick-total>{formatPrice(p.price, BASE_CURRENCY, locale)}</strong>
+        </p>
+        <RequestForm locale={locale} mode="single" slug={p.slug} />
+      </dialog>
+    )}
+
     {related.length > 0 && (
       <section class="section" aria-labelledby="rel-h">
         <div class="section-head"><h2 id="rel-h">{t('product.related')}</h2></div>
@@ -127,6 +142,24 @@ const related = [...others.filter((o) => o.category === p.category), ...others.f
       clamp();
     }));
     input.addEventListener('change', clamp);
+  }
+
+  // Швидка заявка: модальне вікно з формою лише на цей товар (кошик не чіпаємо).
+  const dialog = document.querySelector<HTMLDialogElement>('[data-quick-dialog]');
+  const quickBtn = document.querySelector<HTMLButtonElement>('[data-quick-order]');
+  if (dialog && quickBtn && input) {
+    quickBtn.addEventListener('click', () => {
+      const qty = Number(input.value) || 1;
+      dialog.querySelector('[data-quick-qty]')!.textContent = String(qty);
+      const total = dialog.querySelector<HTMLElement>('[data-quick-total]')!;
+      const price = Number(quickBtn.dataset.price);
+      total.textContent = new Intl.NumberFormat(document.documentElement.lang, { style: 'currency', currency: quickBtn.dataset.currency!, minimumFractionDigits: 2 }).format((price * qty) / 100);
+      dialog.showModal();
+    });
+    dialog.querySelector('[data-quick-close]')!.addEventListener('click', () => dialog.close());
+    // Клік по затемненню навколо вікна теж закриває.
+    dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+    dialog.addEventListener('close', () => quickBtn.focus());
   }
 </script>
 
@@ -176,6 +209,22 @@ const related = [...others.filter((o) => o.category === p.category), ...others.f
   .specs dt { color: var(--ink-2); font-weight: 600; }
   .specs dd { margin: 0; font-weight: 700; }
   .specs a { color: var(--accent-text); }
+
+  .quick {
+    width: min(560px, calc(100% - 24px)); max-height: calc(100dvh - 24px); padding: 24px; overflow: auto;
+    border: 0; border-radius: var(--radius); background: var(--surface); color: var(--ink); box-shadow: var(--shadow-hover);
+  }
+  .quick::backdrop { background: rgb(23 18 31 / 0.55); }
+  .quick-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .quick-head h2 { font-size: 24px; }
+  .close { width: 44px; height: 44px; border: 0; border-radius: 50%; background: none; font-size: 28px; line-height: 1; cursor: pointer; color: var(--ink-2); }
+  .close:hover { background: var(--accent-soft); color: var(--accent-text); }
+  .quick-line {
+    display: flex; justify-content: space-between; gap: 12px; margin: 0 0 16px; padding: 12px 14px;
+    border-radius: var(--radius-sm); background: var(--accent-soft); font-weight: 700;
+  }
+  .quick-line strong { font-weight: 900; white-space: nowrap; }
+  @media (max-width: 480px) { .quick { padding: 16px; } }
 
   .reviews { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
   .related { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }

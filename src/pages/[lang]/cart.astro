@@ -1,0 +1,234 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../../layouts/Base.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import Icon from '../../components/Icon.astro';
+import RequestForm from '../../components/RequestForm.astro';
+import mascot from '../../assets/mascot.webp';
+import { LOCALES, type Locale } from '../../i18n/config';
+import { useTranslations } from '../../i18n';
+import { BASE_CURRENCY, getCategories, getProducts, pick } from '../../lib/data';
+import { MAX_QTY } from '../../lib/cart-client';
+import { formatPrice, href } from '../../lib/format';
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
+}
+
+const locale = Astro.params.lang as Locale;
+const t = useTranslations(locale);
+const categories = getCategories();
+const products = getProducts();
+const forms = Object.fromEntries(['zero', 'one', 'two', 'few', 'many', 'other'].map((f) => [f, t(`catalog.items.${f}`)]));
+---
+<Base locale={locale} title={t('cart.title')} noindex>
+  <div class="wrap">
+    <Breadcrumbs locale={locale} items={[{ label: t('cart.title') }]} />
+    <h1 class="title">{t('cart.title')}</h1>
+
+    <div class="empty" data-cart-empty hidden>
+      <Image src={mascot} alt="" widths={[160, 320]} sizes="160px" class="empty-bear" loading="eager" />
+      <h2>{t('cart.empty.title')}</h2>
+      <p>{t('cart.empty.text')}</p>
+      <a class="btn" href={href(locale, 'catalog/')}>{t('cart.toCatalog')}</a>
+    </div>
+
+    <div class="layout" data-cart-full hidden>
+      <div class="main">
+        <ul class="lines">
+          {products.map((p) => {
+            const cat = categories.find((c) => c.slug === p.category)!;
+            const name = pick(p.name, locale);
+            return (
+              <li class="line" data-line={p.slug} data-price={p.price} data-stock={p.stock} hidden>
+                <a class={`thumb tint-${cat.tint}`} href={href(locale, `product/${p.slug}/`)} tabindex="-1" aria-hidden="true"><Icon name={cat.icon} size={36} /></a>
+                <div class="line-info">
+                  <a class="line-name" href={href(locale, `product/${p.slug}/`)}>{name}</a>
+                  <span class="unit">{formatPrice(p.price, BASE_CURRENCY, locale)}</span>
+                  <p class="warn" data-warn hidden></p>
+                </div>
+                <div class="qty" role="group" aria-label={`${t('product.qty')}: ${name}`}>
+                  <button type="button" data-dec aria-label={t('product.less')}>−</button>
+                  <input type="number" inputmode="numeric" min="1" max={Math.min(Math.max(p.stock, 1), MAX_QTY)} value="1" data-qty aria-label={`${t('product.qty')}: ${name}`} />
+                  <button type="button" data-inc aria-label={t('product.more')}>+</button>
+                </div>
+                <strong class="line-total" data-line-total></strong>
+                <button class="remove" type="button" data-remove aria-label={`${t('cart.remove')}: ${name}`}><span aria-hidden="true">×</span></button>
+              </li>
+            );
+          })}
+        </ul>
+
+        <div class="form-card"><RequestForm locale={locale} mode="cart" /></div>
+      </div>
+
+      <aside class="summary" aria-labelledby="sum-h">
+        <h2 id="sum-h" tabindex="-1">{t('cart.summary')}</h2>
+        <p class="sum-count" data-sum-count></p>
+        <p class="sum-total"><span>{t('cart.total')}</span><strong data-sum-total></strong></p>
+        <p class="sum-note">{t('cart.priceNote')}</p>
+      </aside>
+    </div>
+
+    <script is:inline>
+      // Ранній показ до першого малювання: потрібний блок і рядки з кошика, щоб сторінка не «стрибала»,
+      // коли завантажиться основний скрипт (він перерахує суми й залишки).
+      try {
+        const lines = JSON.parse(localStorage.getItem('cart') || '[]');
+        const rows = Array.isArray(lines)
+          ? lines.map((l) => l && document.querySelector('[data-line="' + CSS.escape(String(l.slug)) + '"]')).filter(Boolean)
+          : [];
+        document.querySelector('[data-cart-empty]').hidden = rows.length > 0;
+        document.querySelector('[data-cart-full]').hidden = rows.length === 0;
+        rows.forEach((r) => (r.hidden = false));
+      } catch { /* будь-що дивне в сховищі — основний скрипт розбереться */ }
+    </script>
+  </div>
+</Base>
+
+<script is:inline type="application/json" id="cart-cfg" set:html={JSON.stringify({
+  locale,
+  currency: BASE_CURRENCY,
+  forms,
+  limited: t('cart.limited'),
+  gone: t('cart.gone'),
+})} />
+
+<script>
+  import { CART_EVENT, readCart, setQty, writeCart } from '../../lib/cart-client';
+
+  const cfg = JSON.parse(document.getElementById('cart-cfg')!.textContent!);
+  const money = new Intl.NumberFormat(cfg.locale, { style: 'currency', currency: cfg.currency, minimumFractionDigits: 2 });
+  const plural = (n: number) => `${n} ${cfg.forms[new Intl.PluralRules(cfg.locale).select(n)] ?? cfg.forms.other}`;
+  const rows = new Map([...document.querySelectorAll<HTMLElement>('[data-line]')].map((r) => [r.dataset.line!, r]));
+  const list = document.querySelector<HTMLElement>('.lines')!;
+
+  // Товари, кількість яких ми зменшили до залишку, — щоб покупець бачив, що змінилось.
+  const reduced = new Set<string>();
+
+  function render() {
+    // Невідомі товари (видалені з каталогу) прибираємо; кількість понад залишок — зменшуємо до залишку.
+    const raw = readCart();
+    const lines = raw
+      .filter((l) => rows.has(l.slug))
+      .map((l) => {
+        const stock = Number(rows.get(l.slug)!.dataset.stock);
+        if (stock > 0 && l.qty > stock) { reduced.add(l.slug); return { ...l, qty: stock }; }
+        return l;
+      });
+    if (JSON.stringify(lines) !== JSON.stringify(raw)) { writeCart(lines); return; } // writeCart викличе render ще раз
+
+    document.querySelector<HTMLElement>('[data-cart-empty]')!.hidden = lines.length > 0;
+    document.querySelector<HTMLElement>('[data-cart-full]')!.hidden = lines.length === 0;
+
+    let total = 0;
+    let count = 0;
+    rows.forEach((r) => (r.hidden = true));
+    for (const line of lines) {
+      const row = rows.get(line.slug)!;
+      const stock = Number(row.dataset.stock);
+      const price = Number(row.dataset.price);
+      const gone = stock === 0;
+      row.hidden = false;
+      list.appendChild(row); // порядок як у кошику
+      row.querySelector<HTMLInputElement>('[data-qty]')!.value = String(line.qty);
+      const warn = row.querySelector<HTMLElement>('[data-warn]')!;
+      warn.hidden = !gone && !reduced.has(line.slug);
+      warn.textContent = gone ? cfg.gone : cfg.limited.replace('{n}', String(stock));
+      row.classList.toggle('problem', gone);
+      // Товару, якого немає, не рахуємо ні в суму, ні в кількість.
+      row.querySelector<HTMLElement>('[data-line-total]')!.textContent = money.format(gone ? 0 : (price * line.qty) / 100);
+      if (!gone) { total += price * line.qty; count += line.qty; }
+    }
+    document.querySelector<HTMLElement>('[data-sum-count]')!.textContent = plural(count);
+    document.querySelector<HTMLElement>('[data-sum-total]')!.textContent = money.format(total / 100);
+  }
+
+  list.addEventListener('click', (e) => {
+    const target = e.target as Element;
+    const row = target.closest<HTMLElement>('[data-line]');
+    if (!row) return;
+    const slug = row.dataset.line!;
+    const current = Number(row.querySelector<HTMLInputElement>('[data-qty]')!.value);
+    const max = Math.max(1, Number(row.dataset.stock));
+    if (target.closest('[data-inc]')) setQty(slug, Math.min(current + 1, max));
+    else if (target.closest('[data-dec]')) setQty(slug, Math.max(current - 1, 1));
+    else if (target.closest('[data-remove]')) {
+      writeCart(readCart().filter((l) => l.slug !== slug));
+      document.querySelector<HTMLElement>('#sum-h')?.focus();
+    }
+  });
+  list.addEventListener('change', (e) => {
+    const input = (e.target as Element).closest<HTMLInputElement>('[data-qty]');
+    if (!input) return;
+    const row = input.closest<HTMLElement>('[data-line]')!;
+    const max = Math.max(1, Number(row.dataset.stock));
+    setQty(row.dataset.line!, Math.min(max, Math.max(1, Math.floor(Number(input.value) || 1))));
+  });
+
+  window.addEventListener(CART_EVENT, render);
+  window.addEventListener('storage', (e) => { if (e.key === 'cart') render(); });
+  render();
+</script>
+
+<style>
+  .title { font-size: clamp(26px, 4vw, 36px); font-weight: 900; margin-bottom: 16px; }
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 28px; align-items: start; }
+  .layout[hidden], .empty[hidden] { display: none; }
+  .main { display: grid; gap: 24px; min-width: 0; }
+
+  .lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  .line {
+    display: grid; grid-template-columns: 72px minmax(0, 1fr) auto auto 44px; align-items: center; gap: 14px;
+    padding: 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface);
+  }
+  .line[hidden] { display: none; }
+  .line.problem { border-color: var(--sale); }
+  .line.problem .qty, .line.problem .line-total { visibility: hidden; } /* товару немає — кількість і сума не мають сенсу */
+  .thumb { width: 72px; height: 72px; border-radius: 12px; display: grid; place-items: center; border: 2px solid var(--tint-border, var(--line)); }
+  .thumb :global(svg) { opacity: 0.6; }
+  .line-info { display: grid; gap: 2px; min-width: 0; }
+  .line-name { font-weight: 800; }
+  .line-name:hover { color: var(--accent-text); }
+  .unit { font-size: 14px; color: var(--ink-2); font-weight: 600; }
+  .warn { margin: 0; font-size: 13px; font-weight: 700; color: var(--sale); }
+  .warn[hidden] { display: none; }
+  .line-total { font-size: 18px; font-weight: 900; text-align: right; min-width: 90px; }
+  .remove { width: 44px; height: 44px; border: 0; border-radius: 50%; background: none; font-size: 26px; line-height: 1; color: var(--ink-2); cursor: pointer; }
+  .remove:hover { background: var(--accent-soft); color: var(--accent-text); }
+
+  .qty { display: inline-flex; align-items: center; border: 2px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .qty button { width: 38px; height: 40px; border: 0; background: none; font-size: 20px; font-weight: 800; cursor: pointer; }
+  .qty button:hover { background: var(--accent-soft); }
+  .qty input { width: 40px; height: 40px; border: 0; text-align: center; font-weight: 800; background: transparent; appearance: textfield; -moz-appearance: textfield; }
+  .qty input::-webkit-inner-spin-button, .qty input::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  .form-card { padding: 24px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+
+  .summary { position: sticky; top: 16px; padding: 22px; border: 2px solid var(--accent-border); border-radius: var(--radius); background: var(--accent-soft); display: grid; gap: 10px; }
+  .summary h2 { font-size: 20px; }
+  .summary p { margin: 0; }
+  .sum-count { color: var(--ink-2); font-weight: 700; min-height: 1.5em; }
+  .sum-total { display: flex; justify-content: space-between; align-items: baseline; font-weight: 800; font-size: 18px; }
+  .sum-total strong { font-size: 28px; font-weight: 900; min-height: 1.2em; }
+  .sum-note { font-size: 14px; color: var(--ink-2); font-weight: 600; }
+
+  .empty { text-align: center; padding: 40px 16px; display: grid; justify-items: center; gap: 8px; }
+  .empty-bear { width: 160px; height: auto; }
+  .empty p { margin: 0 0 8px; color: var(--ink-2); font-weight: 600; }
+
+  @media (max-width: 960px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+    .summary { position: static; order: -1; }
+  }
+  @media (max-width: 600px) {
+    .line { grid-template-columns: 56px minmax(0, 1fr) auto; grid-template-areas: 'thumb info remove' 'qty qty total'; gap: 10px 12px; }
+    .line-total, .remove { justify-self: end; }
+    .thumb { grid-area: thumb; width: 56px; height: 56px; }
+    .line-info { grid-area: info; }
+    .remove { grid-area: remove; }
+    .qty { grid-area: qty; justify-self: start; }
+    .line-total { grid-area: total; align-self: center; }
+    .form-card { padding: 16px; }
+  }
+</style>
