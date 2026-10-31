@@ -138,6 +138,28 @@ test.describe('dark theme', () => {
   });
 });
 
+test('coloured tiles have an outline in both themes', async ({ browser }) => {
+  for (const colorScheme of ['light', 'dark'] as const) {
+    const page = await browser.newPage({ colorScheme });
+    await page.goto('/en/');
+    for (const sel of ['.hero', '.cat', '.age']) {
+      const border = await page.locator(sel).first().evaluate((e) => getComputedStyle(e).borderTopWidth);
+      expect(border, `${sel} in ${colorScheme}`).toBe('1px');
+    }
+    await page.close();
+  }
+});
+
+test('hovered category tile is not clipped by its scroll container', async ({ page }) => {
+  await page.setViewportSize({ width: 730, height: 900 });
+  await page.goto('/en/');
+  const tile = page.locator('.cat').nth(1);
+  await tile.hover();
+  await page.waitForTimeout(300);
+  const [t, g] = await Promise.all([tile.boundingBox(), page.locator('.cat-grid').boundingBox()]);
+  expect(t!.y).toBeGreaterThanOrEqual(g!.y);
+});
+
 test('currency switch stays hidden until prices can be converted', async ({ page }) => {
   await page.goto('/en/');
   await expect(page.locator('[data-currency-label]')).toHaveCount(0);
