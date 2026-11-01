@@ -14,6 +14,8 @@ export const test = base.extend({
       route.fulfill({ contentType: 'image/png', body: PNG }));
     // Курсів за замовчуванням немає (перемикач валют схований); тести валют підставляють свої.
     await page.route(/abawka-test\.supabase\.co\/rest\/v1\/exchange_rates/, (route) => route.fulfill({ json: [] }));
+    // Лічильник переглядів: приймаємо мовчки (тест статистики підміняє його сам).
+    await page.route(/abawka-test\.supabase\.co\/rest\/v1\/rpc\/track_view/, (route) => route.fulfill({ status: 204 }));
     await use(page);
   },
 });

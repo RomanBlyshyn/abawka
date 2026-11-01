@@ -328,3 +328,32 @@ test('promo: request total includes the discount; limits, dates and cancellation
   const big = await submit(order({ promo: 'BIG', lines: [{ slug: 'bobo-balloon', qty: 1 }] }), '10.0.0.42');
   assert.equal((await admin(`select total from public.requests where id = $1`, [big.id])).rows[0].total, 0);
 });
+
+// ── Статистика ────────────────────────────────────────────────────────────────
+test('stats: buyers add anonymous view counters, only valid values are kept', async () => {
+  const track = (p) => as('anon', 'select public.track_view($1::jsonb)', [JSON.stringify(p)]);
+  await track({ page: 'product', product: 'chess', locale: 'pl', referrer: 'www.Google.com' });
+  await track({ page: 'product', product: 'chess', locale: 'pl', referrer: 'google.com' });
+  await track({ page: 'product', product: 'no-such-toy', locale: 'xx', referrer: 'javascript:alert(1)' });
+  await track({ page: '<script>' });
+  const rows = (await admin(`select metric, key, n from public.daily_stats where day = current_date order by metric, key`)).rows;
+  assert.deepEqual(rows, [
+    { metric: 'locale', key: 'pl', n: 2 },
+    { metric: 'page', key: 'product', n: 3 },
+    { metric: 'product', key: 'chess', n: 2 },
+    { metric: 'referrer', key: 'google.com', n: 2 },
+  ]);
+  assert.equal((await as('anon', 'select count(*)::int n from public.daily_stats')).rows[0].n, 0);
+  await rejects(as('anon', `insert into public.daily_stats (metric, key, n) values ('page', 'home', 999)`), /row-level security|permission denied/);
+});
+
+test('stats: owner gets the summary for a period; manager does not', async () => {
+  const s = (await as(OWNER, `select public.shop_stats(current_date - 6, current_date) s`)).rows[0].s;
+  assert.ok(s.requests.total >= 1);
+  assert.equal(typeof s.requests.revenue, 'number');
+  assert.ok(Array.isArray(s.requests.products));
+  assert.equal(s.views.pages, 3);
+  assert.deepEqual(s.views.products, [{ key: 'chess', n: 2 }]);
+  await rejects(as(MANAGER, `select public.shop_stats(current_date - 6, current_date)`), /forbidden/);
+  await rejects(as('anon', `select public.shop_stats(current_date - 6, current_date)`), /permission denied/);
+});

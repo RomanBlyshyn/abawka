@@ -13,6 +13,7 @@ const NAV = [
   { href: '/admin/categories/', label: 'Категорії' },
   { href: '/admin/banners/', label: 'Банери' },
   { href: '/admin/promotions/', label: 'Акції', ownerOnly: true },
+  { href: '/admin/stats/', label: 'Статистика', ownerOnly: true },
 ];
 const path = Astro.url.pathname;
 const current = (href: string) => (href === '/admin/' ? path === '/admin/' : path.startsWith(href));
@@ -68,6 +69,8 @@ const current = (href: string) => (href === '/admin/' ? path === '/admin/' : pat
   .who { display: flex; align-items: center; gap: 12px; font-weight: 700; color: var(--ink-2); min-width: 0; }
   .who[hidden] { display: none; }
   .who span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Пунктів меню багато: на екранах до 1280px email ховаємо, лишаємо «Вийти». */
+  @media (max-width: 1280px) { .who span { display: none; } }
   .logout { border: 2px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 14px; font-weight: 800; cursor: pointer; flex: none; }
   .logout:hover { border-color: var(--pink-500); color: var(--accent-text); }
   .admin-main { padding-block: 32px 64px; }
@@ -75,5 +78,4 @@ const current = (href: string) => (href === '/admin/' ? path === '/admin/' : pat
     .admin-bar-in { flex-wrap: wrap; }
     .admin-nav { order: 3; width: 100%; margin: 0; overflow-x: auto; }
   }
-  @media (max-width: 520px) { .who span { display: none; } }
 </style>

@@ -1,0 +1,226 @@
+---
+import Admin from '../../layouts/Admin.astro';
+
+const PERIODS = [7, 30, 90];
+---
+<Admin title="Статистика">
+  <div class="head">
+    <h1>Статистика</h1>
+    <div class="periods" role="group" aria-label="Період">
+      {PERIODS.map((d) => <button type="button" data-days={d} aria-pressed={d === 30 ? 'true' : 'false'}>{d} днів</button>)}
+    </div>
+  </div>
+  <p class="hint">Перегляди рахуються без cookies і без IP: одна сторінка — раз за візит. Заявки — з бази, разом зі скасованими.</p>
+
+  <p class="state" data-state="loading">Завантаження…</p>
+  <div class="alert" role="alert" tabindex="-1" data-state="error" hidden></div>
+  <p class="state" data-state="owner-only" hidden>Статистика доступна лише власнику магазину.</p>
+
+  <div data-state="ready" hidden>
+    <div class="tiles">
+      <div class="tile"><span class="lbl">Заявок</span><b data-stat="total"></b><span class="sub" data-stat="cancelled"></span></div>
+      <div class="tile"><span class="lbl">Оплачено й відправлено</span><b data-stat="sold"></b></div>
+      <div class="tile"><span class="lbl">Сума оплачених</span><b data-stat="revenue"></b></div>
+      <div class="tile"><span class="lbl">Переглядів сторінок</span><b data-stat="pages"></b></div>
+    </div>
+
+    <section class="card" aria-labelledby="by-day-h">
+      <h2 id="by-day-h">Заявки по днях</h2>
+      <div class="chart" data-chart></div>
+      <details>
+        <summary>Показати таблицею</summary>
+        <table class="table"><thead><tr><th scope="col">День</th><th scope="col">Заявок</th></tr></thead><tbody data-table></tbody></table>
+      </details>
+    </section>
+
+    <div class="grid">
+      <section class="card" aria-labelledby="top-h"><h2 id="top-h">Що замовляють, шт.</h2><ol class="rank" data-rank="ordered"></ol></section>
+      <section class="card" aria-labelledby="viewed-h"><h2 id="viewed-h">Що переглядають</h2><ol class="rank" data-rank="viewed"></ol></section>
+      <section class="card" aria-labelledby="country-h"><h2 id="country-h">Країни покупців</h2><ol class="rank" data-rank="countries"></ol></section>
+      <section class="card" aria-labelledby="lang-h"><h2 id="lang-h">Мова сайту (перегляди)</h2><ol class="rank" data-rank="locales"></ol></section>
+      <section class="card" aria-labelledby="ref-h"><h2 id="ref-h">Звідки приходять</h2><ol class="rank" data-rank="referrers"></ol></section>
+    </div>
+  </div>
+</Admin>
+
+<script>
+  import { requireStaff, supabase, dbError, formatMoney, LANG_NAMES } from '../../lib/admin';
+  import type { Locale } from '../../i18n/config';
+
+  type Ranked = { key: string; n: number };
+  interface Stats {
+    requests: { total: number; cancelled: number; sold: number; revenue: number; by_day: Record<string, number>;
+      products: { slug: string; name: string; qty: number }[]; countries: Ranked[]; locales: Ranked[] };
+    views: { pages: number; by_day: Record<string, number>; products: Ranked[]; locales: Ranked[]; referrers: Ranked[] };
+  }
+
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const states = [...document.querySelectorAll<HTMLElement>('[data-state]')];
+  const show = (name: string) => states.forEach((s) => (s.hidden = s.dataset.state !== name));
+  const regions = new Intl.DisplayNames(['uk'], { type: 'region' });
+  const dayFmt = new Intl.DateTimeFormat('uk', { day: 'numeric', month: 'short' });
+  const num = new Intl.NumberFormat('uk');
+  const requestsWord = (n: number) => (n % 10 === 1 && n % 100 !== 11 ? 'заявка' : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? 'заявки' : 'заявок');
+  let currency = 'EUR';
+  let productNames = new Map<string, string>();
+
+  /** Дати періоду: останні days днів, включно з сьогодні (за часом браузера). */
+  function period(days: number): string[] {
+    const out: string[] = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      out.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
+    }
+    return out;
+  }
+
+  async function load(days: number) {
+    const dates = period(days);
+    const { data, error } = await supabase!.rpc('shop_stats', { p_from: dates[0], p_to: dates.at(-1) });
+    if (error) { $('[data-state="error"]').textContent = dbError(error); return show('error'); }
+    render(data as Stats, dates);
+    show('ready');
+  }
+
+  function render(s: Stats, dates: string[]) {
+    const r = s.requests;
+    $('[data-stat="total"]').textContent = num.format(r.total);
+    $('[data-stat="cancelled"]').textContent = r.cancelled ? `з них скасовано ${num.format(r.cancelled)}` : '';
+    $('[data-stat="sold"]').textContent = num.format(r.sold);
+    $('[data-stat="revenue"]').textContent = `${formatMoney(r.revenue)} ${currency}`;
+    $('[data-stat="pages"]').textContent = num.format(s.views.pages);
+
+    // Стовпчики по днях: одна серія, підпис — у підказці й у таблиці.
+    const max = Math.max(1, ...dates.map((d) => r.by_day[d] ?? 0));
+    const chart = $('[data-chart]');
+    chart.style.setProperty('--cols', String(dates.length));
+    chart.replaceChildren(...dates.map((d, i) => {
+      const n = r.by_day[d] ?? 0;
+      const col = document.createElement('div');
+      col.className = i === 0 ? 'col first' : i === dates.length - 1 ? 'col last' : 'col';
+      col.tabIndex = 0;
+      col.dataset.tip = `${dayFmt.format(new Date(d))}: ${n} ${requestsWord(n)}`;
+      col.setAttribute('role', 'img');
+      col.setAttribute('aria-label', col.dataset.tip);
+      const bar = document.createElement('span');
+      bar.className = 'bar';
+      bar.style.height = n ? `${(n / max) * 100}%` : '0';
+      col.append(bar);
+      return col;
+    }));
+    const axis = document.createElement('div');
+    axis.className = 'axis';
+    axis.innerHTML = '<span></span><span></span>';
+    axis.children[0]!.textContent = dayFmt.format(new Date(dates[0]!));
+    axis.children[1]!.textContent = dayFmt.format(new Date(dates.at(-1)!));
+    chart.append(axis);
+    const top = document.createElement('span');
+    top.className = 'max';
+    top.textContent = `макс. ${max}`;
+    chart.append(top);
+    $('[data-table]').replaceChildren(...dates.filter((d) => r.by_day[d]).reverse().map((d) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td></td><td></td>';
+      tr.cells[0]!.textContent = dayFmt.format(new Date(d));
+      tr.cells[1]!.textContent = String(r.by_day[d]);
+      return tr;
+    }));
+
+    rank('ordered', r.products.map((p) => ({ label: p.name, n: p.qty })));
+    rank('viewed', s.views.products.map((p) => ({ label: productNames.get(p.key) ?? p.key, n: p.n })));
+    rank('countries', r.countries.map((c) => ({ label: regions.of(c.key) ?? c.key, n: c.n })));
+    rank('locales', s.views.locales.map((l) => ({ label: LANG_NAMES[l.key as Locale] ?? l.key, n: l.n })));
+    rank('referrers', s.views.referrers.map((x) => ({ label: x.key, n: x.n })));
+  }
+
+  /** Рейтинг: назва, смуга довжиною відносно першого місця, число текстом. */
+  function rank(name: string, rows: { label: string; n: number }[]) {
+    const ol = $(`[data-rank="${name}"]`);
+    if (!rows.length) {
+      const li = document.createElement('li');
+      li.className = 'empty';
+      li.textContent = 'За цей період даних немає.';
+      return ol.replaceChildren(li);
+    }
+    const max = rows[0]!.n || 1;
+    ol.replaceChildren(...rows.map((row) => {
+      const li = document.createElement('li');
+      li.innerHTML = '<span class="nm"></span><span class="val"></span><span class="track"><span class="fill"></span></span>';
+      li.querySelector('.nm')!.textContent = row.label;
+      li.querySelector('.val')!.textContent = num.format(row.n);
+      li.querySelector<HTMLElement>('.fill')!.style.width = `${(row.n / max) * 100}%`;
+      return li;
+    }));
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('[data-days]').forEach((b, _, all) => b.addEventListener('click', () => {
+    all.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    load(Number(b.dataset.days));
+  }));
+
+  requireStaff()
+    .then(async (me) => {
+      if (me.role !== 'owner') return show('owner-only');
+      const [s, p] = await Promise.all([
+        supabase!.from('settings').select('base_currency').maybeSingle(),
+        supabase!.from('products').select('slug,name'),
+      ]);
+      currency = s.data?.base_currency ?? 'EUR';
+      productNames = new Map((p.data ?? []).map((x) => [x.slug as string, (x.name.uk || x.name.en || x.slug) as string]));
+      load(30);
+    })
+    .catch(() => {});
+</script>
+
+<style>
+  .head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  h1 { font-size: 28px; font-weight: 900; }
+  h2 { font-size: 18px; font-weight: 900; }
+  .hint { color: var(--ink-2); font-weight: 600; margin: 6px 0 16px; }
+  [data-state][hidden] { display: none; }
+  .state { color: var(--ink-2); font-weight: 700; }
+  .alert { padding: 12px 16px; border-radius: var(--radius-sm); background: var(--tint-red); border: 2px solid var(--tint-red-border); font-weight: 700; }
+  .alert[hidden] { display: none; }
+
+  .periods { display: flex; gap: 6px; }
+  .periods button { min-height: 40px; padding: 0 14px; border: 2px solid var(--line); border-radius: 999px; background: var(--surface); font-weight: 800; cursor: pointer; color: var(--ink-2); }
+  .periods button[aria-pressed='true'] { border-color: var(--pink-600); background: var(--accent-soft); color: var(--accent-text); }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .tile { display: grid; gap: 4px; padding: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+  .tile .lbl { font-weight: 700; color: var(--ink-2); }
+  .tile b { font-size: 32px; font-weight: 900; line-height: 1.1; }
+  .tile .sub { font-size: 13px; color: var(--ink-2); font-weight: 600; min-height: 1em; }
+
+  .card { display: grid; gap: 12px; align-content: start; padding: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-top: 16px; }
+
+  /* Стовпчики: одна серія, колір проходить перевірку контрасту на обох фонах. */
+  .chart { --bar: light-dark(var(--pink-600), var(--pink-500)); position: relative; display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: 2px; height: 180px; padding-top: 22px; border-bottom: 1px solid var(--line); }
+  .chart :global(.col) { position: relative; display: flex; align-items: flex-end; height: 100%; cursor: default; outline: none; }
+  .chart :global(.bar) { display: block; width: 100%; background: var(--bar); border-radius: 4px 4px 0 0; min-height: 0; }
+  .chart :global(.col:hover .bar), .chart :global(.col:focus-visible .bar) { filter: brightness(1.15); }
+  .chart :global(.col:focus-visible) { box-shadow: 0 0 0 2px var(--pink-500); border-radius: 4px; }
+  .chart :global(.col[data-tip]:hover)::after, .chart :global(.col[data-tip]:focus-visible)::after {
+    content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 50%; translate: -50% 0; z-index: 2; white-space: nowrap;
+    padding: 6px 10px; border-radius: 8px; background: var(--ink); color: var(--surface); font-size: 13px; font-weight: 700; pointer-events: none;
+  }
+  /* Крайні підказки притиснуті до свого краю, щоб не вилазили за картку. */
+  .chart :global(.col.first)::after { left: 0; translate: 0 0; }
+  .chart :global(.col.last)::after { left: auto; right: 0; translate: 0 0; }
+  .chart :global(.axis) { position: absolute; left: 0; right: 0; bottom: -22px; display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-2); font-weight: 600; }
+  .chart :global(.max) { position: absolute; top: 0; left: 0; font-size: 12px; color: var(--ink-2); font-weight: 600; }
+  details { margin-top: 22px; }
+  summary { cursor: pointer; font-weight: 800; color: var(--accent-text); }
+  .table { margin-top: 8px; border-collapse: collapse; }
+  .table th, .table td { padding: 4px 16px 4px 0; text-align: left; }
+
+  .rank { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .rank :global(li) { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; font-weight: 700; }
+  .rank :global(.nm) { overflow-wrap: anywhere; }
+  .rank :global(.val) { font-variant-numeric: tabular-nums; }
+  .rank :global(.track) { grid-column: 1 / -1; height: 8px; border-radius: 4px; background: var(--line); }
+  .rank :global(.fill) { display: block; height: 100%; border-radius: 4px; background: light-dark(var(--pink-600), var(--pink-500)); }
+  .rank :global(.empty) { display: block; color: var(--ink-2); font-weight: 600; }
+</style>

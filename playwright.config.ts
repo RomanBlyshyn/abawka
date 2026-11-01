@@ -3,6 +3,8 @@ import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: 'tests/e2e',
   fullyParallel: true,
+  // Не більше 4 браузерів одночасно: за замовчуванням їх було 12 (половина ядер), і разом з dev-сервером це вішало комп'ютер.
+  workers: 4,
   reporter: 'list',
   use: { baseURL: 'http://localhost:4390', locale: 'en-US' },
   webServer: {

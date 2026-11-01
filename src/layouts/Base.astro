@@ -53,6 +53,9 @@ const rest = Astro.url.pathname.split('/').slice(2).join('/');
 
     <script>
       import { addToCart, cartCount, CART_EVENT } from '../lib/cart-client';
+      import { trackView } from '../lib/stats-client';
+
+      trackView();
 
       const counter = document.querySelector<HTMLElement>('[data-cart-count]');
       const renderCount = () => {
