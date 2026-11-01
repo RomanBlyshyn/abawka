@@ -103,3 +103,18 @@ test('country picker fits a 320 px phone screen when open', async ({ page }) => 
   await expect(page.getByRole('listbox').filter({ visible: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
 });
+
+test('email in Cyrillic is refused with a hint; a normal email is sent', async ({ page }) => {
+  await page.goto('/en/cart/');
+  await fillRest(page);
+  await page.getByRole('radio', { name: 'Email' }).check();
+  const email = page.getByRole('textbox', { name: 'Email', exact: true });
+  await email.fill('емейл@щось.ком');
+  await send(page);
+  await expect(contactError(page)).toHaveText('Check the email — Latin letters only, e.g. name@gmail.com.');
+  expect(sent).toHaveLength(0);
+  await email.fill('olena.k@gmail.com');
+  await send(page);
+  await expect(page).toHaveURL(/thanks/);
+  expect(sent[0]).toMatchObject({ method: 'email', contact: 'olena.k@gmail.com' });
+});

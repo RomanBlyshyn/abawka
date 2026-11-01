@@ -123,7 +123,7 @@
   "form.error.name": "Zadejte jméno (alespoň 2 znaky).",
   "form.error.phone": "Zadejte telefonní číslo, např. +420 600 000 000.",
   "form.error.telegram": "Zadejte @přezdívku (5–32 znaků) nebo telefonní číslo.",
-  "form.error.email": "Zkontrolujte e-mail, např. name@example.com.",
+  "form.error.email": "Zkontrolujte e-mail — pouze latinkou, např. name@gmail.com.",
   "form.error.country": "Vyberte zemi.",
   "form.error.consent": "Potřebujeme váš souhlas.",
   "form.error.send": "Neodesláno. Zkontrolujte připojení a zkuste to znovu – zadané údaje zůstaly zachovány.",

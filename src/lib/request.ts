@@ -23,7 +23,8 @@ export type Errors = Partial<Record<'name' | 'contact' | 'country' | 'consent' |
 export const LIMITS = { name: 60, contact: 80, comment: 500 } as const;
 
 const TG_USER = /^@?[A-Za-z0-9_]{5,32}$/;
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+// Email латиницею, як його приймає пошта власника: без кирилиці, двох крапок підряд і крапок на краях.
+const EMAIL = /^(?!\.)(?!.*\.\.)[A-Za-z0-9._%+-]+(?<!\.)@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z]{2,}$/;
 
 /** Яким видом контакту має бути поле для обраного способу зв'язку. */
 export const contactKind = (m: Method): 'phone' | 'telegram' | 'email' =>

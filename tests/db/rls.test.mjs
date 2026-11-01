@@ -410,3 +410,11 @@ test('request: phone must be in international format (+country code), as the for
   assert.ok((await submit(order({ contact: '+380671234567' }), '10.2.0.2')).id > 0);
   assert.ok((await submit(order({ method: 'telegram', contact: '@olena_shop' }), '10.2.0.3')).id > 0);
 });
+
+test('request: email must be in Latin letters (no Cyrillic, no double dots)', async () => {
+  await admin(`update public.products set stock = 20 where slug = 'bobo-balloon'`);
+  for (const bad of ['емейл@щось.ком', 'olena@пошта.укр', 'a..b@gmail.com', 'name.@gmail.com', 'name@gmail']) {
+    await rejects(submit(order({ method: 'email', contact: bad }), '10.3.0.1'), /invalid:contact/, bad);
+  }
+  assert.ok((await submit(order({ method: 'email', contact: 'olena.k+toys@gmail.com' }), '10.3.0.2')).id > 0);
+});

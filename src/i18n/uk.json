@@ -123,7 +123,7 @@
   "form.error.name": "Вкажіть ім’я (щонайменше 2 символи).",
   "form.error.phone": "Вкажіть номер телефону, напр. +48 600 000 000.",
   "form.error.telegram": "Вкажіть @нік (5–32 символи) або номер телефону.",
-  "form.error.email": "Перевірте email, напр. name@example.com.",
+  "form.error.email": "Перевірте email — лише латиницею, напр. name@gmail.com.",
   "form.error.country": "Оберіть країну.",
   "form.error.consent": "Потрібна ваша згода.",
   "form.error.send": "Не надіслано. Перевірте з’єднання й спробуйте ще раз — введені дані збережено.",

@@ -123,7 +123,7 @@
   "form.error.name": "Podaj imię (min. 2 znaki).",
   "form.error.phone": "Podaj numer telefonu, np. +48 600 000 000.",
   "form.error.telegram": "Podaj @nick (5–32 znaki) lub numer telefonu.",
-  "form.error.email": "Sprawdź e-mail, np. name@example.com.",
+  "form.error.email": "Sprawdź e-mail — tylko litery łacińskie, np. name@gmail.com.",
   "form.error.country": "Wybierz kraj.",
   "form.error.consent": "Potrzebna jest Twoja zgoda.",
   "form.error.send": "Nie wysłano. Sprawdź połączenie i spróbuj ponownie — wpisane dane zostały zachowane.",

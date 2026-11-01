@@ -119,7 +119,7 @@
   "form.error.name": "Enter your name (at least 2 characters).",
   "form.error.phone": "Enter a phone number, e.g. +48 600 000 000.",
   "form.error.telegram": "Enter a @username (5–32 characters) or a phone number.",
-  "form.error.email": "Check the email, e.g. name@example.com.",
+  "form.error.email": "Check the email — Latin letters only, e.g. name@gmail.com.",
   "form.error.country": "Choose a country.",
   "form.error.consent": "We need your consent.",
   "form.error.send": "Not sent. Check your connection and try again — what you entered is kept.",

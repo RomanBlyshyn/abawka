@@ -123,7 +123,7 @@
   "form.error.name": "Įveskite vardą (bent 2 simboliai).",
   "form.error.phone": "Įveskite telefono numerį, pvz. +370 600 00000.",
   "form.error.telegram": "Įveskite @vardą (5–32 simboliai) arba telefono numerį.",
-  "form.error.email": "Patikrinkite el. paštą, pvz. name@example.com.",
+  "form.error.email": "Patikrinkite el. paštą — tik lotyniškomis raidėmis, pvz. name@gmail.com.",
   "form.error.country": "Pasirinkite šalį.",
   "form.error.consent": "Reikia jūsų sutikimo.",
   "form.error.send": "Neišsiųsta. Patikrinkite ryšį ir bandykite dar kartą – įvesti duomenys išsaugoti.",

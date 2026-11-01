@@ -119,7 +119,7 @@
   "form.error.name": "Bitte Namen angeben (mind. 2 Zeichen).",
   "form.error.phone": "Bitte Telefonnummer angeben, z. B. +49 151 0000000.",
   "form.error.telegram": "Bitte @Name (5–32 Zeichen) oder Telefonnummer angeben.",
-  "form.error.email": "Bitte E-Mail prüfen, z. B. name@example.com.",
+  "form.error.email": "Bitte E-Mail prüfen – nur lateinische Buchstaben, z. B. name@gmail.com.",
   "form.error.country": "Bitte Land wählen.",
   "form.error.consent": "Ihre Zustimmung ist erforderlich.",
   "form.error.send": "Nicht gesendet. Prüfen Sie die Verbindung und versuchen Sie es erneut – Ihre Eingaben bleiben erhalten.",

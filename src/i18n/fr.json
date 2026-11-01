@@ -121,7 +121,7 @@
   "form.error.name": "Indiquez votre prénom (2 caractères min.).",
   "form.error.phone": "Indiquez un numéro, ex. +33 6 00 00 00 00.",
   "form.error.telegram": "Indiquez un @pseudo (5 à 32 caractères) ou un numéro.",
-  "form.error.email": "Vérifiez l’e-mail, ex. name@example.com.",
+  "form.error.email": "Vérifiez l’e-mail — lettres latines uniquement, ex. name@gmail.com.",
   "form.error.country": "Choisissez un pays.",
   "form.error.consent": "Votre accord est nécessaire.",
   "form.error.send": "Non envoyé. Vérifiez votre connexion et réessayez : vos saisies sont conservées.",
