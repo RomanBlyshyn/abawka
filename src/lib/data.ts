@@ -1,6 +1,11 @@
 // Єдина точка доступу до даних. На етапі 2 тіло функцій заміниться на запити до Supabase, сигнатури лишаться.
-import seed from '../data/seed.json';
+import realSeed from '../data/seed.json';
+import testSeed from '../../tests/fixtures/seed.json';
 import type { Locale } from '../i18n/config';
+
+// E2E-тести збирають сайт на тестовому наборі (ABAWKA_TEST_DATA=1), щоб не залежати від справжніх товарів.
+// Дані читаються лише під час збірки, у браузер жоден із наборів не потрапляє.
+const seed = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.ABAWKA_TEST_DATA === '1' ? testSeed : realSeed;
 
 export type Localized = Partial<Record<Locale, string>>;
 export type Tint = 'pink' | 'yellow' | 'red' | 'blue' | 'green';

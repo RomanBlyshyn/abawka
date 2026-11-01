@@ -7,7 +7,7 @@ import ReviewCard from '../../components/ReviewCard.astro';
 import { AGE_GROUPS } from '../../lib/age';
 import { LOCALES, type Locale } from '../../i18n/config';
 import { useTranslations } from '../../i18n';
-import { getCategories, getProducts, getReviews, pick } from '../../lib/data';
+import { getCategories, getProducts, getReviews, getSlides, pick } from '../../lib/data';
 import { href } from '../../lib/format';
 
 export function getStaticPaths() {
@@ -18,9 +18,10 @@ const locale = Astro.params.lang as Locale;
 const t = useTranslations(locale);
 const categories = getCategories();
 const products = getProducts();
-// Тільки те, що можна замовити: спершу хіти (мечі — за брифом), добираємо новинками, щоб ряд не був порожнім.
+// «Хіти й рекомендації» (як у брифі): тільки те, що можна замовити — спершу хіти (мечі), далі новинки, далі решта.
 const available = products.filter((p) => p.stock > 0);
-const hits = [...available.filter((p) => p.hit), ...available.filter((p) => !p.hit && p.new)].slice(0, 8);
+const rank = (p: (typeof products)[number]) => (p.hit ? 0 : p.new ? 1 : 2);
+const hits = [...available].sort((a, b) => rank(a) - rank(b)).slice(0, 8);
 const reviews = getReviews();
 const steps = [
   { icon: 'cart', n: 1 },
@@ -31,7 +32,7 @@ const steps = [
 <Base locale={locale} title={t('home.title')}>
   <div class="wrap">
     <h1 class="sr-only">ABAWKA — {t('home.title')}</h1>
-    <div class="section"><HeroSlider locale={locale} /></div>
+    {getSlides().length > 0 && <div class="section"><HeroSlider locale={locale} /></div>}
 
     <section class="section" aria-labelledby="cats-h">
       <div class="section-head"><h2 id="cats-h">{t('home.categories')}</h2></div>
@@ -79,12 +80,14 @@ const steps = [
       </ol>
     </section>
 
-    <section class="section" aria-labelledby="rev-h">
-      <div class="section-head"><h2 id="rev-h">{t('home.reviews')}</h2></div>
-      <div class="reviews">
-        {reviews.map((r) => <ReviewCard review={r} locale={locale} />)}
-      </div>
-    </section>
+    {reviews.length > 0 && (
+      <section class="section" aria-labelledby="rev-h">
+        <div class="section-head"><h2 id="rev-h">{t('home.reviews')}</h2></div>
+        <div class="reviews">
+          {reviews.map((r) => <ReviewCard review={r} locale={locale} />)}
+        </div>
+      </section>
+    )}
   </div>
 </Base>
 

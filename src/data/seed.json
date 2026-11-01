@@ -1,5 +1,5 @@
 {
-  "_note": "Тестові дані до етапу 2 (база). Ціни й рейтинги — заглушки, власник введе справжні в адмінці. Відгуки demo:true прибираються до запуску.",
+  "_note": "Справжні дані магазину (до переїзду в базу на етапі 2). Ціни й залишки — тимчасові, поки клієнт не дасть справжні. Хіт — мечі (зі слів клієнта).",
   "baseCurrency": "EUR",
   "categories": [
     {
@@ -88,13 +88,12 @@
       "slug": "toy-sword",
       "category": "swords",
       "price": 1999,
-      "oldPrice": 2499,
       "ageMin": 3,
-      "stock": 12,
+      "stock": 10,
       "hit": true,
       "new": false,
-      "rating": 4.8,
-      "reviews": 3,
+      "rating": 0,
+      "reviews": 0,
       "name": {
         "pl": "Miecz zabawkowy",
         "en": "Toy sword",
@@ -112,11 +111,11 @@
       "category": "swords",
       "price": 2499,
       "ageMin": 3,
-      "stock": 8,
+      "stock": 10,
       "hit": true,
       "new": false,
-      "rating": 4.9,
-      "reviews": 2,
+      "rating": 0,
+      "reviews": 0,
       "name": {
         "pl": "Miecz rycerski",
         "en": "Knight sword",
@@ -134,11 +133,11 @@
       "category": "interactive",
       "price": 2999,
       "ageMin": 3,
-      "stock": 5,
-      "hit": true,
-      "new": true,
-      "rating": 5,
-      "reviews": 1,
+      "stock": 10,
+      "hit": false,
+      "new": false,
+      "rating": 0,
+      "reviews": 0,
       "name": {
         "pl": "Chodząca kapibara na baterie",
         "en": "Walking capybara (battery)",
@@ -156,9 +155,9 @@
       "category": "interactive",
       "price": 2799,
       "ageMin": 3,
-      "stock": 0,
+      "stock": 10,
       "hit": false,
-      "new": true,
+      "new": false,
       "rating": 0,
       "reviews": 0,
       "name": {
@@ -177,13 +176,12 @@
       "slug": "slingshot-helicopter",
       "category": "flying",
       "price": 899,
-      "oldPrice": 1199,
       "ageMin": 6,
-      "stock": 30,
-      "hit": true,
+      "stock": 10,
+      "hit": false,
       "new": false,
-      "rating": 4.6,
-      "reviews": 2,
+      "rating": 0,
+      "reviews": 0,
       "name": {
         "pl": "Helikopter z procą",
         "en": "Slingshot helicopter",
@@ -201,11 +199,11 @@
       "category": "balloons",
       "price": 599,
       "ageMin": 3,
-      "stock": 50,
+      "stock": 10,
       "hit": false,
       "new": false,
-      "rating": 4.7,
-      "reviews": 1,
+      "rating": 0,
+      "reviews": 0,
       "name": {
         "pl": "Balon Bobo",
         "en": "Bobo balloon",
@@ -223,7 +221,7 @@
       "category": "board-games",
       "price": 3499,
       "ageMin": 6,
-      "stock": 4,
+      "stock": 10,
       "hit": false,
       "new": false,
       "rating": 0,
@@ -247,74 +245,7 @@
       "tint": "pink",
       "href": "catalog/swords/",
       "mascot": true
-    },
-    {
-      "key": "new",
-      "tint": "yellow",
-      "href": "catalog/interactive/",
-      "mascot": false
-    },
-    {
-      "key": "sale",
-      "tint": "blue",
-      "href": "catalog/?sale=1",
-      "mascot": false
     }
   ],
-  "reviews": [
-    {
-      "demo": true,
-      "author": "Anna",
-      "country": "PL",
-      "rating": 5,
-      "product": "toy-sword",
-      "text": {
-        "pl": "Syn nie wypuszcza miecza z rąk. Szybki kontakt i wysyłka.",
-        "en": "My son won't let go of the sword. Quick contact and shipping.",
-        "uk": "Син не випускає меч з рук. Швидко зв'язались і відправили.",
-        "de": "Mein Sohn lässt das Schwert nicht mehr los. Schneller Kontakt und Versand.",
-        "cs": "Syn meč nepustí z ruky. Rychlý kontakt i odeslání.",
-        "lt": "Sūnus nepaleidžia kardo iš rankų. Greitai susisiekė ir išsiuntė.",
-        "es": "Mi hijo no suelta la espada. Contacto y envío rápidos.",
-        "fr": "Mon fils ne lâche plus son épée. Contact et envoi rapides.",
-        "ru": "Сын не выпускает меч из рук. Быстро связались и отправили."
-      }
-    },
-    {
-      "demo": true,
-      "author": "Olena",
-      "country": "UA",
-      "rating": 5,
-      "product": "walking-capybara",
-      "text": {
-        "pl": "Kapibara to hit wśród dzieci na podwórku!",
-        "en": "The capybara is a hit with all the kids in the yard!",
-        "uk": "Капібара — хіт серед усіх дітей у дворі!",
-        "de": "Das Capybara ist der Hit bei allen Kindern im Hof!",
-        "cs": "Kapybara je hitem mezi všemi dětmi na dvoře!",
-        "lt": "Kapibara – hitas tarp visų kiemo vaikų!",
-        "es": "¡La capibara es el éxito entre todos los niños del barrio!",
-        "fr": "Le capybara fait fureur auprès de tous les enfants du quartier !",
-        "ru": "Капибара — хит среди всех детей во дворе!"
-      }
-    },
-    {
-      "demo": true,
-      "author": "Tomáš",
-      "country": "CZ",
-      "rating": 4,
-      "product": "slingshot-helicopter",
-      "text": {
-        "pl": "Lata naprawdę wysoko. Polecam na lato.",
-        "en": "Flies really high. Great for summer.",
-        "uk": "Літає дуже високо. Раджу на літо.",
-        "de": "Fliegt richtig hoch. Super für den Sommer.",
-        "cs": "Létá opravdu vysoko. Skvělé na léto.",
-        "lt": "Skrenda tikrai aukštai. Puiku vasarai.",
-        "es": "Vuela muy alto. Ideal para el verano.",
-        "fr": "Il vole vraiment haut. Parfait pour l’été.",
-        "ru": "Летает очень высоко. Советую на лето."
-      }
-    }
-  ]
+  "reviews": []
 }

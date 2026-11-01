@@ -11,11 +11,13 @@ interface Props { locale: Locale }
 const { locale } = Astro.props;
 const t = useTranslations(locale);
 const slides = getSlides();
+const multi = slides.length > 1;
 ---
-<section class="hero" aria-roledescription="carousel" aria-label={t('slider.label')} data-slider>
+<!-- Один банер — звичайний блок без стрілок і крапок; два й більше — каруселька. -->
+<section class="hero" aria-roledescription={multi ? 'carousel' : undefined} aria-label={t('slider.label')} data-slider={multi ? '' : undefined}>
   <div class="track" data-track>
     {slides.map((s, i) => (
-      <div class={`slide tint-${s.tint}`} role="group" aria-roledescription="slide" aria-label={`${i + 1} / ${slides.length}`}>
+      <div class={`slide tint-${s.tint}`} role={multi ? 'group' : undefined} aria-roledescription={multi ? 'slide' : undefined} aria-label={multi ? `${i + 1} / ${slides.length}` : undefined}>
         <div class="text">
           <h2>{t(`slide.${s.key}.title`)}</h2>
           <p>{t(`slide.${s.key}.text`)}</p>
@@ -27,11 +29,15 @@ const slides = getSlides();
       </div>
     ))}
   </div>
-  <button class="nav prev" type="button" data-prev aria-label={t('slider.prev')}><Icon name="chevron-left" /></button>
-  <button class="nav next" type="button" data-next aria-label={t('slider.next')}><Icon name="chevron-right" /></button>
-  <div class="dots">
-    {slides.map((_, i) => <button type="button" data-dot={i} aria-label={`${t('slider.goto')} ${i + 1}`} aria-current={i === 0 ? 'true' : undefined} />)}
-  </div>
+  {multi && (
+    <>
+      <button class="nav prev" type="button" data-prev aria-label={t('slider.prev')}><Icon name="chevron-left" /></button>
+      <button class="nav next" type="button" data-next aria-label={t('slider.next')}><Icon name="chevron-right" /></button>
+      <div class="dots">
+        {slides.map((_, i) => <button type="button" data-dot={i} aria-label={`${t('slider.goto')} ${i + 1}`} aria-current={i === 0 ? 'true' : undefined} />)}
+      </div>
+    </>
+  )}
 </section>
 
 <script>

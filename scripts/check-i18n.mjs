@@ -22,12 +22,14 @@ for (const l of LOCALES) {
   for (const base of pluralKeys) for (const f of forms) if (!d[`${base}.${f}`]) missing.push(`${l}: ${base}.${f}`);
 }
 
-const seed = read('src/data/seed.json');
-const texts = [
-  ...seed.categories.map((c) => [`category ${c.slug}`, c.name]),
-  ...seed.products.map((p) => [`product ${p.slug}`, p.name]),
-  ...seed.reviews.map((r) => [`review ${r.product}`, r.text]),
-];
+const texts = ['src/data/seed.json', 'tests/fixtures/seed.json'].flatMap((file) => {
+  const seed = read(file);
+  return [
+    ...seed.categories.map((c) => [`${file}: category ${c.slug}`, c.name]),
+    ...seed.products.flatMap((p) => [[`${file}: product ${p.slug}`, p.name], ...(p.description ? [[`${file}: description ${p.slug}`, p.description]] : [])]),
+    ...seed.reviews.map((r) => [`${file}: review ${r.product}`, r.text]),
+  ];
+});
 for (const [what, t] of texts) for (const l of LOCALES) if (!t[l]) missing.push(`${l}: ${what}`);
 
 if (missing.length) {
