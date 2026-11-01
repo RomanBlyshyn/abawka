@@ -143,3 +143,103 @@ test.describe('admin: product editor', () => {
     await expect(page.getByText('Товар не знайдено')).toBeVisible();
   });
 });
+
+test.describe('admin: product photos', () => {
+  // Справжня картинка 2400×1200, намальована в браузері, щоб перевірити зменшення до трьох розмірів.
+  async function bigPng(page: import('@playwright/test').Page) {
+    const b64 = await page.evaluate(async () => {
+      const c = document.createElement('canvas');
+      c.width = 2400; c.height = 1200;
+      const g = c.getContext('2d')!;
+      const grad = g.createLinearGradient(0, 0, 2400, 1200);
+      grad.addColorStop(0, '#d6246e'); grad.addColorStop(1, '#ffc94d');
+      g.fillStyle = grad; g.fillRect(0, 0, 2400, 1200);
+      for (let i = 0; i < 400; i++) { g.fillStyle = `hsl(${i * 7} 80% 50%)`; g.fillRect((i * 97) % 2400, (i * 53) % 1200, 40, 40); }
+      const blob = await new Promise<Blob>((ok) => c.toBlob((b) => ok(b!), 'image/png'));
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      let s = ''; bytes.forEach((x) => (s += String.fromCharCode(x)));
+      return btoa(s);
+    });
+    return { name: 'photo.png', mimeType: 'image/png', buffer: Buffer.from(b64, 'base64') };
+  }
+
+  test('new product: photos become available after the first save', async ({ page }) => {
+    await mockAdmin(page, sampleDb());
+    await page.goto('/admin/products/edit/');
+    await expect(page.getByText('Спершу збережіть товар')).toBeVisible();
+    await expect(page.locator('[data-file-input]')).toBeHidden();
+  });
+
+  test('upload: three compressed WebP sizes, then a database row; first photo is the cover', async ({ page }) => {
+    const db = sampleDb();
+    await mockAdmin(page, db);
+    await page.goto('/admin/products/edit/?id=p-chess');
+    await page.locator('[data-file-input]').setInputFiles(await bigPng(page));
+    await expect(page.locator('[data-photo-status]')).toHaveText('Додано фото: 1.');
+
+    const uploads = db.requests.filter((r) => r.method === 'STORAGE-UPLOAD');
+    expect(uploads.map((u) => u.url.replace(/[0-9a-f-]{36}-/, 'ID-'))).toEqual([
+      'products/p-chess/ID-400.webp', 'products/p-chess/ID-800.webp', 'products/p-chess/ID-1600.webp',
+    ]);
+    const sizes = uploads.map((u) => (u.body as { bytes: number; contentType: string }));
+    expect(sizes.every((s) => s.contentType === 'image/webp')).toBe(true);
+    expect(sizes[0]!.bytes).toBeLessThan(sizes[2]!.bytes);
+    const row = db.product_images[0]!;
+    expect(row).toMatchObject({ product_id: 'p-chess', position: 0 });
+    expect(String(row.path)).toMatch(/^products\/p-chess\/[0-9a-f-]{36}$/);
+    await expect(page.locator('.photo').first().locator('.cover')).toHaveText('обкладинка');
+  });
+
+  test('a file the browser cannot open (e.g. HEIC): clear advice, nothing uploaded', async ({ page }) => {
+    const db = sampleDb();
+    await mockAdmin(page, db);
+    await page.goto('/admin/products/edit/?id=p-chess');
+    await page.locator('[data-file-input]').setInputFiles({ name: 'IMG_0001.heic', mimeType: 'image/heic', buffer: Buffer.from('not really an image') });
+    await expect(page.locator('[data-photo-error]')).toContainText('надішліть його як JPG');
+    expect(db.requests.filter((r) => r.method === 'STORAGE-UPLOAD')).toHaveLength(0);
+    expect(db.product_images).toHaveLength(0);
+  });
+
+  test('storage failure: "not uploaded, try again", no half-saved photo', async ({ page }) => {
+    const db = sampleDb();
+    await mockAdmin(page, db, { storageError: true });
+    await page.goto('/admin/products/edit/?id=p-chess');
+    await page.locator('[data-file-input]').setInputFiles(await bigPng(page));
+    await expect(page.locator('[data-photo-error]')).toContainText('не завантажено');
+    expect(db.product_images).toHaveLength(0);
+  });
+
+  test('reorder with arrows: positions rewritten, new first photo becomes the cover', async ({ page }) => {
+    const db = sampleDb();
+    db.product_images.push(
+      { id: 'img-a', product_id: 'p-chess', path: 'products/p-chess/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', position: 0 },
+      { id: 'img-b', product_id: 'p-chess', path: 'products/p-chess/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', position: 1 },
+    );
+    await mockAdmin(page, db);
+    await page.goto('/admin/products/edit/?id=p-chess');
+    await expect(page.locator('.photo')).toHaveCount(2);
+    await expect(page.getByRole('button', { name: 'Фото 1: раніше' })).toBeDisabled();
+    await page.getByRole('button', { name: 'Фото 2: раніше' }).click();
+    await expect(page.locator('[data-photo-status]')).toHaveText('Порядок збережено.');
+    expect(db.product_images.find((i) => i.id === 'img-b')!.position).toBe(0);
+    expect(db.product_images.find((i) => i.id === 'img-a')!.position).toBe(1);
+    await expect(page.locator('.photo').first()).toHaveAttribute('data-photo-id', 'img-b');
+    await expect(page.locator('.photo').first().locator('.cover')).toBeVisible();
+  });
+
+  test('delete asks first, removes the row and all three files', async ({ page }) => {
+    const db = sampleDb();
+    db.product_images.push({ id: 'img-a', product_id: 'p-chess', path: 'products/p-chess/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', position: 0 });
+    await mockAdmin(page, db);
+    await page.goto('/admin/products/edit/?id=p-chess');
+    page.once('dialog', (d) => d.dismiss());
+    await page.getByRole('button', { name: 'Видалити фото 1' }).click();
+    expect(db.product_images).toHaveLength(1);
+    page.once('dialog', (d) => d.accept());
+    await page.getByRole('button', { name: 'Видалити фото 1' }).click();
+    await expect(page.locator('[data-photo-status]')).toHaveText('Фото видалено.');
+    expect(db.product_images).toHaveLength(0);
+    const removed = db.requests.find((r) => r.method === 'STORAGE-DELETE')!.body as string[];
+    expect(removed.map((k) => k.split('-').pop())).toEqual(['400.webp', '800.webp', '1600.webp']);
+  });
+});

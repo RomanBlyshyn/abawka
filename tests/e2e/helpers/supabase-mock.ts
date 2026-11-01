@@ -12,14 +12,14 @@ export const session = () => {
 };
 
 type Row = Record<string, unknown> & { id: string };
-export interface Db { products: Row[]; categories: Row[]; product_images: Row[]; requests: { method: string; url: string; body: unknown }[] }
+export interface Db { products: Row[]; categories: Row[]; product_images: Row[]; storage: string[]; requests: { method: string; url: string; body: unknown }[] }
 
 const cors = { 'access-control-allow-origin': '*', 'access-control-expose-headers': 'content-range' };
 const reply = (route: Route, body: unknown, status = 200) =>
   route.fulfill({ status, contentType: 'application/json', headers: cors, body: body === undefined ? '' : JSON.stringify(body) });
 
 /** Увійти (сесія в localStorage) і підмінити auth + REST + functions. */
-export async function mockAdmin(page: Page, db: Db, opts: { role?: 'owner' | 'manager'; translate?: 'ok' | 'fail'; dbError?: { code: string; status: number } } = {}) {
+export async function mockAdmin(page: Page, db: Db, opts: { role?: 'owner' | 'manager'; translate?: 'ok' | 'fail'; dbError?: { code: string; status: number }; storageError?: boolean } = {}) {
   await page.route(/\/auth\/v1\/token/, (r) => reply(r, session()));
   await page.route(/\/auth\/v1\/user/, (r) => reply(r, USER));
   await page.route(/\/auth\/v1\/logout/, (r) => r.fulfill({ status: 204, headers: cors }));
@@ -39,31 +39,56 @@ export async function mockAdmin(page: Page, db: Db, opts: { role?: 'owner' | 'ma
     const rows = db[table];
     const single = (req.headers()['accept'] ?? '').includes('vnd.pgrst.object');
     const idEq = url.searchParams.get('id')?.replace(/^eq\./, '');
+    // Фільтри виду col=eq.value (id, product_id …).
+    const eqs = [...url.searchParams].filter(([, v]) => v.startsWith('eq.')).map(([k, v]) => [k, v.slice(3)] as const);
+    const matches = (r: Row) => eqs.every(([k, v]) => String(r[k]) === v);
     const method = req.method();
     if (method !== 'GET' && method !== 'HEAD') db.requests.push({ method, url: req.url(), body: req.postDataJSON?.() ?? null });
     if (opts.dbError && method !== 'GET') return reply(route, { code: opts.dbError.code, message: 'mock error' }, opts.dbError.status);
 
     if (method === 'GET') {
-      let out = idEq ? rows.filter((r) => r.id === idEq) : rows;
+      let out = rows.filter(matches);
+      if (url.searchParams.get('order')?.startsWith('position')) out = [...out].sort((a, b) => Number(a.position) - Number(b.position));
       if (table === 'products') out = out.map((p) => ({ ...p, images: db.product_images.filter((i) => i.product_id === p.id) }));
       return reply(route, single ? out[0] ?? null : out);
     }
     if (method === 'POST') {
       const created = { id: `new-${rows.length + 1}`, ...(req.postDataJSON() as object) } as Row;
       rows.push(created);
-      return reply(route, single ? { id: created.id } : [{ id: created.id }], 201);
+      return reply(route, single ? created : [created], 201);
     }
     if (method === 'PATCH') {
       const row = rows.find((r) => r.id === idEq);
       if (!row) return reply(route, { code: 'PGRST116', message: 'no rows' }, 406);
       Object.assign(row, req.postDataJSON());
-      return reply(route, single ? { id: row.id } : [{ id: row.id }]);
+      return reply(route, single ? row : [row]);
     }
     if (method === 'DELETE') {
       db[table] = rows.filter((r) => r.id !== idEq) as Row[];
       return route.fulfill({ status: 204, headers: cors });
     }
     return reply(route, { message: 'unsupported' }, 400);
+  });
+
+  // Сховище: завантаження, видалення й публічні картинки.
+  const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+  await page.route(/\/storage\/v1\/object\/public\//, (r) => r.fulfill({ contentType: 'image/png', body: PNG, headers: cors }));
+  await page.route(/\/storage\/v1\/object\/catalog/, async (route) => {
+    const req = route.request();
+    if (opts.storageError) return reply(route, { statusCode: '500', error: 'mock', message: 'mock storage error' }, 500);
+    if (req.method() === 'DELETE') {
+      const { prefixes } = req.postDataJSON() as { prefixes: string[] };
+      db.requests.push({ method: 'STORAGE-DELETE', url: req.url(), body: prefixes });
+      db.storage = db.storage.filter((k) => !prefixes.includes(k));
+      return reply(route, prefixes.map((name) => ({ name })));
+    }
+    const key = decodeURIComponent(new URL(req.url()).pathname.split('/storage/v1/object/catalog/')[1]!);
+    db.storage.push(key);
+    // supabase-js шле Blob як multipart: тип файлу — у заголовку частини, не запиту.
+    const raw = req.postDataBuffer() ?? Buffer.alloc(0);
+    const contentType = /content-type:\s*(image\/[a-z+.-]+)/i.exec(raw.toString('latin1'))?.[1] ?? req.headers()['content-type'];
+    db.requests.push({ method: 'STORAGE-UPLOAD', url: key, body: { contentType, bytes: raw.length } });
+    return reply(route, { Key: `catalog/${key}`, Id: key });
   });
 
   // Сесія як після входу: supabase-js читає її з localStorage.
@@ -81,5 +106,6 @@ export const sampleDb = (): Db => ({
     { id: 'p-chess', slug: 'chess', name: { uk: 'Шахи', en: 'Chess set' }, description: { uk: 'Дерев’яні' }, price: 3499, old_price: null, stock: 0, age_min: 6, hit: false, is_new: false, published: false, category_id: 'cat-games', position: 1 },
   ],
   product_images: [],
+  storage: [],
   requests: [],
 });

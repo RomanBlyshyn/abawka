@@ -118,3 +118,8 @@ test('photo storage: only staff can upload or delete', async () => {
   await as(MANAGER, `insert into storage.objects (bucket_id, name) values ('catalog', 'products/a.webp')`);
   assert.equal((await as(STRANGER, `delete from storage.objects returning id`)).rows.length, 0);
 });
+
+test('photo storage: staff can list objects (needed to delete), strangers cannot', async () => {
+  assert.ok((await as(MANAGER, `select count(*)::int n from storage.objects where bucket_id = 'catalog'`)).rows[0].n >= 1);
+  assert.equal((await as(STRANGER, `select count(*)::int n from storage.objects`)).rows[0].n, 0);
+});

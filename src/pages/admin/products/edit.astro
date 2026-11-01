@@ -40,6 +40,22 @@ import { LOCALES, LOCALE_NAMES } from '../../../i18n/config';
       </div>
     </section>
 
+    <!-- Фото -->
+    <section class="card" aria-labelledby="t-photos">
+      <h2 id="t-photos">Фото</h2>
+      <p class="hint" data-photos-new>Спершу збережіть товар — після цього тут можна буде додати фото.</p>
+      <div data-photos hidden>
+        <p class="hint">Перше фото — обкладинка в каталозі. Порядок міняється стрілками. Фото зменшуються автоматично, можна вантажити прямо з телефона.</p>
+        <ul class="photos" data-photo-list></ul>
+        <label class="upload" data-dropzone>
+          <input type="file" accept="image/*" multiple data-file-input />
+          <span class="upload-text"><b>+ Додати фото</b><span>або перетягніть файли сюди</span></span>
+        </label>
+        <p class="hint" role="status" data-photo-status></p>
+        <div class="alert" role="alert" tabindex="-1" data-photo-error hidden></div>
+      </div>
+    </section>
+
     <!-- Ціна й наявність -->
     <section class="card" aria-labelledby="t-price">
       <h2 id="t-price">Ціна й наявність</h2>
@@ -100,6 +116,7 @@ import { LOCALES, LOCALE_NAMES } from '../../../i18n/config';
 <script>
   import { requireStaff, supabase, parseMoney, formatMoney, slugify, dbError, translate, guardUnsaved, ADMIN_LANGS, LANG_NAMES, type Localized } from '../../../lib/admin';
   import type { Locale } from '../../../i18n/config';
+  import { makeVariants, ImageError, SIZES, type Size } from '../../../lib/images';
 
   const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
   const states = [...document.querySelectorAll<HTMLElement>('[data-state]')];
@@ -324,7 +341,139 @@ import { LOCALES, LOCALE_NAMES } from '../../../i18n/config';
     if (new URLSearchParams(location.search).get('created')) $('[data-saved]').textContent = 'Товар створено ✓';
   }
 
-  requireStaff().then(load).catch(() => {});
+  // ── Фото ───────────────────────────────────────────────────────────────────
+  // Фото зберігаються одразу (окремо від кнопки «Зберегти»): кожне завантаження, видалення й зміна порядку
+  // одразу в базі й сховищі.
+  type Photo = { id: string; path: string; position: number };
+  let photos: Photo[] = [];
+  const BUCKET = 'catalog';
+  const publicUrl = (path: string, size: Size) => `${import.meta.env.PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}-${size}.webp`;
+  const photoStatus = (t: string) => { $('[data-photo-status]').textContent = t; };
+  const photoError = (t: string) => { const e = $('[data-photo-error]'); e.textContent = t; e.hidden = !t; if (t) e.focus(); };
+
+  function renderPhotos() {
+    const list = $('[data-photo-list]');
+    list.replaceChildren(...photos.map((p, i) => {
+      const li = document.createElement('li');
+      li.className = 'photo';
+      li.dataset.photoId = p.id;
+      const img = new Image(160, 160);
+      img.src = publicUrl(p.path, 400);
+      img.alt = `Фото ${i + 1}`;
+      li.append(img);
+      if (i === 0) { const c = document.createElement('span'); c.className = 'cover'; c.textContent = 'обкладинка'; li.append(c); }
+      const tools = document.createElement('div');
+      tools.className = 'photo-tools';
+      const btn = (label: string, aria: string, action: () => void, disabled = false) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = label;
+        b.setAttribute('aria-label', aria);
+        b.disabled = disabled;
+        b.addEventListener('click', action);
+        tools.append(b);
+      };
+      btn('◀', `Фото ${i + 1}: раніше`, () => movePhoto(i, -1), i === 0);
+      btn('▶', `Фото ${i + 1}: пізніше`, () => movePhoto(i, 1), i === photos.length - 1);
+      btn('✕', `Видалити фото ${i + 1}`, () => removePhoto(p));
+      li.append(tools);
+      return li;
+    }));
+  }
+
+  async function loadPhotos() {
+    const { data, error } = await supabase!.from('product_images').select('id,path,position').eq('product_id', id!).order('position');
+    if (error) return photoError(dbError(error));
+    photos = data as Photo[];
+    renderPhotos();
+  }
+
+  async function uploadFiles(files: File[]) {
+    photoError('');
+    const images = files.filter((f) => f.type.startsWith('image/') || /\.(heic|heif)$/i.test(f.name));
+    if (!images.length) return photoError('Це не схоже на фото. Оберіть файли JPG, PNG або WebP.');
+    const problems: string[] = [];
+    let done = 0;
+    for (const file of images) {
+      photoStatus(`Завантаження ${done + 1} з ${images.length}…`);
+      const photoId = crypto.randomUUID();
+      const path = `products/${id}/${photoId}`;
+      try {
+        const variants = await makeVariants(file);
+        const uploaded: string[] = [];
+        try {
+          for (const size of SIZES) {
+            const key = `${path}-${size}.webp`;
+            const { error } = await supabase!.storage.from(BUCKET).upload(key, variants[size], { contentType: variants[size].type, upsert: false, cacheControl: '31536000' });
+            if (error) throw error;
+            uploaded.push(key);
+          }
+          const position = photos.length ? Math.max(...photos.map((p) => p.position)) + 1 : 0;
+          const { data, error } = await supabase!.from('product_images').insert({ product_id: id, path, position }).select('id,path,position').single();
+          if (error) throw error;
+          photos.push(data as Photo);
+          renderPhotos();
+          done++;
+        } catch (e) {
+          // Не лишаємо «сиріт» у сховищі, якщо запис у базу не вдався.
+          if (uploaded.length) await supabase!.storage.from(BUCKET).remove(uploaded);
+          throw e;
+        }
+      } catch (e) {
+        problems.push(e instanceof ImageError
+          ? e.reason === 'too-big'
+            ? `«${file.name}» завелике (понад 30 МБ).`
+            : `«${file.name}» не вдалося відкрити. Якщо це фото з iPhone (HEIC), надішліть його як JPG або увімкніть Налаштування → Камера → Формати → «Найсумісніший».`
+          : `«${file.name}» не завантажено. Перевірте інтернет і спробуйте ще раз.`);
+      }
+    }
+    photoStatus(done ? `Додано фото: ${done}.` : '');
+    photoError(problems.join(' '));
+  }
+
+  async function movePhoto(i: number, dir: -1 | 1) {
+    const j = i + dir;
+    [photos[i], photos[j]] = [photos[j]!, photos[i]!];
+    renderPhotos();
+    // Переписуємо позиції всіх фото по порядку: так вони завжди 0, 1, 2… без дір і дублів.
+    const results = await Promise.all(photos.map((p, k) =>
+      p.position === k ? null : supabase!.from('product_images').update({ position: k }).eq('id', p.id)));
+    photos.forEach((p, k) => (p.position = k));
+    const failed = results.find((r) => r?.error);
+    if (failed) { photoError(dbError(failed.error)); loadPhotos(); } else photoStatus('Порядок збережено.');
+  }
+
+  async function removePhoto(p: Photo) {
+    if (!confirm('Видалити це фото?')) return;
+    const { error } = await supabase!.from('product_images').delete().eq('id', p.id);
+    if (error) return photoError(dbError(error));
+    photos = photos.filter((x) => x.id !== p.id);
+    renderPhotos();
+    // Файли прибираємо після запису в базі: навіть якщо це не вдасться, сайт уже не показує фото.
+    await supabase!.storage.from(BUCKET).remove(SIZES.map((s) => `${p.path}-${s}.webp`));
+    photoStatus('Фото видалено.');
+  }
+
+  $<HTMLInputElement>('[data-file-input]').addEventListener('change', async (e) => {
+    const input = e.currentTarget as HTMLInputElement;
+    await uploadFiles([...(input.files ?? [])]);
+    input.value = '';
+  });
+  const zone = $('[data-dropzone]');
+  zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('over'));
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zone.classList.remove('over');
+    uploadFiles([...(e.dataTransfer?.files ?? [])]);
+  });
+
+  requireStaff().then(load).then(() => {
+    if (!id) return;
+    $('[data-photos-new]').hidden = true;
+    $('[data-photos]').hidden = false;
+    return loadPhotos();
+  }).catch(() => {});
 </script>
 
 <style>
@@ -366,6 +515,27 @@ import { LOCALES, LOCALE_NAMES } from '../../../i18n/config';
   .check { display: flex; align-items: center; gap: 10px; font-weight: 700; margin: 0; cursor: pointer; }
   .check input { width: 22px; height: 22px; accent-color: var(--pink-600); }
   .advanced summary { font-weight: 800; cursor: pointer; }
+
+  [data-photos][hidden], [data-photos-new][hidden] { display: none; }
+  [data-photos] { display: grid; gap: 10px; }
+  .photos { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .photos:empty { display: none; }
+  .photos :global(.photo) { position: relative; border: 2px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--bg-soft); }
+  .photos :global(.photo:first-child) { border-color: var(--pink-600); }
+  .photos :global(img) { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
+  .photos :global(.cover) { position: absolute; top: 6px; left: 6px; padding: 2px 8px; border-radius: 999px; background: var(--pink-600); color: #fff; font-size: 12px; font-weight: 800; }
+  .photos :global(.photo-tools) { display: flex; justify-content: space-between; gap: 4px; padding: 6px; background: var(--surface); }
+  .photos :global(.photo-tools button) { flex: 1; min-height: 36px; border: 2px solid var(--line); border-radius: 8px; background: var(--surface); font-weight: 800; cursor: pointer; }
+  .photos :global(.photo-tools button:last-child) { color: var(--sale); }
+  .photos :global(.photo-tools button:disabled) { opacity: 0.35; cursor: default; }
+  .upload {
+    position: relative; display: grid; place-items: center; min-height: 110px; padding: 16px; margin: 0;
+    border: 2px dashed var(--accent-border); border-radius: var(--radius); background: var(--accent-soft); cursor: pointer; text-align: center;
+  }
+  .upload.over, .upload:focus-within { border-color: var(--pink-600); }
+  .upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .upload-text { display: grid; gap: 2px; color: var(--accent-text); }
+  .upload-text span { font-size: 14px; font-weight: 600; color: var(--ink-2); }
   .alert { padding: 12px 16px; border-radius: var(--radius-sm); background: var(--tint-red); border: 2px solid var(--tint-red-border); font-weight: 700; }
   .alert[hidden] { display: none; }
 
