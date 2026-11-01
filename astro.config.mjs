@@ -11,11 +11,10 @@ export default defineConfig({
   outDir: process.env.ABAWKA_TEST_DATA === '1' ? 'dist-test' : 'dist',
   integrations: [
     sitemap({
-      // У пошук — лише сторінки для покупців: без адмінки, кошика, «Дякуємо», 404 і перекладних копій англійських документів.
+      // У пошук — лише сторінки для покупців: без адмінки, кошика, «Дякуємо», 404.
       filter: (page) => {
         const path = new URL(page).pathname;
         if (/^\/admin\/|\/(cart|thanks|404)\/$/.test(path)) return false;
-        if (/^\/(?!en\/)[a-z]{2}\/(terms|privacy|returns)\/$/.test(path)) return false;
         return path !== '/';
       },
       i18n: { defaultLocale: DEFAULT_LOCALE, locales: Object.fromEntries(LOCALES.map((l) => [l, l])) },

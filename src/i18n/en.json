@@ -132,7 +132,6 @@
   "thanks.continue": "Continue shopping",
   "form.error.stock": "Some toys are no longer available in that quantity. Refresh the cart page and check the quantities.",
   "form.error.rate": "Too many requests in a short time. Please try again in a few minutes — what you entered is kept.",
-  "legal.englishOnly": "This document is available in English.",
   "form.deliveryNote": "The owner will arrange the delivery method and cost with you personally.",
   "notFound.title": "Page not found",
   "notFound.text": "Maybe this toy has sold out, or there is a typo in the address.",
@@ -150,5 +149,10 @@
   "price.lowest30": "Lowest price in the 30 days before the discount: {price}",
   "price.approx": "Prices in {currency} are approximate: {source} rate of {date}. Requests are calculated in {base}.",
   "price.source.ECB": "ECB",
-  "price.source.NBU": "NBU"
+  "price.source.NBU": "NBU",
+  "legal.translated": "This is a translation for convenience. In case of differences, the English version applies:",
+  "legal.englishVersion": "English version",
+  "legal.todo": "to be added",
+  "legal.email": "Email",
+  "legal.phone": "Phone"
 }

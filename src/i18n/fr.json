@@ -134,7 +134,6 @@
   "thanks.continue": "Continuer mes achats",
   "form.error.stock": "Certains jouets ne sont plus disponibles en cette quantité. Rechargez le panier et vérifiez les quantités.",
   "form.error.rate": "Trop de demandes en peu de temps. Réessayez dans quelques minutes : vos saisies sont conservées.",
-  "legal.englishOnly": "Ce document est disponible en anglais.",
   "form.deliveryNote": "Le propriétaire conviendra personnellement avec vous du mode et du coût de livraison.",
   "notFound.title": "Page introuvable",
   "notFound.text": "Ce jouet est peut-être épuisé, ou l’adresse contient une faute de frappe.",
@@ -152,5 +151,10 @@
   "price.lowest30": "Prix le plus bas des 30 jours précédant la réduction : {price}",
   "price.approx": "Les prix en {currency} sont indicatifs : taux {source} du {date}. La demande est calculée en {base}.",
   "price.source.ECB": "BCE",
-  "price.source.NBU": "NBU"
+  "price.source.NBU": "NBU",
+  "legal.translated": "Ceci est une traduction de courtoisie. En cas de divergence, la version anglaise fait foi :",
+  "legal.englishVersion": "English version",
+  "legal.todo": "à compléter",
+  "legal.email": "E-mail",
+  "legal.phone": "Téléphone"
 }

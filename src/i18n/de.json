@@ -132,7 +132,6 @@
   "thanks.continue": "Weiter einkaufen",
   "form.error.stock": "Einige Spielsachen sind nicht mehr in dieser Menge verfügbar. Laden Sie den Warenkorb neu und prüfen Sie die Mengen.",
   "form.error.rate": "Zu viele Anfragen in kurzer Zeit. Bitte versuchen Sie es in ein paar Minuten erneut – Ihre Eingaben bleiben erhalten.",
-  "legal.englishOnly": "Dieses Dokument ist auf Englisch verfügbar.",
   "form.deliveryNote": "Versandart und -kosten bespricht der Inhaber persönlich mit Ihnen.",
   "notFound.title": "Seite nicht gefunden",
   "notFound.text": "Vielleicht ist dieses Spielzeug ausverkauft oder die Adresse enthält einen Tippfehler.",
@@ -150,5 +149,10 @@
   "price.lowest30": "Niedrigster Preis der 30 Tage vor der Reduzierung: {price}",
   "price.approx": "Preise in {currency} sind Richtwerte: {source}-Kurs vom {date}. Anfragen werden in {base} berechnet.",
   "price.source.ECB": "EZB",
-  "price.source.NBU": "NBU"
+  "price.source.NBU": "NBU",
+  "legal.translated": "Dies ist eine Übersetzung zur Orientierung. Bei Abweichungen gilt die englische Fassung:",
+  "legal.englishVersion": "English version",
+  "legal.todo": "wird ergänzt",
+  "legal.email": "E-Mail",
+  "legal.phone": "Telefon"
 }

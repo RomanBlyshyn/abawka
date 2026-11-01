@@ -28,7 +28,7 @@ test('sitemap: shop pages in, service pages out; robots.txt points to it', async
   expect(xml).toContain('/en/product/toy-sword/');
   expect(xml).toContain('/en/terms/');
   expect(xml).toContain('hreflang="uk"');
-  for (const hidden of ['/admin/', '/en/cart/', '/en/thanks/', '/en/404/', '/pl/terms/']) expect(xml, hidden).not.toContain(hidden);
+  for (const hidden of ['/admin/', '/en/cart/', '/en/thanks/', '/en/404/']) expect(xml, hidden).not.toContain(hidden);
   const robots = await (await page.request.get('/robots.txt')).text();
   expect(robots).toContain('Disallow: /admin/');
   expect(robots).toMatch(/Sitemap: https?:\/\/[^/]+\/sitemap-index\.xml/);

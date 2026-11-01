@@ -136,7 +136,6 @@
   "thanks.continue": "Kontynuuj zakupy",
   "form.error.stock": "Części zabawek nie ma już w potrzebnej ilości. Odśwież stronę koszyka i sprawdź ilości.",
   "form.error.rate": "Za dużo zgłoszeń w krótkim czasie. Spróbuj ponownie za kilka minut — wpisane dane zostały zachowane.",
-  "legal.englishOnly": "Ten dokument jest dostępny w języku angielskim.",
   "form.deliveryNote": "Sposób i koszt dostawy właściciel ustali z Tobą osobiście.",
   "notFound.title": "Nie znaleziono strony",
   "notFound.text": "Może ten produkt został już wyprzedany albo w adresie jest błąd.",
@@ -154,5 +153,10 @@
   "price.lowest30": "Najniższa cena z 30 dni przed obniżką: {price}",
   "price.approx": "Ceny w {currency} są orientacyjne: kurs {source} z {date}. Zgłoszenie liczymy w {base}.",
   "price.source.ECB": "EBC",
-  "price.source.NBU": "NBU"
+  "price.source.NBU": "NBU",
+  "legal.translated": "To tłumaczenie dla wygody. W razie rozbieżności obowiązuje wersja angielska:",
+  "legal.englishVersion": "English version",
+  "legal.todo": "zostanie dodane",
+  "legal.email": "E-mail",
+  "legal.phone": "Telefon"
 }

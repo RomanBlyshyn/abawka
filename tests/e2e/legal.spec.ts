@@ -1,37 +1,54 @@
+import { readFileSync, readdirSync } from 'node:fs';
 import { expect, test } from './fixtures';
 
 const LOCALES = ['pl', 'en', 'uk', 'de', 'cs', 'lt', 'es', 'fr', 'ru'];
 const DOCS = ['terms/', 'privacy/', 'returns/'];
 
-test('legal pages: footer links open real pages; text is in English', async ({ page }) => {
+test('legal pages: footer links open real pages in the site language, with a link to the English original', async ({ page }) => {
   await page.goto('/pl/cart/');
   for (const name of ['Regulamin', 'Polityka prywatności', 'Zwroty']) {
     const link = page.locator('footer').getByRole('link', { name, exact: true });
     const res = await page.request.get(await link.getAttribute('href') as string);
     expect(res.status(), name).toBe(200);
   }
-  await page.goto('/pl/terms/');
-  await expect(page.getByText('Ten dokument jest dostępny w języku angielskim.')).toBeVisible();
-  await expect(page.locator('article')).toHaveAttribute('lang', 'en');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Terms of Sale');
-  await expect(page).toHaveTitle('Regulamin · ABAWKA');
-  await expect(page.locator('meta[name=robots]')).toHaveAttribute('content', /noindex/); // копії англійського тексту не дублюються в пошуку
-  await page.goto('/en/terms/');
-  await expect(page.getByText('This document is available in English.')).toHaveCount(0);
-  await expect(page.locator('meta[name=robots]')).toHaveCount(0);
+  await page.goto('/uk/returns/');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Повернення товарів та право на відмову від угоди');
+  await expect(page.locator('.note')).toContainText('У разі розбіжностей діє англійська версія');
+  await page.locator('.note').getByRole('link', { name: 'English version' }).click();
+  await expect(page).toHaveURL(/\/en\/returns\/$/);
+  await expect(page.locator('.note')).toHaveCount(0);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Returns and right of withdrawal');
+  await page.goto('/uk/terms/');
+  await expect(page).toHaveTitle('Регламент · ABAWKA');
+  await expect(page.locator('meta[name=robots]')).toHaveCount(0); // переклад — окрема сторінка для пошуку
+  await page.locator('article').getByRole('link', { name: /Повернення/ }).click();
+  await expect(page).toHaveURL(/\/uk\/returns\/$/); // посилання всередині документа ведуть на ту саму мову
 });
 
-test('legal pages: seller from shop data; missing details are clearly marked, not invented', async ({ page }) => {
-  await page.goto('/en/returns/');
-  const seller = page.locator('address').first();
-  await expect(seller).toContainText('Viktor Marchenko');
-  await expect(seller).toContainText('ul. Wojrowicka 48');
-  await expect(seller).toContainText('[email — to be added]');
-  await expect(page.getByRole('heading', { name: 'Model withdrawal form' })).toBeVisible();
+test('legal pages: seller from shop data in every language; missing details are clearly marked', async ({ page }) => {
+  for (const [locale, country, todo, phone] of [['en', 'Poland', '[to be added]', 'Phone'], ['uk', 'Польща', '[буде додано]', 'Телефон'], ['de', 'Polen', '[wird ergänzt]', 'Telefon']]) {
+    await page.goto(`/${locale}/returns/`);
+    const seller = page.locator('address').first();
+    await expect(seller).toContainText('Viktor Marchenko');
+    await expect(seller).toContainText(`ul. Wojrowicka 48, 54-436 Wrocław, ${country}`);
+    await expect(seller).toContainText(`${phone}: ${todo}`);
+  }
   await page.goto('/en/privacy/');
   // Строки — ті самі, що чистить база (cleanup_personal_data).
   for (const term of ['IP address — 30 days.', 'Requests that did not lead to a purchase — 12 months.', 'Completed purchases — 5 years']) {
     await expect(page.getByText(term)).toBeVisible();
+  }
+});
+
+test('legal translations: every document exists in every language and keeps all placeholders', () => {
+  const vars = (s: string) => [...s.matchAll(/<var>([a-z-]+)<\/var>/g)].map((m) => m[1]).sort().join(',');
+  for (const file of readdirSync('src/legal/en')) {
+    const source = readFileSync(`src/legal/en/${file}`, 'utf8');
+    for (const l of LOCALES.filter((x) => x !== 'en')) {
+      const text = readFileSync(`src/legal/${l}/${file}`, 'utf8');
+      expect(vars(text), `${l}/${file}`).toBe(vars(source));
+      expect(text, `${l}/${file}`).not.toMatch(/\p{L}<a |<\/a>\p{L}/u); // посилання не рвуть слова
+    }
   }
 });
 

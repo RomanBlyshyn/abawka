@@ -1,7 +1,7 @@
 {
   "_note": "Дані продавця для юридичних і інфо-сторінок — лише те, що дав клієнт. null = ще не дав: на сторінці буде позначка «to be added», перед запуском заповнити.",
   "seller": "Viktor Marchenko",
-  "address": { "street": "ul. Wojrowicka 48", "postcode": null, "city": "Wrocław", "country": "Poland" },
+  "address": { "street": "ul. Wojrowicka 48", "postcode": "54-436", "city": "Wrocław", "country": "Poland" },
   "email": null,
   "phone": null,
   "telegram": null,

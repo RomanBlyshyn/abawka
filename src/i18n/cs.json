@@ -136,7 +136,6 @@
   "thanks.continue": "Pokračovat v nákupu",
   "form.error.stock": "Některé hračky už nejsou v potřebném množství. Obnovte stránku košíku a zkontrolujte množství.",
   "form.error.rate": "Příliš mnoho žádostí v krátké době. Zkuste to za pár minut – zadané údaje zůstaly zachovány.",
-  "legal.englishOnly": "Tento dokument je k dispozici v angličtině.",
   "form.deliveryNote": "Způsob a cenu doručení s vámi majitel domluví osobně.",
   "notFound.title": "Stránka nenalezena",
   "notFound.text": "Možná je tato hračka už vyprodaná, nebo je v adrese chyba.",
@@ -154,5 +153,10 @@
   "price.lowest30": "Nejnižší cena za 30 dní před slevou: {price}",
   "price.approx": "Ceny v {currency} jsou orientační: kurz {source} ze dne {date}. Žádost počítáme v {base}.",
   "price.source.ECB": "ECB",
-  "price.source.NBU": "NBU"
+  "price.source.NBU": "NBU",
+  "legal.translated": "Toto je překlad pro pohodlí. V případě rozporů platí anglická verze:",
+  "legal.englishVersion": "English version",
+  "legal.todo": "bude doplněno",
+  "legal.email": "E-mail",
+  "legal.phone": "Telefon"
 }

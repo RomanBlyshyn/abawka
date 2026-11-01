@@ -19,7 +19,7 @@
 - E2E-тести: `npm run test:e2e` (самі збирають сайт і піднімають preview на 4390).
 - Тести бази: `npm run test:db` — міграції й RLS на PGlite (Postgres у Node, без Docker), заглушки Supabase в `tests/db/supabase-stubs.sql`.
 - Жива база (Supabase `uvpoanwkoikudjdbreys`, регіон eu-west-1): `npm run db:push` застосовує нові міграції (`-- --dry-run` — лише показати); `npm run staff:add -- email owner|manager` — додати людину в команду. Обидва читають секрети з `.env` і не виводять їх.
-- Edge Functions: `npm run fn:secrets` (ключі з `.env` у Supabase), `npm run fn:deploy -- <назва>`. Бот: `npm run tg:setup` — під'єднати webhook до функції `telegram`, `npm run tg:status` — перевірити.
+- Edge Functions: `npm run fn:secrets` (ключі з `.env` у Supabase), `npm run fn:deploy -- <назва>`. Юридичні документи: оригінал у `src/legal/en/*.html`, після правки — `npm run legal:translate` (DeepL, перекладає лише змінене). Бот: `npm run tg:setup` — під'єднати webhook до функції `telegram`, `npm run tg:status` — перевірити.
 
 ## Структура
 - `src/pages/[lang]/` — сторінки, по одній копії на кожну з 9 мов

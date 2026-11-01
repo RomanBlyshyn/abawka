@@ -15,7 +15,8 @@
     "fn:secrets": "node scripts/functions.mjs secrets",
     "fn:deploy": "node scripts/functions.mjs deploy",
     "tg:setup": "node scripts/telegram.mjs setup",
-    "tg:status": "node scripts/telegram.mjs status"
+    "tg:status": "node scripts/telegram.mjs status",
+    "legal:translate": "node scripts/translate-legal.mjs"
   },
   "author": "Roman <rb281926@gmail.com>",
   "type": "module",
