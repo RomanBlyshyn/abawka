@@ -21,3 +21,14 @@ test.describe('admin: update the live site', () => {
     await expect(page.locator('[data-publish-msg]')).toHaveText('Сайт ще не підключено до хостингу — оновлення запрацює після запуску.');
   });
 });
+
+test('admin header fits every screen: all sections, «Оновити сайт» and «Вийти» visible', async ({ page }) => {
+  await mockAdmin(page, sampleDb());
+  for (const width of [375, 768, 1024, 1180, 1280, 1366, 1600]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto('/admin/requests/');
+    await expect(page.getByRole('button', { name: 'Вийти' })).toBeInViewport();
+    await expect(page.getByRole('button', { name: 'Оновити сайт' })).toBeInViewport();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth), `${width}px`).toBe(0);
+  }
+});

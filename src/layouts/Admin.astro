@@ -96,8 +96,8 @@ const current = (href: string) => (href === '/admin/' ? path === '/admin/' : pat
   .who { display: flex; align-items: center; gap: 12px; font-weight: 700; color: var(--ink-2); min-width: 0; }
   .who[hidden] { display: none; }
   .who span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  /* Пунктів меню багато: на екранах до 1280px email ховаємо, лишаємо «Вийти». */
-  @media (max-width: 1280px) { .who span { display: none; } }
+  /* Пунктів меню багато: на екранах до 1500px email ховаємо, лишаємо «Оновити сайт» і «Вийти». */
+  @media (max-width: 1500px) { .who span { display: none; } }
   .publish { border: 2px solid var(--accent-border); background: var(--accent-soft); color: var(--accent-text); border-radius: 999px; padding: 6px 14px; font-weight: 800; cursor: pointer; flex: none; }
   .publish:disabled { opacity: 0.6; cursor: default; }
   .publish-msg { margin: 0 0 12px; font-weight: 700; color: var(--ink-2); }
@@ -105,7 +105,8 @@ const current = (href: string) => (href === '/admin/' ? path === '/admin/' : pat
   .logout { border: 2px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 14px; font-weight: 800; cursor: pointer; flex: none; }
   .logout:hover { border-color: var(--pink-500); color: var(--accent-text); }
   .admin-main { padding-block: 32px 64px; }
-  @media (max-width: 720px) {
+  /* До 1360px меню не влазить в один рядок з кнопками — переносимо його під лого. */
+  @media (max-width: 1360px) {
     .admin-bar-in { flex-wrap: wrap; }
     .admin-nav { order: 3; width: 100%; margin: 0; overflow-x: auto; }
   }
