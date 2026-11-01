@@ -154,5 +154,22 @@
   "legal.englishVersion": "English version",
   "legal.todo": "to be added",
   "legal.email": "Email",
-  "legal.phone": "Phone"
+  "legal.phone": "Phone",
+  "info.how.intro": "There is no online payment on the website. You send a request, and the owner contacts you personally.",
+  "info.how.step1": "Choose toys and add them to the cart. If you want just one, use “{quick}” on the product page.",
+  "info.how.step2": "In the cart, enter your name and a convenient way to contact you, then send the request. It is free and does not oblige you to buy.",
+  "info.how.step3": "The owner contacts you during {hours} (Warsaw time) and confirms availability, the total, delivery and how to pay.",
+  "info.how.step4": "You pay the owner directly in the agreed way, and the owner ships the parcel.",
+  "info.delivery.shipping": "Delivery",
+  "info.delivery.text1": "We ship from Wrocław (Poland) across Europe and to Ukraine.",
+  "info.delivery.text2": "The owner agrees the delivery method and cost with you personally. Delivery is paid by the buyer, and you learn its cost before you agree to buy.",
+  "info.delivery.payment": "Payment",
+  "info.delivery.payText1": "There is no online payment on the website, and it never asks for your card details. You pay the owner directly in the way agreed when they contact you.",
+  "info.delivery.payText2": "Prices are in {base}. Prices in other currencies are approximate.",
+  "info.delivery.returnsText": "You have 14 days to return the goods without giving a reason.",
+  "info.delivery.returnsLink": "How to return",
+  "info.contact.fastest": "Fastest: send a request from the cart or a product page — the owner will contact you the way you choose.",
+  "info.contact.hours": "Reply hours",
+  "info.contact.hoursText": "{hours}, Warsaw time",
+  "info.contact.seller": "Seller"
 }

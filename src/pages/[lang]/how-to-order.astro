@@ -1,0 +1,33 @@
+---
+import InfoPage from '../../components/InfoPage.astro';
+import { LOCALES, type Locale } from '../../i18n/config';
+import { useTranslations } from '../../i18n';
+import { href } from '../../lib/format';
+import { hours } from '../../lib/shop';
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
+}
+const locale = Astro.params.lang as Locale;
+const t = useTranslations(locale);
+const steps = [
+  t('info.how.step1').replace('{quick}', t('product.quickOrder')),
+  t('info.how.step2'),
+  t('info.how.step3').replace('{hours}', hours),
+  t('info.how.step4'),
+];
+---
+<InfoPage locale={locale} title={t('footer.how')}>
+  <p class="lead">{t('info.how.intro')}</p>
+  <ol class="steps">
+    {steps.map((s, i) => <li><span class="n" aria-hidden="true">{i + 1}</span><p>{s}</p></li>)}
+  </ol>
+  <a class="btn" href={href(locale, 'catalog/')}>{t('cart.toCatalog')}</a>
+</InfoPage>
+
+<style>
+  .steps { list-style: none; margin: 20px 0 28px; padding: 0; display: grid; gap: 14px; }
+  .steps li { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; align-items: start; padding: 16px; border: 2px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+  .steps p { margin: 0; padding-top: 8px; }
+  .n { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-text); font-weight: 900; font-size: 20px; }
+</style>

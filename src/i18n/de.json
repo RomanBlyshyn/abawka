@@ -154,5 +154,22 @@
   "legal.englishVersion": "English version",
   "legal.todo": "wird ergänzt",
   "legal.email": "E-Mail",
-  "legal.phone": "Telefon"
+  "legal.phone": "Telefon",
+  "info.how.intro": "Auf der Website gibt es keine Online-Zahlung. Sie senden eine Anfrage, und der Inhaber meldet sich persönlich bei Ihnen.",
+  "info.how.step1": "Wählen Sie Spielzeug aus und legen Sie es in den Warenkorb. Wenn Sie nur eines möchten, nutzen Sie „{quick}“ auf der Produktseite.",
+  "info.how.step2": "Geben Sie im Warenkorb Ihren Namen und einen bequemen Kontaktweg an und senden Sie die Anfrage. Das ist kostenlos und unverbindlich.",
+  "info.how.step3": "Der Inhaber meldet sich in der Zeit von {hours} Uhr (Warschauer Zeit) und bestätigt Verfügbarkeit, Gesamtbetrag, Versand und Zahlungsweise.",
+  "info.how.step4": "Sie bezahlen direkt beim Inhaber auf die vereinbarte Weise, und er verschickt das Paket.",
+  "info.delivery.shipping": "Versand",
+  "info.delivery.text1": "Wir versenden aus Wrocław (Polen) in ganz Europa und in die Ukraine.",
+  "info.delivery.text2": "Versandart und -kosten bespricht der Inhaber persönlich mit Ihnen. Den Versand zahlt der Käufer – die Kosten erfahren Sie, bevor Sie dem Kauf zustimmen.",
+  "info.delivery.payment": "Zahlung",
+  "info.delivery.payText1": "Auf der Website gibt es keine Online-Zahlung, und sie fragt nie nach Kartendaten. Sie zahlen direkt beim Inhaber auf die beim Kontakt vereinbarte Weise.",
+  "info.delivery.payText2": "Die Preise sind in {base} angegeben. Preise in anderen Währungen sind Richtwerte.",
+  "info.delivery.returnsText": "Sie haben 14 Tage Zeit, die Ware ohne Angabe von Gründen zurückzugeben.",
+  "info.delivery.returnsLink": "So funktioniert die Rückgabe",
+  "info.contact.fastest": "Am schnellsten: Senden Sie eine Anfrage aus dem Warenkorb oder von einer Produktseite – der Inhaber meldet sich auf dem von Ihnen gewählten Weg.",
+  "info.contact.hours": "Antwortzeiten",
+  "info.contact.hoursText": "{hours} Uhr, Warschauer Zeit",
+  "info.contact.seller": "Verkäufer"
 }

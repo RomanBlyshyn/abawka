@@ -1,0 +1,35 @@
+---
+import InfoPage from '../../components/InfoPage.astro';
+import { LOCALES, type Locale } from '../../i18n/config';
+import { useTranslations } from '../../i18n';
+import { href } from '../../lib/format';
+import { hours, shop } from '../../lib/shop';
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
+}
+const locale = Astro.params.lang as Locale;
+const t = useTranslations(locale);
+const a = shop.address;
+const country = new Intl.DisplayNames([locale], { type: 'region' }).of('PL');
+---
+<InfoPage locale={locale} title={t('footer.contacts')}>
+  <p class="lead">{t('info.contact.fastest')}</p>
+  <a class="btn" href={href(locale, 'catalog/')}>{t('cart.toCatalog')}</a>
+
+  <h2>{t('info.contact.hours')}</h2>
+  <p>{t('info.contact.hoursText').replace('{hours}', hours)}</p>
+
+  <h2>{t('info.contact.seller')}</h2>
+  {/* Email і телефон — лише справжні, з shop.json; поки їх немає, рядків просто не видно. */}
+  <address class="seller">
+    <b>{shop.seller}</b><br />
+    {a.street}, {a.postcode} {a.city}, {country}
+    {shop.email && <><br />{t('legal.email')}: <a href={`mailto:${shop.email}`}>{shop.email}</a></>}
+    {shop.phone && <><br />{t('legal.phone')}: <a href={`tel:${shop.phone.replace(/\s/g, '')}`}>{shop.phone}</a></>}
+  </address>
+</InfoPage>
+
+<style>
+  .seller { font-style: normal; padding: 14px 18px; border-left: 4px solid var(--accent-border); background: var(--accent-soft); border-radius: var(--radius-sm); }
+</style>

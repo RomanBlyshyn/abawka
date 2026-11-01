@@ -158,5 +158,22 @@
   "legal.englishVersion": "English version",
   "legal.todo": "zostanie dodane",
   "legal.email": "E-mail",
-  "legal.phone": "Telefon"
+  "legal.phone": "Telefon",
+  "info.how.intro": "Na stronie nie ma płatności online. Wysyłasz zgłoszenie, a właściciel kontaktuje się z Tobą osobiście.",
+  "info.how.step1": "Wybierz zabawki i dodaj je do koszyka. Jeśli chcesz tylko jedną — kliknij „{quick}” na stronie produktu.",
+  "info.how.step2": "W koszyku podaj imię i wygodny sposób kontaktu, a potem wyślij zgłoszenie. To nic nie kosztuje i do niczego nie zobowiązuje.",
+  "info.how.step3": "Właściciel skontaktuje się z Tobą w godzinach {hours} (czasu warszawskiego) i potwierdzi dostępność, sumę, dostawę oraz sposób płatności.",
+  "info.how.step4": "Płacisz bezpośrednio właścicielowi w uzgodniony sposób, a on wysyła paczkę.",
+  "info.delivery.shipping": "Dostawa",
+  "info.delivery.text1": "Wysyłamy z Wrocławia (Polska) po całej Europie i na Ukrainę.",
+  "info.delivery.text2": "Sposób dostawy i jej koszt właściciel ustala z Tobą osobiście. Dostawę opłaca kupujący — jej cenę poznasz, zanim zgodzisz się na zakup.",
+  "info.delivery.payment": "Płatność",
+  "info.delivery.payText1": "Na stronie nie ma płatności online i strona nigdy nie prosi o dane karty. Płacisz bezpośrednio właścicielowi w sposób uzgodniony podczas kontaktu.",
+  "info.delivery.payText2": "Ceny podajemy w {base}. Ceny w innych walutach są orientacyjne.",
+  "info.delivery.returnsText": "Masz 14 dni na zwrot bez podania przyczyny.",
+  "info.delivery.returnsLink": "Jak zwrócić towar",
+  "info.contact.fastest": "Najszybciej: wyślij zgłoszenie z koszyka lub strony produktu — właściciel skontaktuje się z Tobą wybranym przez Ciebie sposobem.",
+  "info.contact.hours": "Godziny odpowiedzi",
+  "info.contact.hoursText": "{hours}, czas warszawski",
+  "info.contact.seller": "Sprzedawca"
 }

@@ -158,5 +158,22 @@
   "legal.englishVersion": "English version",
   "legal.todo": "bude doplněno",
   "legal.email": "E-mail",
-  "legal.phone": "Telefon"
+  "legal.phone": "Telefon",
+  "info.how.intro": "Na webu není online platba. Pošlete žádost a majitel se vám ozve osobně.",
+  "info.how.step1": "Vyberte hračky a přidejte je do košíku. Pokud chcete jen jednu, použijte „{quick}“ na stránce produktu.",
+  "info.how.step2": "V košíku zadejte jméno a pohodlný způsob kontaktu a odešlete žádost. Je to zdarma a k ničemu vás to nezavazuje.",
+  "info.how.step3": "Majitel se vám ozve v době {hours} (varšavského času) a potvrdí dostupnost, celkovou cenu, doručení a způsob platby.",
+  "info.how.step4": "Zaplatíte přímo majiteli dohodnutým způsobem a on odešle balík.",
+  "info.delivery.shipping": "Doručení",
+  "info.delivery.text1": "Posíláme z Vratislavi (Polsko) po celé Evropě a na Ukrajinu.",
+  "info.delivery.text2": "Způsob a cenu doručení s vámi majitel domluví osobně. Doručení platí kupující a jeho cenu se dozvíte dřív, než s nákupem souhlasíte.",
+  "info.delivery.payment": "Platba",
+  "info.delivery.payText1": "Na webu není online platba a web nikdy nežádá údaje o kartě. Platíte přímo majiteli způsobem, na kterém se domluvíte.",
+  "info.delivery.payText2": "Ceny jsou uvedeny v {base}. Ceny v jiných měnách jsou orientační.",
+  "info.delivery.returnsText": "Máte 14 dní na vrácení zboží bez udání důvodu.",
+  "info.delivery.returnsLink": "Jak vrátit zboží",
+  "info.contact.fastest": "Nejrychleji: pošlete žádost z košíku nebo stránky produktu — majitel se vám ozve zvoleným způsobem.",
+  "info.contact.hours": "Kdy odpovídáme",
+  "info.contact.hoursText": "{hours}, varšavského času",
+  "info.contact.seller": "Prodávající"
 }

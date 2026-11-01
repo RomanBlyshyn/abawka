@@ -1,0 +1,25 @@
+---
+import InfoPage from '../../components/InfoPage.astro';
+import { LOCALES, type Locale } from '../../i18n/config';
+import { useTranslations } from '../../i18n';
+import { BASE_CURRENCY } from '../../lib/data';
+import { href } from '../../lib/format';
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
+}
+const locale = Astro.params.lang as Locale;
+const t = useTranslations(locale);
+---
+<InfoPage locale={locale} title={t('footer.delivery')}>
+  <h2>{t('info.delivery.shipping')}</h2>
+  <p>{t('info.delivery.text1')}</p>
+  <p>{t('info.delivery.text2')}</p>
+
+  <h2>{t('info.delivery.payment')}</h2>
+  <p>{t('info.delivery.payText1')}</p>
+  <p>{t('info.delivery.payText2').replace('{base}', BASE_CURRENCY)}</p>
+
+  <h2>{t('footer.returns')}</h2>
+  <p>{t('info.delivery.returnsText')} <a href={href(locale, 'returns/')}>{t('info.delivery.returnsLink')}</a></p>
+</InfoPage>

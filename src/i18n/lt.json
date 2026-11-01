@@ -158,5 +158,22 @@
   "legal.englishVersion": "English version",
   "legal.todo": "bus pridėta",
   "legal.email": "El. paštas",
-  "legal.phone": "Telefonas"
+  "legal.phone": "Telefonas",
+  "info.how.intro": "Svetainėje nėra mokėjimo internetu. Jūs siunčiate užklausą, o savininkas susisiekia su jumis asmeniškai.",
+  "info.how.step1": "Išsirinkite žaislus ir įdėkite juos į krepšelį. Jei norite tik vieno, produkto puslapyje spauskite „{quick}“.",
+  "info.how.step2": "Krepšelyje nurodykite vardą ir patogų susisiekimo būdą, tada išsiųskite užklausą. Tai nemokama ir nieko neįpareigoja.",
+  "info.how.step3": "Savininkas susisieks su jumis {hours} (Varšuvos laiku) ir patvirtins prekių turėjimą, sumą, pristatymą ir mokėjimo būdą.",
+  "info.how.step4": "Sumokate tiesiogiai savininkui sutartu būdu, o jis išsiunčia siuntinį.",
+  "info.delivery.shipping": "Pristatymas",
+  "info.delivery.text1": "Siunčiame iš Vroclavo (Lenkija) visoje Europoje ir į Ukrainą.",
+  "info.delivery.text2": "Pristatymo būdą ir kainą savininkas suderina su jumis asmeniškai. Už pristatymą moka pirkėjas — jo kainą sužinosite prieš sutikdami pirkti.",
+  "info.delivery.payment": "Mokėjimas",
+  "info.delivery.payText1": "Svetainėje nėra mokėjimo internetu ir ji niekada neprašo kortelės duomenų. Mokate tiesiogiai savininkui būdu, dėl kurio susitarsite.",
+  "info.delivery.payText2": "Kainos nurodytos {base}. Kainos kitomis valiutomis yra orientacinės.",
+  "info.delivery.returnsText": "Turite 14 dienų grąžinti prekes nenurodydami priežasties.",
+  "info.delivery.returnsLink": "Kaip grąžinti",
+  "info.contact.fastest": "Greičiausia: išsiųskite užklausą iš krepšelio arba produkto puslapio — savininkas susisieks su jumis jūsų pasirinktu būdu.",
+  "info.contact.hours": "Atsakymo laikas",
+  "info.contact.hoursText": "{hours} Varšuvos laiku",
+  "info.contact.seller": "Pardavėjas"
 }

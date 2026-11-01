@@ -1,0 +1,25 @@
+---
+// Інфо-сторінка (як замовити, доставка, контакти): заголовок, хлібні крихти, текст.
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from './Breadcrumbs.astro';
+import type { Locale } from '../i18n/config';
+
+interface Props { locale: Locale; title: string }
+const { locale, title } = Astro.props;
+---
+<Base locale={locale} title={title}>
+  <div class="wrap info">
+    <Breadcrumbs locale={locale} items={[{ label: title }]} />
+    <h1>{title}</h1>
+    <slot />
+  </div>
+</Base>
+
+<style>
+  .info { max-width: 780px; padding-bottom: 48px; line-height: 1.65; }
+  h1 { font-size: clamp(28px, 5vw, 38px); font-weight: 900; margin: 12px 0 16px; }
+  .info :global(h2) { font-size: 21px; font-weight: 900; margin: 28px 0 8px; }
+  .info :global(p) { margin: 0 0 12px; }
+  .info :global(p a), .info :global(address a) { color: var(--accent-text); text-decoration: underline; }
+  .info :global(.lead) { font-size: 18px; font-weight: 600; color: var(--ink-2); }
+</style>

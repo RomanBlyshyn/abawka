@@ -156,5 +156,22 @@
   "legal.englishVersion": "English version",
   "legal.todo": "à compléter",
   "legal.email": "E-mail",
-  "legal.phone": "Téléphone"
+  "legal.phone": "Téléphone",
+  "info.how.intro": "Il n’y a pas de paiement en ligne sur le site. Vous envoyez une demande et le propriétaire vous contacte personnellement.",
+  "info.how.step1": "Choisissez des jouets et ajoutez-les au panier. Si vous n’en voulez qu’un, utilisez « {quick} » sur la page du produit.",
+  "info.how.step2": "Dans le panier, indiquez votre nom et un moyen de contact pratique, puis envoyez la demande. C’est gratuit et sans engagement.",
+  "info.how.step3": "Le propriétaire vous contacte aux heures {hours} (heure de Varsovie) et confirme la disponibilité, le total, la livraison et le mode de paiement.",
+  "info.how.step4": "Vous payez directement le propriétaire selon le mode convenu, et il expédie le colis.",
+  "info.delivery.shipping": "Livraison",
+  "info.delivery.text1": "Nous expédions depuis Wrocław (Pologne) dans toute l’Europe et en Ukraine.",
+  "info.delivery.text2": "Le propriétaire convient personnellement avec vous du mode et du coût de livraison. La livraison est à la charge de l’acheteur, et vous en connaissez le prix avant d’accepter l’achat.",
+  "info.delivery.payment": "Paiement",
+  "info.delivery.payText1": "Il n’y a pas de paiement en ligne sur le site, et il ne demande jamais vos données de carte. Vous payez directement le propriétaire selon le mode convenu.",
+  "info.delivery.payText2": "Les prix sont indiqués en {base}. Les prix dans d’autres devises sont indicatifs.",
+  "info.delivery.returnsText": "Vous avez 14 jours pour retourner les articles sans donner de motif.",
+  "info.delivery.returnsLink": "Comment retourner",
+  "info.contact.fastest": "Le plus rapide : envoyez une demande depuis le panier ou une page produit — le propriétaire vous contactera par le moyen choisi.",
+  "info.contact.hours": "Heures de réponse",
+  "info.contact.hoursText": "{hours}, heure de Varsovie",
+  "info.contact.seller": "Vendeur"
 }

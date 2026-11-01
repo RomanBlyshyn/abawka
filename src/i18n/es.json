@@ -156,5 +156,22 @@
   "legal.englishVersion": "English version",
   "legal.todo": "se añadirá",
   "legal.email": "Correo electrónico",
-  "legal.phone": "Teléfono"
+  "legal.phone": "Teléfono",
+  "info.how.intro": "En la web no hay pago en línea. Envías una solicitud y el propietario se pone en contacto contigo personalmente.",
+  "info.how.step1": "Elige los juguetes y añádelos al carrito. Si solo quieres uno, usa «{quick}» en la página del producto.",
+  "info.how.step2": "En el carrito, indica tu nombre y una forma cómoda de contactarte, y envía la solicitud. Es gratis y no te obliga a comprar.",
+  "info.how.step3": "El propietario te contactará en horario de {hours} (hora de Varsovia) y confirmará la disponibilidad, el total, el envío y la forma de pago.",
+  "info.how.step4": "Pagas directamente al propietario de la forma acordada y él envía el paquete.",
+  "info.delivery.shipping": "Envío",
+  "info.delivery.text1": "Enviamos desde Breslavia (Polonia) a toda Europa y a Ucrania.",
+  "info.delivery.text2": "El propietario acuerda contigo personalmente el método y el coste de envío. El envío lo paga el comprador y conocerás su precio antes de aceptar la compra.",
+  "info.delivery.payment": "Pago",
+  "info.delivery.payText1": "En la web no hay pago en línea y nunca se piden los datos de tu tarjeta. Pagas directamente al propietario de la forma que acordéis.",
+  "info.delivery.payText2": "Los precios están en {base}. Los precios en otras monedas son aproximados.",
+  "info.delivery.returnsText": "Tienes 14 días para devolver los productos sin dar ningún motivo.",
+  "info.delivery.returnsLink": "Cómo devolver",
+  "info.contact.fastest": "Lo más rápido: envía una solicitud desde el carrito o la página de un producto y el propietario te contactará como prefieras.",
+  "info.contact.hours": "Horario de respuesta",
+  "info.contact.hoursText": "{hours}, hora de Varsovia",
+  "info.contact.seller": "Vendedor"
 }
