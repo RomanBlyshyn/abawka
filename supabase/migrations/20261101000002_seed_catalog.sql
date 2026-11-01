@@ -1,0 +1,23 @@
+-- Початкове наповнення з src/data/seed.json (те, що дав клієнт). Ціни й залишки — тимчасові, власник змінить в адмінці.
+insert into public.categories (slug, name, icon, tint, position) values
+  ('swords', '{"pl":"Miecze","en":"Swords","uk":"Мечі","de":"Schwerter","cs":"Meče","lt":"Kardai","es":"Espadas","fr":"Épées","ru":"Мечи"}'::jsonb, 'sword', 'red', 0),
+  ('interactive', '{"pl":"Zabawki interaktywne","en":"Interactive toys","uk":"Інтерактивні іграшки","de":"Interaktives Spielzeug","cs":"Interaktivní hračky","lt":"Interaktyvūs žaislai","es":"Juguetes interactivos","fr":"Jouets interactifs","ru":"Интерактивные игрушки"}'::jsonb, 'rabbit', 'yellow', 1),
+  ('flying', '{"pl":"Latające zabawki","en":"Flying toys","uk":"Літаючі іграшки","de":"Fliegendes Spielzeug","cs":"Létající hračky","lt":"Skraidantys žaislai","es":"Juguetes voladores","fr":"Jouets volants","ru":"Летающие игрушки"}'::jsonb, 'helicopter', 'blue', 2),
+  ('balloons', '{"pl":"Balony","en":"Balloons","uk":"Повітряні кульки","de":"Luftballons","cs":"Balónky","lt":"Balionai","es":"Globos","fr":"Ballons","ru":"Воздушные шары"}'::jsonb, 'balloon', 'pink', 3),
+  ('board-games', '{"pl":"Gry planszowe","en":"Board games","uk":"Настільні ігри","de":"Brettspiele","cs":"Deskové hry","lt":"Stalo žaidimai","es":"Juegos de mesa","fr":"Jeux de société","ru":"Настольные игры"}'::jsonb, 'chess', 'green', 4);
+
+insert into public.products (slug, category_id, name, price, stock, age_min, hit, is_new, position)
+select v.slug, c.id, v.name::jsonb, v.price, v.stock, v.age_min, v.hit, v.is_new, v.position
+from (values
+  ('toy-sword', 'swords', '{"pl":"Miecz zabawkowy","en":"Toy sword","uk":"Іграшковий меч","de":"Spielzeugschwert","cs":"Dětský meč","lt":"Žaislinis kardas","es":"Espada de juguete","fr":"Épée jouet","ru":"Игрушечный меч"}', 1999, 10, 3, true, false, 0),
+  ('knight-sword', 'swords', '{"pl":"Miecz rycerski","en":"Knight sword","uk":"Меч лицаря","de":"Ritterschwert","cs":"Rytířský meč","lt":"Riterio kardas","es":"Espada de caballero","fr":"Épée de chevalier","ru":"Меч рыцаря"}', 2499, 10, 3, true, false, 1),
+  ('walking-capybara', 'interactive', '{"pl":"Chodząca kapibara na baterie","en":"Walking capybara (battery)","uk":"Капібара, що ходить, на батарейках","de":"Laufendes Capybara mit Batterie","cs":"Chodící kapybara na baterie","lt":"Vaikščiojanti kapibara su baterijomis","es":"Capibara que camina a pilas","fr":"Capybara qui marche à piles","ru":"Шагающая капибара на батарейках"}', 2999, 10, 3, false, false, 2),
+  ('walking-rabbit', 'interactive', '{"pl":"Chodzący królik na baterie","en":"Walking rabbit (battery)","uk":"Кролик, що ходить, на батарейках","de":"Laufendes Kaninchen mit Batterie","cs":"Chodící králík na baterie","lt":"Vaikščiojantis triušis su baterijomis","es":"Conejo que camina a pilas","fr":"Lapin qui marche à piles","ru":"Шагающий кролик на батарейках"}', 2799, 10, 3, false, false, 3),
+  ('slingshot-helicopter', 'flying', '{"pl":"Helikopter z procą","en":"Slingshot helicopter","uk":"Гелікоптер з рогаткою","de":"Katapult-Hubschrauber","cs":"Vrtulník s prakem","lt":"Sraigtasparnis su laidyne","es":"Helicóptero con tirachinas","fr":"Hélicoptère à lance-pierre","ru":"Вертолёт с рогаткой"}', 899, 10, 6, false, false, 4),
+  ('bobo-balloon', 'balloons', '{"pl":"Balon Bobo","en":"Bobo balloon","uk":"Bobo кулька","de":"Bobo-Ballon","cs":"Balónek Bobo","lt":"Bobo balionas","es":"Globo Bobo","fr":"Ballon Bobo","ru":"Шар Bobo"}', 599, 10, 3, false, false, 5),
+  ('chess', 'board-games', '{"pl":"Szachy","en":"Chess set","uk":"Шахи","de":"Schachspiel","cs":"Šachy","lt":"Šachmatai","es":"Ajedrez","fr":"Jeu d’échecs","ru":"Шахматы"}', 3499, 10, 6, false, false, 6)
+) as v(slug, category, name, price, stock, age_min, hit, is_new, position)
+join public.categories c on c.slug = v.category;
+
+insert into public.banners (title, body, cta, href, tint, mascot, position) values
+  ('{"pl":"Miecze — nasz hit","en":"Swords — our bestseller","uk":"Мечі — наш хіт","de":"Schwerter – unser Bestseller","cs":"Meče – náš hit","lt":"Kardai – mūsų hitas","es":"Espadas: nuestro éxito","fr":"Les épées, notre best-seller","ru":"Мечи — наш хит"}'::jsonb, '{"pl":"Dla małych rycerzy od 3 lat","en":"For little knights aged 3+","uk":"Для маленьких лицарів від 3 років","de":"Für kleine Ritter ab 3 Jahren","cs":"Pro malé rytíře od 3 let","lt":"Mažiesiems riteriams nuo 3 metų","es":"Para pequeños caballeros desde 3 años","fr":"Pour les petits chevaliers dès 3 ans","ru":"Для маленьких рыцарей от 3 лет"}'::jsonb, '{"pl":"Zobacz miecze","en":"See swords","uk":"Дивитись мечі","de":"Schwerter ansehen","cs":"Zobrazit meče","lt":"Žiūrėti kardus","es":"Ver espadas","fr":"Voir les épées","ru":"Смотреть мечи"}'::jsonb, 'catalog/swords/', 'pink', true, 0);

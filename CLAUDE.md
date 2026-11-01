@@ -17,6 +17,7 @@
 - Розробка: `npm run dev` → http://localhost:4321/
 - Перевірка типів: `npm run check`; перекладів: `npm run check:i18n`; збірка: `npm run build`
 - E2E-тести: `npm run test:e2e` (самі збирають сайт і піднімають preview на 4390).
+- Тести бази: `npm run test:db` — міграції й RLS на PGlite (Postgres у Node, без Docker), заглушки Supabase в `tests/db/supabase-stubs.sql`.
 
 ## Структура
 - `src/pages/[lang]/` — сторінки, по одній копії на кожну з 9 мов
