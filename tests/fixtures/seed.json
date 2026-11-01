@@ -105,6 +105,21 @@
         "es": "Espada de juguete",
         "fr": "Épée jouet",
         "ru": "Игрушечный меч"
+      },
+      "images": [
+        "products/00000000-0000-4000-8000-000000000001/00000000-0000-4000-8000-0000000000a1",
+        "products/00000000-0000-4000-8000-000000000001/00000000-0000-4000-8000-0000000000a2"
+      ],
+      "description": {
+        "pl": "Lekki miecz z pianki.\nBezpieczny do zabawy.",
+        "en": "A light foam sword.\nSafe to play with.",
+        "uk": "Легкий меч із піни.\nБезпечний для гри.",
+        "de": "Ein leichtes Schaumstoffschwert.\nSicher zum Spielen.",
+        "cs": "Lehký pěnový meč.\nBezpečný na hraní.",
+        "lt": "Lengvas putplasčio kardas.\nSaugus žaisti.",
+        "es": "Una espada ligera de espuma.\nSegura para jugar.",
+        "fr": "Une épée légère en mousse.\nSans danger pour jouer.",
+        "ru": "Лёгкий меч из пены.\nБезопасен для игры."
       }
     },
     {
@@ -243,21 +258,117 @@
   ],
   "slides": [
     {
-      "key": "hits",
-      "tint": "pink",
+      "title": {
+        "pl": "Miecze — nasz hit",
+        "en": "Swords — our bestseller",
+        "uk": "Мечі — наш хіт",
+        "de": "Schwerter – unser Bestseller",
+        "cs": "Meče – náš hit",
+        "lt": "Kardai – mūsų hitas",
+        "es": "Espadas: nuestro éxito",
+        "fr": "Les épées, notre best-seller",
+        "ru": "Мечи — наш хит"
+      },
+      "body": {
+        "pl": "Dla małych rycerzy od 3 lat",
+        "en": "For little knights aged 3+",
+        "uk": "Для маленьких лицарів від 3 років",
+        "de": "Für kleine Ritter ab 3 Jahren",
+        "cs": "Pro malé rytíře od 3 let",
+        "lt": "Mažiesiems riteriams nuo 3 metų",
+        "es": "Para pequeños caballeros desde 3 años",
+        "fr": "Pour les petits chevaliers dès 3 ans",
+        "ru": "Для маленьких рыцарей от 3 лет"
+      },
+      "cta": {
+        "pl": "Zobacz miecze",
+        "en": "See swords",
+        "uk": "Дивитись мечі",
+        "de": "Schwerter ansehen",
+        "cs": "Zobrazit meče",
+        "lt": "Žiūrėti kardus",
+        "es": "Ver espadas",
+        "fr": "Voir les épées",
+        "ru": "Смотреть мечи"
+      },
       "href": "catalog/swords/",
+      "tint": "pink",
       "mascot": true
     },
     {
-      "key": "new",
-      "tint": "yellow",
+      "title": {
+        "pl": "Nowość: chodząca kapibara",
+        "en": "New: walking capybara",
+        "uk": "Новинка: капібара, що ходить",
+        "de": "Neu: laufendes Capybara",
+        "cs": "Novinka: chodící kapybara",
+        "lt": "Naujiena: vaikščiojanti kapibara",
+        "es": "Novedad: capibara que camina",
+        "fr": "Nouveau : le capybara qui marche",
+        "ru": "Новинка: шагающая капибара"
+      },
+      "body": {
+        "pl": "Na baterie, chodzi sama i bawi całą rodzinę",
+        "en": "Battery-powered, walks on its own, fun for the whole family",
+        "uk": "На батарейках, ходить сама й веселить усю родину",
+        "de": "Batteriebetrieben, läuft von selbst und macht der ganzen Familie Spaß",
+        "cs": "Na baterie, chodí sama a pobaví celou rodinu",
+        "lt": "Su baterijomis, vaikšto pati ir linksmina visą šeimą",
+        "es": "A pilas, camina sola y divierte a toda la familia",
+        "fr": "À piles, il marche tout seul et amuse toute la famille",
+        "ru": "На батарейках, ходит сама и веселит всю семью"
+      },
+      "cta": {
+        "pl": "Poznaj kapibarę",
+        "en": "Meet the capybara",
+        "uk": "Знайомтесь, капібара",
+        "de": "Capybara entdecken",
+        "cs": "Seznamte se s kapybarou",
+        "lt": "Susipažinkite su kapibara",
+        "es": "Conoce a la capibara",
+        "fr": "Découvrir le capybara",
+        "ru": "Знакомьтесь, капибара"
+      },
       "href": "catalog/interactive/",
+      "tint": "yellow",
       "mascot": false
     },
     {
-      "key": "sale",
-      "tint": "blue",
+      "title": {
+        "pl": "Promocje do −25%",
+        "en": "Up to −25% off",
+        "uk": "Знижки до −25%",
+        "de": "Bis zu −25 % Rabatt",
+        "cs": "Slevy až −25 %",
+        "lt": "Nuolaidos iki −25 %",
+        "es": "Hasta −25 % de descuento",
+        "fr": "Jusqu’à −25 %",
+        "ru": "Скидки до −25%"
+      },
+      "body": {
+        "pl": "Helikoptery z procą i miecze taniej",
+        "en": "Slingshot helicopters and swords on sale",
+        "uk": "Гелікоптери з рогаткою й мечі дешевше",
+        "de": "Katapult-Hubschrauber und Schwerter günstiger",
+        "cs": "Vrtulníky s prakem a meče levněji",
+        "lt": "Sraigtasparniai su laidyne ir kardai pigiau",
+        "es": "Helicópteros con tirachinas y espadas más baratos",
+        "fr": "Hélicoptères à lance-pierre et épées moins chers",
+        "ru": "Вертолёты с рогаткой и мечи дешевле"
+      },
+      "cta": {
+        "pl": "Do promocji",
+        "en": "See deals",
+        "uk": "До акцій",
+        "de": "Zu den Angeboten",
+        "cs": "Do akcí",
+        "lt": "Į akcijas",
+        "es": "Ver ofertas",
+        "fr": "Voir les promos",
+        "ru": "К акциям"
+      },
       "href": "catalog/?sale=1",
+      "tint": "blue",
       "mascot": false
     }
   ],

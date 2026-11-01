@@ -7,7 +7,7 @@ import RequestForm from '../../components/RequestForm.astro';
 import mascot from '../../assets/mascot.webp';
 import { LOCALES, type Locale } from '../../i18n/config';
 import { useTranslations } from '../../i18n';
-import { BASE_CURRENCY, getCategories, getProducts, pick } from '../../lib/data';
+import { BASE_CURRENCY, getCategories, getProducts, imageUrl, pick } from '../../lib/data';
 import { MAX_QTY } from '../../lib/cart-client';
 import { formatPrice, href } from '../../lib/format';
 
@@ -41,7 +41,7 @@ const forms = Object.fromEntries(['zero', 'one', 'two', 'few', 'many', 'other'].
             const name = pick(p.name, locale);
             return (
               <li class="line" data-line={p.slug} data-price={p.price} data-stock={p.stock} hidden>
-                <a class={`thumb tint-${cat.tint}`} href={href(locale, `product/${p.slug}/`)} tabindex="-1" aria-hidden="true"><Icon name={cat.icon} size={36} /></a>
+                <a class={`thumb tint-${cat.tint}`} href={href(locale, `product/${p.slug}/`)} tabindex="-1" aria-hidden="true">{p.images?.[0] ? <img src={imageUrl(p.images[0], 400)} width="72" height="72" alt="" loading="lazy" /> : <Icon name={cat.icon} size={36} />}</a>
                 <div class="line-info">
                   <a class="line-name" href={href(locale, `product/${p.slug}/`)}>{name}</a>
                   <span class="unit">{formatPrice(p.price, BASE_CURRENCY, locale)}</span>
@@ -187,6 +187,8 @@ const forms = Object.fromEntries(['zero', 'one', 'two', 'few', 'many', 'other'].
   .line.problem .qty, .line.problem .line-total { visibility: hidden; } /* товару немає — кількість і сума не мають сенсу */
   .thumb { width: 72px; height: 72px; border-radius: 12px; display: grid; place-items: center; border: 2px solid var(--tint-border, var(--line)); }
   .thumb :global(svg) { opacity: 0.6; }
+  .thumb { overflow: hidden; }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; }
   .line-info { display: grid; gap: 2px; min-width: 0; }
   .line-name { font-weight: 800; }
   .line-name:hover { color: var(--accent-text); }

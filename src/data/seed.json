@@ -241,9 +241,41 @@
   ],
   "slides": [
     {
-      "key": "hits",
-      "tint": "pink",
+      "title": {
+        "pl": "Miecze — nasz hit",
+        "en": "Swords — our bestseller",
+        "uk": "Мечі — наш хіт",
+        "de": "Schwerter – unser Bestseller",
+        "cs": "Meče – náš hit",
+        "lt": "Kardai – mūsų hitas",
+        "es": "Espadas: nuestro éxito",
+        "fr": "Les épées, notre best-seller",
+        "ru": "Мечи — наш хит"
+      },
+      "body": {
+        "pl": "Dla małych rycerzy od 3 lat",
+        "en": "For little knights aged 3+",
+        "uk": "Для маленьких лицарів від 3 років",
+        "de": "Für kleine Ritter ab 3 Jahren",
+        "cs": "Pro malé rytíře od 3 let",
+        "lt": "Mažiesiems riteriams nuo 3 metų",
+        "es": "Para pequeños caballeros desde 3 años",
+        "fr": "Pour les petits chevaliers dès 3 ans",
+        "ru": "Для маленьких рыцарей от 3 лет"
+      },
+      "cta": {
+        "pl": "Zobacz miecze",
+        "en": "See swords",
+        "uk": "Дивитись мечі",
+        "de": "Schwerter ansehen",
+        "cs": "Zobrazit meče",
+        "lt": "Žiūrėti kardus",
+        "es": "Ver espadas",
+        "fr": "Voir les épées",
+        "ru": "Смотреть мечи"
+      },
       "href": "catalog/swords/",
+      "tint": "pink",
       "mascot": true
     }
   ],

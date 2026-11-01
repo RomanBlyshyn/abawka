@@ -154,3 +154,39 @@ test('catalog and product pages: no overflow or errors in any language', async (
   }
   expect(errors).toEqual([]);
 });
+
+test.describe('photos and description from the admin', () => {
+  // Сховище Supabase у тестах підміняємо крихітною картинкою: перевіряємо розмітку, а не мережу.
+  const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+  test.beforeEach(async ({ page }) => {
+    await page.route('**/storage/v1/object/public/catalog/**', (r) => r.fulfill({ contentType: 'image/png', body: PNG }));
+  });
+
+  test('card shows the first photo; products without photos keep the placeholder', async ({ page }) => {
+    await page.goto('/en/catalog/');
+    const sword = page.locator('.card', { hasText: 'Toy sword' });
+    await expect(sword.locator('img.photo')).toHaveAttribute('src', /a1-400\.webp$/);
+    await expect(page.locator('.card', { hasText: 'Chess set' }).locator('.ph')).toBeVisible();
+  });
+
+  test('product gallery switches photos; description keeps line breaks', async ({ page }) => {
+    await page.goto('/en/product/toy-sword/');
+    const main = page.locator('[data-main-photo]');
+    await expect(main).toHaveAttribute('src', /a1-800\.webp$/);
+    await page.locator('[data-thumb]').nth(1).click();
+    await expect(main).toHaveAttribute('src', /a2-800\.webp$/);
+    await expect(main).toHaveAttribute('srcset', /a2-1600\.webp 1600w/);
+    await expect(page.locator('[data-thumb]').nth(1)).toHaveAttribute('aria-current', '');
+    await expect(page.locator('.desc')).toHaveText('A light foam sword.\nSafe to play with.');
+    await page.goto('/en/product/chess/');
+    await expect(page.locator('.thumbs')).toHaveCount(0);
+    await expect(page.getByText('Description coming soon.')).toBeVisible();
+  });
+
+  test('cart thumbnail uses the photo', async ({ page }) => {
+    await page.goto('/en/');
+    await page.evaluate(() => localStorage.setItem('cart', JSON.stringify([{ slug: 'toy-sword', qty: 1 }])));
+    await page.goto('/en/cart/');
+    await expect(page.locator('[data-line="toy-sword"] .thumb img')).toHaveAttribute('src', /a1-400\.webp$/);
+  });
+});

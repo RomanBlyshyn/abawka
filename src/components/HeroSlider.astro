@@ -4,7 +4,7 @@ import Icon from './Icon.astro';
 import mascot from '../assets/mascot.webp';
 import type { Locale } from '../i18n/config';
 import { useTranslations } from '../i18n';
-import { getSlides } from '../lib/data';
+import { getSlides, pick } from '../lib/data';
 import { href } from '../lib/format';
 
 interface Props { locale: Locale }
@@ -19,9 +19,9 @@ const multi = slides.length > 1;
     {slides.map((s, i) => (
       <div class={`slide tint-${s.tint}`} role={multi ? 'group' : undefined} aria-roledescription={multi ? 'slide' : undefined} aria-label={multi ? `${i + 1} / ${slides.length}` : undefined}>
         <div class="text">
-          <h2>{t(`slide.${s.key}.title`)}</h2>
-          <p>{t(`slide.${s.key}.text`)}</p>
-          <a class="btn" href={href(locale, s.href)}>{t(`slide.${s.key}.cta`)}</a>
+          <h2>{pick(s.title, locale)}</h2>
+          {pick(s.body, locale) && <p>{pick(s.body, locale)}</p>}
+          {pick(s.cta, locale) && <a class="btn" href={href(locale, s.href)}>{pick(s.cta, locale)}</a>}
         </div>
         {s.mascot && (
           <Image src={mascot} alt="" class="mascot" widths={[120, 220, 240, 440]} sizes="(max-width: 640px) 120px, 220px" loading={i === 0 ? 'eager' : 'lazy'} />

@@ -28,6 +28,7 @@ const texts = ['src/data/seed.json', 'tests/fixtures/seed.json'].flatMap((file) 
     ...seed.categories.map((c) => [`${file}: category ${c.slug}`, c.name]),
     ...seed.products.flatMap((p) => [[`${file}: product ${p.slug}`, p.name], ...(p.description ? [[`${file}: description ${p.slug}`, p.description]] : [])]),
     ...seed.reviews.map((r) => [`${file}: review ${r.product}`, r.text]),
+    ...seed.slides.flatMap((s, i) => [[`${file}: banner ${i} title`, s.title], [`${file}: banner ${i} body`, s.body], [`${file}: banner ${i} cta`, s.cta]]),
   ];
 });
 for (const [what, t] of texts) for (const l of LOCALES) if (!t[l]) missing.push(`${l}: ${what}`);

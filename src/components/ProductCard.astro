@@ -2,7 +2,7 @@
 import Icon from './Icon.astro';
 import { type Locale } from '../i18n/config';
 import { plural, useTranslations } from '../i18n';
-import { BASE_CURRENCY, getCategories, pick, type Product } from '../lib/data';
+import { BASE_CURRENCY, getCategories, imageUrl, pick, type Product } from '../lib/data';
 import { formatPrice, href } from '../lib/format';
 
 interface Props { product: Product; locale: Locale }
@@ -15,16 +15,22 @@ const discount = oldPrice ? Math.round((1 - p.price / oldPrice) * 100) : 0;
 const rating = new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(p.rating);
 const url = href(locale, `product/${p.slug}/`);
 const inStock = p.stock > 0;
+const cover = p.images?.[0];
 ---
 <article class="card">
   <div class="media">
     <!-- Дублює посилання з назви, тому прихована від клавіатури й читалок; бейджі — поза нею, щоб їх було чути. -->
     <a href={url} tabindex="-1" aria-hidden="true">
-      <!-- Заглушка, поки нема фото: колір і іконка категорії. -->
-      <div class={`ph tint-${category?.tint ?? 'pink'}`}>
-        <Icon name={category?.icon ?? 'star'} size={64} />
-        <span>{t('card.photoSoon')}</span>
-      </div>
+      {cover ? (
+        <img class="photo" src={imageUrl(cover, 400)} srcset={`${imageUrl(cover, 400)} 400w, ${imageUrl(cover, 800)} 800w`}
+          sizes="(max-width: 640px) 50vw, 300px" width="400" height="400" alt="" loading="lazy" decoding="async" />
+      ) : (
+        /* Заглушка, поки нема фото: колір і іконка категорії. */
+        <div class={`ph tint-${category?.tint ?? 'pink'}`}>
+          <Icon name={category?.icon ?? 'star'} size={64} />
+          <span>{t('card.photoSoon')}</span>
+        </div>
+      )}
     </a>
     <div class="badges">
       {discount > 0 && <span class="badge sale">−{discount}%</span>}
@@ -69,6 +75,7 @@ const inStock = p.stock > 0;
   .ph :global(svg) { color: var(--ink); opacity: 0.55; }
 
   .media > a { display: block; }
+  .photo { width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--bg-soft); }
   .badges { pointer-events: none; position: absolute; top: 10px; left: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
   .badge { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 900; }
   .badge.sale { background: var(--red); color: #fff; }
