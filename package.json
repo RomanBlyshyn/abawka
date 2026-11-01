@@ -11,7 +11,9 @@
     "test:e2e": "playwright test",
     "test:db": "node --test tests/db/rls.test.mjs",
     "db:push": "node scripts/db.mjs push",
-    "staff:add": "node scripts/add-staff.mjs"
+    "staff:add": "node scripts/add-staff.mjs",
+    "fn:secrets": "node scripts/functions.mjs secrets",
+    "fn:deploy": "node scripts/functions.mjs deploy"
   },
   "author": "Roman <rb281926@gmail.com>",
   "type": "module",
