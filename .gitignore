@@ -36,3 +36,6 @@ desktop.ini
 test-results/
 playwright-report/
 dist-test/
+
+# Supabase CLI
+supabase/.temp/
