@@ -45,7 +45,7 @@ import Admin from '../../layouts/Admin.astro';
           <p class="comment" data-comment hidden></p>
         </div>
         <ul class="items" data-items></ul>
-        <p class="total">Разом: <b data-total></b></p>
+        <p class="total"><span class="promo-used" data-promo hidden></span>Разом: <b data-total></b></p>
       </div>
       <details class="note">
         <summary>Нотатка для команди <span class="has-note" data-has-note hidden>•</span></summary>
@@ -64,6 +64,7 @@ import Admin from '../../layouts/Admin.astro';
   type Req = {
     id: number; created_at: string; status: string; locale: string; name: string; method: string; contact: string;
     country: string; delivery: string; comment: string; currency: string; total: number; items: Item[]; staff_note: string;
+    promo_code: string | null; discount: number;
   };
 
   const TABS: Record<string, string[]> = {
@@ -97,7 +98,7 @@ import Admin from '../../layouts/Admin.astro';
   async function load() {
     show('loading');
     const { data, error } = await supabase!.from('requests')
-      .select('id,created_at,status,locale,name,method,contact,country,delivery,comment,currency,total,items,staff_note')
+      .select('id,created_at,status,locale,name,method,contact,country,delivery,comment,currency,total,items,staff_note,promo_code,discount')
       .order('created_at', { ascending: false }).limit(500);
     if (error) { $('[data-state="error"]').textContent = dbError(error); return show('error'); }
     rows = data as Req[];
@@ -135,6 +136,8 @@ import Admin from '../../layouts/Admin.astro';
         return row;
       }));
       q('[data-total]').textContent = `${formatMoney(r.total)} ${r.currency}`;
+      q('[data-promo]').hidden = !r.promo_code;
+      q('[data-promo]').textContent = r.promo_code ? `Промокод ${r.promo_code}: −${formatMoney(r.discount)} ${r.currency} · ` : '';
       q<HTMLTextAreaElement>('[data-note]').value = r.staff_note;
       q('[data-has-note]').hidden = !r.staff_note;
 
@@ -204,6 +207,8 @@ import Admin from '../../layouts/Admin.astro';
   .comment[hidden] { display: none; }
   .items { margin: 0; padding-left: 18px; font-weight: 600; }
   .total { margin: 0; grid-column: 2; text-align: right; font-size: 18px; }
+  .promo-used { font-size: 15px; color: var(--accent-text); font-weight: 800; }
+  .promo-used[hidden] { display: none; }
   .note summary { cursor: pointer; font-weight: 800; color: var(--ink-2); }
   .has-note { color: var(--pink-600); }
   .has-note[hidden] { display: none; }

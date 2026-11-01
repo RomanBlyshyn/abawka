@@ -28,6 +28,11 @@ test('request message: delivery arranged personally shows just the country', () 
   expect(requestMessage(row({ delivery: 'discuss' }))).toContain('📦 Польща\n');
 });
 
+test('request message: promo code and discount before the total', () => {
+  const text = requestMessage(row({ promo_code: 'SAVE10', discount: 750, total: 6747 }));
+  expect(text).toMatch(/🎟 Промокод SAVE10: −7,50\s€\n<b>Разом: 67,47\s€<\/b>/);
+});
+
 test('request message: buyer text cannot break the markup', () => {
   const text = requestMessage(row({ name: '<b>Bob</b> & Co', comment: 'Подзвоніть <після 18>' }));
   expect(text).toContain('👤 &lt;b&gt;Bob&lt;/b&gt; &amp; Co');

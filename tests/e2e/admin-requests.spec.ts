@@ -13,7 +13,7 @@ test.describe('admin: requests', () => {
     const db = sampleDb();
     db.requests_table.push(
       req(1001),
-      req(1002, { method: 'telegram', contact: '@abawka_fan', name: 'Olena', country: 'UA', delivery: 'nova-poshta', comment: 'Подарунок' }),
+      req(1002, { method: 'telegram', contact: '@abawka_fan', name: 'Olena', country: 'UA', delivery: 'nova-poshta', comment: 'Подарунок', promo_code: 'SAVE10', discount: 460, total: 4138 }),
       req(1003, { method: 'whatsapp', contact: '+380 67 000 00 00', status: 'contacted' }),
       req(1004, { status: 'done' }),
     );
@@ -34,6 +34,8 @@ test.describe('admin: requests', () => {
     await expect(olena.locator('[data-contact-link]')).toHaveAttribute('href', 'https://t.me/abawka_fan');
     await expect(olena).toContainText('«Подарунок»');
     await expect(olena).toContainText('Нова пошта');
+    await expect(olena.locator('.total')).toHaveText('Промокод SAVE10: −4.60 EUR · Разом: 41.38 EUR');
+    await expect(anna.locator('[data-promo]')).toBeHidden();
 
     await page.getByRole('tab', { name: /В роботі/ }).click();
     await expect(page.locator('.req[data-request-id="1003"] [data-contact-link]')).toHaveAttribute('href', 'https://wa.me/380670000000');

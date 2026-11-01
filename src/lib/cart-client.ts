@@ -40,3 +40,13 @@ export function setQty(slug: string, qty: number): void {
 }
 
 export const cartCount = (lines = readCart()) => lines.reduce((n, l) => n + l.qty, 0);
+
+// Застосований промокод — до кінця сесії вкладки. Знижку все одно перераховує сервер.
+const PROMO_KEY = 'promo';
+export function readPromo(): string {
+  try { return sessionStorage.getItem(PROMO_KEY) ?? ''; } catch { return ''; }
+}
+export function writePromo(code: string): void {
+  try { if (code) sessionStorage.setItem(PROMO_KEY, code); else sessionStorage.removeItem(PROMO_KEY); } catch { /* приватний режим */ }
+  window.dispatchEvent(new CustomEvent(CART_EVENT, { detail: readCart() }));
+}

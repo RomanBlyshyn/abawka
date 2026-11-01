@@ -139,5 +139,15 @@
   "notFound.title": "Page introuvable",
   "notFound.text": "Ce jouet est peut-être épuisé, ou l’adresse contient une faute de frappe.",
   "notFound.catalog": "Voir le catalogue",
-  "notFound.home": "Accueil"
+  "notFound.home": "Accueil",
+  "cart.promo.label": "Code promo",
+  "cart.promo.apply": "Appliquer",
+  "cart.promo.remove": "Retirer le code",
+  "cart.promo.discount": "Remise ({code})",
+  "cart.promo.applied": "Le code {code} a été appliqué.",
+  "cart.promo.invalid": "Ce code n’existe pas ou n’est plus valable.",
+  "cart.promo.min": "Ce code est valable à partir de {sum} de commande.",
+  "cart.promo.error": "Impossible de vérifier le code. Veuillez réessayer.",
+  "form.error.promo": "Le code promo n’est plus valable : nous l’avons retiré et mis à jour le total. Veuillez renvoyer la demande.",
+  "price.lowest30": "Prix le plus bas des 30 jours précédant la réduction : {price}"
 }

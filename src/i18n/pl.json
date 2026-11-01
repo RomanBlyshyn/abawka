@@ -141,5 +141,15 @@
   "notFound.title": "Nie znaleziono strony",
   "notFound.text": "Może ten produkt został już wyprzedany albo w adresie jest błąd.",
   "notFound.catalog": "Do katalogu",
-  "notFound.home": "Strona główna"
+  "notFound.home": "Strona główna",
+  "cart.promo.label": "Kod rabatowy",
+  "cart.promo.apply": "Zastosuj",
+  "cart.promo.remove": "Usuń kod",
+  "cart.promo.discount": "Rabat ({code})",
+  "cart.promo.applied": "Kod {code} został zastosowany.",
+  "cart.promo.invalid": "Taki kod nie istnieje lub już nie obowiązuje.",
+  "cart.promo.min": "Kod obowiązuje przy zamówieniu od {sum}.",
+  "cart.promo.error": "Nie udało się sprawdzić kodu. Spróbuj ponownie.",
+  "form.error.promo": "Kod rabatowy już nie obowiązuje — usunęliśmy go i zaktualizowaliśmy sumę. Wyślij zgłoszenie ponownie.",
+  "price.lowest30": "Najniższa cena z 30 dni przed obniżką: {price}"
 }

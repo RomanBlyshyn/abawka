@@ -262,3 +262,69 @@ test('retention: old IPs are wiped, old requests deleted as the privacy policy s
   await rejects(as(MANAGER, `update public.requests set ip = '1.2.3.4' where id = ${fresh}`), /лише статус/);
   await rejects(as('anon', 'select public.cleanup_personal_data()'), /permission denied/);
 });
+
+// ── Акції й промокоди ─────────────────────────────────────────────────────────
+const idOf = async (slug) => (await admin(`select id from public.products where slug = $1`, [slug])).rows[0].id;
+const product = async (slug) => (await admin(`select price, old_price from public.products where slug = $1`, [slug])).rows[0];
+
+test('sale: owner starts and ends a sale; manager and buyers cannot', async () => {
+  await admin(`update public.products set price = 2000, old_price = null where slug = 'chess'`);
+  const chess = await idOf('chess');
+  await rejects(as(MANAGER, `select public.start_sale(array['${chess}']::uuid[], 25)`), /forbidden/);
+  await rejects(as('anon', `select public.start_sale(array['${chess}']::uuid[], 25)`), /permission denied/);
+  await rejects(as(OWNER, `select public.start_sale(array['${chess}']::uuid[], 95)`), /invalid:percent/);
+  assert.equal((await as(OWNER, `select public.start_sale(array['${chess}']::uuid[], 25) n`)).rows[0].n, 1);
+  assert.deepEqual(await product('chess'), { price: 1500, old_price: 2000 });
+  // Друга акція рахується від ціни до першої, а не від уже зниженої.
+  await as(OWNER, `select public.start_sale(array['${chess}']::uuid[], 10)`);
+  assert.deepEqual(await product('chess'), { price: 1800, old_price: 2000 });
+  await as(OWNER, `select public.end_sale(array['${chess}']::uuid[])`);
+  assert.deepEqual(await product('chess'), { price: 2000, old_price: null });
+});
+
+test('omnibus: lowest price of the 30 days before the current price', async () => {
+  const id = await idOf('knight-sword');
+  // Спершу ціна товару (тригер пише свій рядок історії), потім історію замінюємо контрольованою.
+  await admin(`update public.products set price = 1999, old_price = 2800 where id = $1`, [id]);
+  await admin(`delete from public.price_history where product_id = $1`, [id]);
+  await admin(`insert into public.price_history (product_id, price, changed_at) values
+    ($1, 3000, now() - interval '90 days'),  -- діяла на початку 30-денного вікна
+    ($1, 2500, now() - interval '20 days'),
+    ($1, 2800, now() - interval '10 days'),
+    ($1, 1999, now())`, [id]);
+  const low = async () => (await as('anon', `select lowest_30d from public.product_lowest_30d where product_id = $1`, [id])).rows[0].lowest_30d;
+  assert.equal(await low(), 2500);
+  await admin(`update public.price_history set changed_at = now() - interval '40 days' where product_id = $1 and price = 2500`, [id]);
+  assert.equal(await low(), 2500, 'ціна, що діяла на початку вікна, теж рахується');
+  await admin(`delete from public.price_history where product_id = $1 and price in (2500, 3000)`, [id]);
+  assert.equal(await low(), 2800);
+});
+
+test('promo: buyers check a code, the server computes the discount; codes stay hidden', async () => {
+  await admin(`update public.products set price = 1000, stock = 20, old_price = null where slug = 'bobo-balloon'`);
+  await as(OWNER, `insert into public.promo_codes (code, kind, value, min_total) values ('SUMMER10', 'percent', 10, 0), ('MINUS5', 'amount', 500, 3000)`);
+  await rejects(as(MANAGER, `insert into public.promo_codes (code, kind, value) values ('MGR', 'percent', 50)`), /row-level security/);
+  assert.equal((await as('anon', 'select count(*)::int n from public.promo_codes')).rows[0].n, 0);
+  const check = (payload) => as('anon', 'select public.check_promo($1::jsonb) r', [JSON.stringify(payload)]).then((r) => r.rows[0].r);
+  assert.deepEqual(await check({ promo: ' summer10 ', lines: [{ slug: 'bobo-balloon', qty: 2 }] }), { code: 'SUMMER10', subtotal: 2000, discount: 200, total: 1800 });
+  await rejects(check({ promo: 'MINUS5', lines: [{ slug: 'bobo-balloon', qty: 2 }] }), /promo:min:3000/);
+  await rejects(check({ promo: 'NOPE', lines: [{ slug: 'bobo-balloon', qty: 1 }] }), /promo:invalid/);
+  await rejects(as('anon', `select * from public.promo_discount('SUMMER10', 1000)`), /permission denied/);
+});
+
+test('promo: request total includes the discount; limits, dates and cancellation are respected', async () => {
+  await as(OWNER, `insert into public.promo_codes (code, kind, value, max_uses) values ('ONCE', 'amount', 300, 1)`);
+  await as(OWNER, `insert into public.promo_codes (code, kind, value, ends_at) values ('OLD', 'percent', 20, now() - interval '1 day')`);
+  const r = await submit(order({ promo: 'once', lines: [{ slug: 'bobo-balloon', qty: 1, price: 1 }] }), '10.0.0.40');
+  const row = (await admin(`select total, discount, promo_code from public.requests where id = $1`, [r.id])).rows[0];
+  assert.deepEqual(row, { total: 700, discount: 300, promo_code: 'ONCE' });
+  await rejects(submit(order({ promo: 'ONCE' }), '10.0.0.41'), /promo:invalid/); // ліміт 1 використання
+  await rejects(submit(order({ promo: 'OLD' }), '10.0.0.41'), /promo:invalid/);
+  await as(MANAGER, `update public.requests set status = 'cancelled' where id = ${r.id}`);
+  assert.equal((await admin(`select used from public.promo_codes where code = 'ONCE'`)).rows[0].used, 0);
+  await rejects(as(MANAGER, `update public.requests set discount = 0 where id = ${r.id}`), /лише статус/);
+  // Знижка не робить суму від'ємною.
+  await as(OWNER, `insert into public.promo_codes (code, kind, value) values ('BIG', 'amount', 99999)`);
+  const big = await submit(order({ promo: 'BIG', lines: [{ slug: 'bobo-balloon', qty: 1 }] }), '10.0.0.42');
+  assert.equal((await admin(`select total from public.requests where id = $1`, [big.id])).rows[0].total, 0);
+});

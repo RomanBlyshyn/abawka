@@ -137,5 +137,15 @@
   "notFound.title": "Seite nicht gefunden",
   "notFound.text": "Vielleicht ist dieses Spielzeug ausverkauft oder die Adresse enthält einen Tippfehler.",
   "notFound.catalog": "Zum Katalog",
-  "notFound.home": "Startseite"
+  "notFound.home": "Startseite",
+  "cart.promo.label": "Gutscheincode",
+  "cart.promo.apply": "Einlösen",
+  "cart.promo.remove": "Code entfernen",
+  "cart.promo.discount": "Rabatt ({code})",
+  "cart.promo.applied": "Code {code} wurde eingelöst.",
+  "cart.promo.invalid": "Diesen Code gibt es nicht oder er ist nicht mehr gültig.",
+  "cart.promo.min": "Der Code gilt ab einem Bestellwert von {sum}.",
+  "cart.promo.error": "Der Code konnte nicht geprüft werden. Bitte versuchen Sie es erneut.",
+  "form.error.promo": "Der Gutscheincode ist nicht mehr gültig — wir haben ihn entfernt und die Summe aktualisiert. Bitte senden Sie die Anfrage erneut.",
+  "price.lowest30": "Niedrigster Preis der 30 Tage vor der Reduzierung: {price}"
 }

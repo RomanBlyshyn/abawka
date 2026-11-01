@@ -141,5 +141,15 @@
   "notFound.title": "Страница не найдена",
   "notFound.text": "Возможно, эта игрушка уже распродана или в адресе ошибка.",
   "notFound.catalog": "В каталог",
-  "notFound.home": "На главную"
+  "notFound.home": "На главную",
+  "cart.promo.label": "Промокод",
+  "cart.promo.apply": "Применить",
+  "cart.promo.remove": "Убрать код",
+  "cart.promo.discount": "Скидка ({code})",
+  "cart.promo.applied": "Промокод {code} применён.",
+  "cart.promo.invalid": "Такого промокода нет или он уже не действует.",
+  "cart.promo.min": "Промокод действует для заказа от {sum}.",
+  "cart.promo.error": "Не удалось проверить промокод. Попробуйте ещё раз.",
+  "form.error.promo": "Промокод больше не действует — мы убрали его и обновили сумму. Отправьте заявку ещё раз.",
+  "price.lowest30": "Самая низкая цена за 30 дней до скидки: {price}"
 }

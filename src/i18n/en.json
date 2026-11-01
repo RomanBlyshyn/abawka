@@ -137,5 +137,15 @@
   "notFound.title": "Page not found",
   "notFound.text": "Maybe this toy has sold out, or there is a typo in the address.",
   "notFound.catalog": "Go to the catalogue",
-  "notFound.home": "Home page"
+  "notFound.home": "Home page",
+  "cart.promo.label": "Promo code",
+  "cart.promo.apply": "Apply",
+  "cart.promo.remove": "Remove code",
+  "cart.promo.discount": "Discount ({code})",
+  "cart.promo.applied": "Code {code} applied.",
+  "cart.promo.invalid": "This code does not exist or is no longer valid.",
+  "cart.promo.min": "This code works for orders from {sum}.",
+  "cart.promo.error": "Could not check the code. Please try again.",
+  "form.error.promo": "The promo code is no longer valid — we removed it and updated the total. Please send the request again.",
+  "price.lowest30": "Lowest price in the 30 days before the discount: {price}"
 }

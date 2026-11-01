@@ -65,6 +65,16 @@ const forms = Object.fromEntries(['zero', 'one', 'two', 'few', 'many', 'other'].
       <aside class="summary" aria-labelledby="sum-h">
         <h2 id="sum-h" tabindex="-1">{t('cart.summary')}</h2>
         <p class="sum-count" data-sum-count></p>
+        <form class="promo" data-promo-form novalidate>
+          <label for="promo-code">{t('cart.promo.label')}</label>
+          <div class="promo-row">
+            <input id="promo-code" name="promo" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="30" />
+            <button class="btn btn-light" type="submit" data-promo-apply>{t('cart.promo.apply')}</button>
+          </div>
+          <p class="promo-msg" role="status" data-promo-msg></p>
+          <button class="link" type="button" data-promo-remove hidden>{t('cart.promo.remove')}</button>
+        </form>
+        <p class="sum-discount" data-discount-row hidden><span data-discount-label></span><strong data-discount></strong></p>
         <p class="sum-total"><span>{t('cart.total')}</span><strong data-sum-total></strong></p>
         <p class="sum-note">{t('cart.priceNote')}</p>
       </aside>
@@ -92,10 +102,15 @@ const forms = Object.fromEntries(['zero', 'one', 'two', 'few', 'many', 'other'].
   forms,
   limited: t('cart.limited'),
   gone: t('cart.gone'),
+  promo: {
+    discount: t('cart.promo.discount'), applied: t('cart.promo.applied'), invalid: t('cart.promo.invalid'),
+    min: t('cart.promo.min'), error: t('cart.promo.error'),
+  },
 })} />
 
 <script>
-  import { CART_EVENT, readCart, setQty, writeCart } from '../../lib/cart-client';
+  import { CART_EVENT, readCart, readPromo, setQty, writeCart, writePromo } from '../../lib/cart-client';
+  import { checkPromo, PromoError, type PromoResult } from '../../lib/request-client';
 
   const cfg = JSON.parse(document.getElementById('cart-cfg')!.textContent!);
   const money = new Intl.NumberFormat(cfg.locale, { style: 'currency', currency: cfg.currency, minimumFractionDigits: 2 });
@@ -141,8 +156,76 @@ const forms = Object.fromEntries(['zero', 'one', 'two', 'few', 'many', 'other'].
       if (!gone) { total += price * line.qty; count += line.qty; }
     }
     document.querySelector<HTMLElement>('[data-sum-count]')!.textContent = plural(count);
-    document.querySelector<HTMLElement>('[data-sum-total]')!.textContent = money.format(total / 100);
+
+    // Промокод: знижку показуємо лише ту, яку сервер порахував саме для цього складу кошика.
+    const valid = lines.filter((l) => Number(rows.get(l.slug)!.dataset.stock) > 0);
+    const key = JSON.stringify(valid);
+    const code = readPromo();
+    // promoTried: без мережі не перевіряємо той самий код для того самого кошика безкінечно.
+    if (code && valid.length && (promo?.code !== code || promoFor !== key) && promoTried !== code + key) applyPromo(code, false);
+    const shown = code && promo?.code === code && promoFor === key ? promo : null;
+    discountRow.hidden = !shown;
+    if (shown) {
+      discountRow.querySelector('[data-discount-label]')!.textContent = cfg.promo.discount.replace('{code}', shown.code);
+      discountRow.querySelector('[data-discount]')!.textContent = `−${money.format(shown.discount / 100)}`;
+    }
+    promoRemove.hidden = !code;
+    if (code && !promoInput.value) promoInput.value = code;
+    document.querySelector<HTMLElement>('[data-sum-total]')!.textContent = money.format((shown ? shown.total : total) / 100);
   }
+
+  const promoForm = document.querySelector<HTMLFormElement>('[data-promo-form]')!;
+  const promoInput = promoForm.querySelector<HTMLInputElement>('[name=promo]')!;
+  const promoMsg = promoForm.querySelector<HTMLElement>('[data-promo-msg]')!;
+  const promoRemove = promoForm.querySelector<HTMLButtonElement>('[data-promo-remove]')!;
+  const discountRow = document.querySelector<HTMLElement>('[data-discount-row]')!;
+  let promo: PromoResult | null = null;
+  let promoFor = '';
+  let promoTried = '';
+  let checking = 0;
+
+  /** Перевірити код на сервері для поточного кошика. announce — показати «застосовано» (натиснули кнопку). */
+  async function applyPromo(code: string, announce: boolean) {
+    const valid = readCart().filter((l) => Number(rows.get(l.slug)?.dataset.stock) > 0);
+    const key = JSON.stringify(valid);
+    const ticket = ++checking;
+    promoTried = code + key;
+    try {
+      const res = await checkPromo(code, valid);
+      if (ticket !== checking) return; // кошик змінився, поки чекали, — актуальна інша перевірка
+      promo = res;
+      promoFor = key;
+      if (announce) promoMsg.textContent = cfg.promo.applied.replace('{code}', res.code);
+      writePromo(res.code);
+    } catch (e) {
+      if (ticket !== checking) return;
+      const err = e instanceof PromoError ? e : new PromoError('network');
+      promo = null;
+      if (err.kind === 'network') {
+        promoMsg.textContent = cfg.promo.error; // код лишаємо: сервер перевірить його й під час заявки
+        if (announce) writePromo(code);
+        else render();
+        return;
+      }
+      promoMsg.textContent = err.kind === 'min' ? cfg.promo.min.replace('{sum}', money.format(err.min / 100)) : cfg.promo.invalid;
+      writePromo('');
+    }
+  }
+
+  promoForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const code = promoInput.value.trim().toUpperCase();
+    promoMsg.textContent = '';
+    if (!/^[A-Z0-9-]{3,30}$/.test(code)) { promoMsg.textContent = cfg.promo.invalid; return; }
+    applyPromo(code, true);
+  });
+  promoRemove.addEventListener('click', () => {
+    promo = null;
+    promoInput.value = '';
+    promoMsg.textContent = '';
+    writePromo('');
+    promoInput.focus();
+  });
 
   list.addEventListener('click', (e) => {
     const target = e.target as Element;
@@ -207,10 +290,21 @@ const forms = Object.fromEntries(['zero', 'one', 'two', 'few', 'many', 'other'].
 
   .form-card { padding: 24px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
 
-  .summary { position: sticky; top: 16px; padding: 22px; border: 2px solid var(--accent-border); border-radius: var(--radius); background: var(--accent-soft); display: grid; gap: 10px; }
+  .summary { position: sticky; top: 16px; padding: 22px; border: 2px solid var(--accent-border); border-radius: var(--radius); background: var(--accent-soft); display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
   .summary h2 { font-size: 20px; }
   .summary p { margin: 0; }
   .sum-count { color: var(--ink-2); font-weight: 700; min-height: 1.5em; }
+  .promo { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .promo label { font-weight: 800; }
+  .promo-row { display: flex; gap: 8px; }
+  .promo-row input { flex: 1; min-width: 0; min-height: 44px; padding: 8px 12px; border: 2px solid var(--line); border-radius: 12px; background: var(--surface); text-transform: uppercase; }
+  .promo-row input:focus { border-color: var(--pink-500); outline: none; }
+  .promo-row .btn { border: 2px solid var(--accent-border); padding-inline: 14px; }
+  .promo-msg { font-size: 14px; font-weight: 700; }
+  .promo-msg:empty { display: none; }
+  .promo .link { justify-self: start; border: 0; background: none; padding: 0; color: var(--accent-text); font-weight: 800; cursor: pointer; text-decoration: underline; }
+  .promo .link[hidden], .sum-discount[hidden] { display: none; }
+  .sum-discount { display: flex; justify-content: space-between; gap: 8px; font-weight: 800; color: var(--accent-text); }
   .sum-total { display: flex; justify-content: space-between; align-items: baseline; font-weight: 800; font-size: 18px; }
   .sum-total strong { font-size: 28px; font-weight: 900; min-height: 1.2em; }
   .sum-note { font-size: 14px; color: var(--ink-2); font-weight: 600; }

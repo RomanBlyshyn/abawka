@@ -1,7 +1,7 @@
 // Текст повідомлення про заявку для Telegram (HTML-розмітка). Без Deno API — тестується в Node.
 export interface RequestRow {
   id: number; locale: string; name: string; method: string; contact: string; country: string; delivery: string;
-  comment: string; currency: string; total: number;
+  comment: string; currency: string; total: number; promo_code?: string | null; discount?: number;
   items: { slug: string; name: Record<string, string>; price: number; qty: number }[];
 }
 
@@ -23,6 +23,7 @@ export function requestMessage(r: RequestRow): string {
     `🧸 <b>Нова заявка №${r.id}</b>`,
     '',
     ...r.items.map((i) => `• ${esc(title(i.name, i.slug))} × ${i.qty} — ${money(i.price * i.qty)}`),
+    ...(r.promo_code ? [`🎟 Промокод ${esc(r.promo_code)}: −${money(r.discount ?? 0)}`] : []),
     `<b>Разом: ${money(r.total)}</b>`,
     '',
     `👤 ${esc(r.name)}`,

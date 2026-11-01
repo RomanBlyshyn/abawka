@@ -83,6 +83,7 @@ const related = [...others.filter((o) => o.category === p.category), ...others.f
             {oldPrice && <s class="old"><span class="sr-only">{t('card.oldPrice')}: </span>{formatPrice(oldPrice, BASE_CURRENCY, locale)}</s>}
             <span class:list={['price', { sale: oldPrice }]}>{formatPrice(p.price, BASE_CURRENCY, locale)}</span>
           </div>
+          {oldPrice && <p class="lowest">{t('price.lowest30').replace('{price}', formatPrice(p.lowest30 ?? p.price, BASE_CURRENCY, locale))}</p>}
           <p class:list={['stock', { out: !inStock }]}>{inStock ? t('product.inStock') : t('card.outOfStock')}</p>
 
           {inStock && (
@@ -224,6 +225,7 @@ const related = [...others.filter((o) => o.category === p.category), ...others.f
   .price { font-size: 34px; font-weight: 900; }
   .price.sale { color: var(--sale); }
   .old { color: var(--ink-2); font-size: 18px; }
+  .lowest { margin: 0; font-size: 14px; color: var(--ink-2); font-weight: 600; }
   .stock { margin: 0; font-weight: 800; color: var(--green); }
   :global(:root[data-theme='dark']) .stock:not(.out) { color: #7fd38a; }
   .stock.out { color: var(--ink-2); }

@@ -141,5 +141,15 @@
   "notFound.title": "Puslapis nerastas",
   "notFound.text": "Galbūt šis žaislas jau išparduotas arba adrese yra klaida.",
   "notFound.catalog": "Į katalogą",
-  "notFound.home": "Į pradžią"
+  "notFound.home": "Į pradžią",
+  "cart.promo.label": "Nuolaidos kodas",
+  "cart.promo.apply": "Pritaikyti",
+  "cart.promo.remove": "Pašalinti kodą",
+  "cart.promo.discount": "Nuolaida ({code})",
+  "cart.promo.applied": "Kodas {code} pritaikytas.",
+  "cart.promo.invalid": "Tokio kodo nėra arba jis nebegalioja.",
+  "cart.promo.min": "Kodas galioja užsakymams nuo {sum}.",
+  "cart.promo.error": "Nepavyko patikrinti kodo. Bandykite dar kartą.",
+  "form.error.promo": "Nuolaidos kodas nebegalioja — jį pašalinome ir atnaujinome sumą. Išsiųskite užklausą dar kartą.",
+  "price.lowest30": "Mažiausia kaina per 30 dienų iki nuolaidos: {price}"
 }

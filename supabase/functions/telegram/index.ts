@@ -36,7 +36,7 @@ async function webhookSecret() {
 // ── 1) Нова заявка ────────────────────────────────────────────────────────────
 async function notify(id: number) {
   const { data: r } = await db.from('requests')
-    .select('id,locale,name,method,contact,country,delivery,comment,currency,total,items')
+    .select('id,locale,name,method,contact,country,delivery,comment,currency,total,items,promo_code,discount')
     .eq('id', id).is('notified_at', null).gte('created_at', new Date(Date.now() - 3600e3).toISOString())
     .maybeSingle();
   if (!r) return reply({ sent: 0 }); // уже надіслано, стара або не існує

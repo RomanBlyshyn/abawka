@@ -141,5 +141,15 @@
   "notFound.title": "Сторінку не знайдено",
   "notFound.text": "Можливо, цю іграшку вже розпродано або в адресі помилка.",
   "notFound.catalog": "До каталогу",
-  "notFound.home": "На головну"
+  "notFound.home": "На головну",
+  "cart.promo.label": "Промокод",
+  "cart.promo.apply": "Застосувати",
+  "cart.promo.remove": "Прибрати код",
+  "cart.promo.discount": "Знижка ({code})",
+  "cart.promo.applied": "Промокод {code} застосовано.",
+  "cart.promo.invalid": "Такого промокоду немає або він уже не діє.",
+  "cart.promo.min": "Промокод діє для замовлення від {sum}.",
+  "cart.promo.error": "Не вдалося перевірити промокод. Спробуйте ще раз.",
+  "form.error.promo": "Промокод більше не діє — ми прибрали його й оновили суму. Надішліть заявку ще раз.",
+  "price.lowest30": "Найнижча ціна за 30 днів до знижки: {price}"
 }

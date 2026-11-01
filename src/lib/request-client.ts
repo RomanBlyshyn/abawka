@@ -1,7 +1,7 @@
-import type { RequestInput } from './request';
+import type { RequestInput, RequestLine } from './request';
 
 export interface SubmitResult { id: string; demo: boolean }
-export type SubmitFailure = 'stock' | 'rate' | 'network';
+export type SubmitFailure = 'stock' | 'rate' | 'promo' | 'network';
 export class SubmitError extends Error {
   constructor(public kind: SubmitFailure) { super(kind); }
 }
@@ -40,5 +40,33 @@ export async function submitRequest(input: RequestInput & { locale: string; webs
   const message = String((await res.json().catch(() => ({}))).message ?? '');
   if (message.startsWith('stock:')) throw new SubmitError('stock');
   if (message === 'rate_limited') throw new SubmitError('rate');
+  if (message.startsWith('promo:')) throw new SubmitError('promo');
   throw new SubmitError('network'); // інші помилки покупцю пояснюємо як «не надіслано, спробуйте ще раз»
+}
+
+export interface PromoResult { code: string; subtotal: number; discount: number; total: number }
+export class PromoError extends Error {
+  /** min — мінімальна сума замовлення в центах, якщо код діє лише від неї. */
+  constructor(public kind: 'invalid' | 'min' | 'network', public min = 0) { super(kind); }
+}
+
+/** Перевірити промокод для кошика: суму й знижку рахує функція бази check_promo. */
+export async function checkPromo(code: string, lines: RequestLine[]): Promise<PromoResult> {
+  if (!requestsLive) throw new PromoError('network');
+  let res: Response;
+  try {
+    res = await fetch(`${URL_}/rest/v1/rpc/check_promo`, {
+      method: 'POST',
+      headers: { apikey: KEY!, authorization: `Bearer ${KEY}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ payload: { promo: code, lines } }),
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch {
+    throw new PromoError('network');
+  }
+  if (res.ok) return res.json();
+  const message = String((await res.json().catch(() => ({}))).message ?? '');
+  if (message === 'promo:invalid') throw new PromoError('invalid');
+  if (message.startsWith('promo:min:')) throw new PromoError('min', Number(message.slice('promo:min:'.length)));
+  throw new PromoError('network');
 }

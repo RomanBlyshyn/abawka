@@ -51,6 +51,7 @@ const cover = p.images?.[0];
       <div class="prices">
         {oldPrice && <s class="old"><span class="sr-only">{t('card.oldPrice')}: </span>{formatPrice(oldPrice, BASE_CURRENCY, locale)}</s>}
         <span class:list={['price', { sale: oldPrice }]}>{formatPrice(p.price, BASE_CURRENCY, locale)}</span>
+        {oldPrice && <span class="lowest">{t('price.lowest30').replace('{price}', formatPrice(p.lowest30 ?? p.price, BASE_CURRENCY, locale))}</span>}
       </div>
       {inStock ? (
         <button class="btn add" type="button" data-add-to-cart={p.slug} data-stock={p.stock} aria-label={`${t('card.toCart')}: ${pick(p.name, locale)}`}>
@@ -93,6 +94,7 @@ const cover = p.images?.[0];
   .buy { margin-top: auto; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 4px 8px; }
   .prices { display: flex; flex-direction: column; }
   .old { font-size: 13px; color: var(--ink-2); }
+  .lowest { flex-basis: 100%; font-size: 11px; line-height: 1.3; color: var(--ink-2); font-weight: 600; }
   .price { font-size: 20px; font-weight: 900; }
   .price.sale { color: var(--sale); }
   .add { width: 44px; height: 44px; padding: 0; flex: none; }

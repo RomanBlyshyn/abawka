@@ -141,5 +141,15 @@
   "notFound.title": "Stránka nenalezena",
   "notFound.text": "Možná je tato hračka už vyprodaná, nebo je v adrese chyba.",
   "notFound.catalog": "Do katalogu",
-  "notFound.home": "Na úvodní stránku"
+  "notFound.home": "Na úvodní stránku",
+  "cart.promo.label": "Slevový kód",
+  "cart.promo.apply": "Použít",
+  "cart.promo.remove": "Odebrat kód",
+  "cart.promo.discount": "Sleva ({code})",
+  "cart.promo.applied": "Kód {code} byl použit.",
+  "cart.promo.invalid": "Tento kód neexistuje nebo už neplatí.",
+  "cart.promo.min": "Kód platí pro objednávky od {sum}.",
+  "cart.promo.error": "Kód se nepodařilo ověřit. Zkuste to znovu.",
+  "form.error.promo": "Slevový kód už neplatí — odebrali jsme ho a aktualizovali součet. Odešlete žádost znovu.",
+  "price.lowest30": "Nejnižší cena za 30 dní před slevou: {price}"
 }

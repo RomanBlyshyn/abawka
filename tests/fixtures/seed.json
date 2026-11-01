@@ -89,6 +89,7 @@
       "category": "swords",
       "price": 1999,
       "oldPrice": 2499,
+      "lowest30": 2199,
       "ageMin": 3,
       "stock": 12,
       "hit": true,

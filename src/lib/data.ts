@@ -17,6 +17,8 @@ export interface Category { slug: string; icon: string; tint: Tint; name: Locali
 export interface Product {
   slug: string; category: string; name: Localized; description?: Localized;
   price: number; oldPrice?: number; ageMin: number; stock: number;
+  /** Найнижча ціна за 30 днів до поточної (Omnibus); немає — поточна ціна. */
+  lowest30?: number;
   hit: boolean; new: boolean; rating: number; reviews: number;
   /** Префікси фото в сховищі (без розміру й розширення), у порядку показу. */
   images?: string[];
@@ -49,13 +51,15 @@ type Row = Record<string, any>; // eslint-disable-line @typescript-eslint/no-exp
 
 async function fromSupabase(): Promise<ShopData> {
   // Публічний ключ: RLS віддає лише опубліковані товари, активні банери й схвалені відгуки.
-  const [settings, categories, products, banners, reviews] = await Promise.all([
+  const [settings, categories, products, banners, reviews, lowest] = await Promise.all([
     rest<Row[]>('settings?select=base_currency'),
     rest<Row[]>('categories?select=slug,name,icon,tint&order=position,created_at'),
-    rest<Row[]>('products?select=slug,name,description,price,old_price,stock,age_min,hit,is_new,category:categories(slug),images:product_images(path,position)&order=position,created_at'),
+    rest<Row[]>('products?select=id,slug,name,description,price,old_price,stock,age_min,hit,is_new,category:categories(slug),images:product_images(path,position)&order=position,created_at'),
     rest<Row[]>('banners?select=title,body,cta,href,tint,mascot&active=is.true&order=position,created_at'),
     rest<Row[]>('reviews?select=author,country,rating,body,product:products(slug)&approved=is.true&order=created_at.desc'),
+    rest<Row[]>('product_lowest_30d?select=product_id,lowest_30d'),
   ]);
+  const lowestOf = new Map(lowest.map((l) => [l.product_id, l.lowest_30d as number]));
 
   const stats = new Map<string, { sum: number; n: number }>();
   for (const r of reviews) {
@@ -75,6 +79,7 @@ async function fromSupabase(): Promise<ShopData> {
         description: p.description,
         price: p.price,
         oldPrice: p.old_price ?? undefined,
+        lowest30: lowestOf.get(p.id),
         ageMin: p.age_min,
         stock: p.stock,
         hit: p.hit,

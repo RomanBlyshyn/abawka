@@ -112,11 +112,11 @@ const cfg = {
   {!requestsLive && <p class="demo">{t('form.demo')}</p>}
 </form>
 
-<script is:inline type="application/json" data-request-cfg set:html={JSON.stringify({ ...cfg, summaryError: t('form.error.summary'), sendError: t('form.error.send'), stockError: t('form.error.stock'), rateError: t('form.error.rate'), phoneHint: t('form.contact.phoneHint') })} />
+<script is:inline type="application/json" data-request-cfg set:html={JSON.stringify({ ...cfg, summaryError: t('form.error.summary'), sendError: t('form.error.send'), stockError: t('form.error.stock'), rateError: t('form.error.rate'), promoError: t('form.error.promo'), phoneHint: t('form.contact.phoneHint') })} />
 
 <script>
   import { contactKind, validateRequest, type Errors, type Method, type RequestLine } from '../lib/request';
-  import { readCart, writeCart } from '../lib/cart-client';
+  import { readCart, readPromo, writeCart, writePromo } from '../lib/cart-client';
   import { submitRequest, SubmitError } from '../lib/request-client';
 
   const DRAFT_KEY = 'request-draft';
@@ -175,6 +175,7 @@ const cfg = {
         comment: el<HTMLTextAreaElement>('[name=comment]').value.trim(),
         consent: el('[name=consent]').checked,
         lines: lines(),
+        promo: cfg.mode === 'cart' ? readPromo() : '',
       };
     }
 
@@ -225,7 +226,7 @@ const cfg = {
       el<HTMLElement>('[data-sending]').hidden = false;
       try {
         const res = await submitRequest({ ...input, locale: cfg.locale, website: el('[name=website]').value });
-        if (cfg.mode === 'cart') writeCart([]);
+        if (cfg.mode === 'cart') { writePromo(''); writeCart([]); }
         try { sessionStorage.removeItem(DRAFT_KEY); } catch { /* немає доступу — не страшно */ }
         const url = new URL(cfg.thanks, location.href);
         url.searchParams.set('n', res.id);
@@ -234,7 +235,8 @@ const cfg = {
       } catch (e) {
         // Не надіслано: усе введене лишається у формі, кнопку можна натиснути ще раз.
         const kind = e instanceof SubmitError ? e.kind : 'network';
-        showAlert(kind === 'stock' ? cfg.stockError : kind === 'rate' ? cfg.rateError : cfg.sendError);
+        if (kind === 'promo') writePromo(''); // кошик перерахує суму без знижки
+        showAlert(kind === 'stock' ? cfg.stockError : kind === 'rate' ? cfg.rateError : kind === 'promo' ? cfg.promoError : cfg.sendError);
         alertBox.focus();
         submit.disabled = false;
         el<HTMLElement>('[data-submit-label]').hidden = false;

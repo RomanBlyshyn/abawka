@@ -12,6 +12,8 @@ export interface RequestInput {
   comment: string;
   consent: boolean;
   lines: RequestLine[];
+  /** Промокод з кошика; знижку рахує сервер. */
+  promo?: string;
 }
 
 export type FieldError = 'name' | 'phone' | 'telegram' | 'email' | 'country' | 'consent' | 'empty';
