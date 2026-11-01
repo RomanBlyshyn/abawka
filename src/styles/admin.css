@@ -1,0 +1,14 @@
+/* Спільні стилі адмінки: редактор багатомовних полів (src/lib/i18n-editor.ts). */
+.i18n-editor { display: grid; gap: 8px; }
+.i18n-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.i18n-tabs button { position: relative; min-width: 48px; min-height: 38px; padding: 4px 12px; border: 2px solid var(--line); border-radius: 999px; background: var(--surface); font-weight: 800; cursor: pointer; }
+.i18n-tabs button[aria-selected='true'] { border-color: var(--pink-600); background: var(--accent-soft); color: var(--accent-text); }
+.i18n-tabs .dot { position: absolute; top: 4px; right: 5px; width: 7px; height: 7px; border-radius: 50%; background: var(--line); }
+.i18n-tabs .filled .dot { background: var(--green); }
+.i18n-editor label { font-weight: 800; margin-top: 4px; }
+.i18n-editor .lang-label { color: var(--ink-2); font-weight: 600; }
+.i18n-editor input, .i18n-editor textarea { width: 100%; min-height: 46px; padding: 10px 14px; border: 2px solid var(--line); border-radius: 12px; background: var(--surface); font-weight: 600; }
+.i18n-editor input:focus, .i18n-editor textarea:focus { border-color: var(--pink-500); outline: none; }
+.i18n-translate { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+.i18n-translate .btn { border: 2px solid var(--accent-border); }
+.i18n-translate .hint { font-size: 14px; color: var(--ink-2); font-weight: 600; }

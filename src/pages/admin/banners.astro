@@ -1,0 +1,236 @@
+---
+import Admin from '../../layouts/Admin.astro';
+
+const TINTS = [
+  { value: 'pink', label: 'рожевий' }, { value: 'yellow', label: 'жовтий' }, { value: 'red', label: 'червоний' },
+  { value: 'blue', label: 'синій' }, { value: 'green', label: 'зелений' },
+];
+---
+<Admin title="Банери">
+  <div class="head">
+    <h1>Банери на головній</h1>
+    <button type="button" class="btn" data-add>+ Додати банер</button>
+  </div>
+  <p class="hint">Великий слайдер угорі головної. Один активний банер — показується без стрілок; кілька — гортаються самі.</p>
+
+  <p class="state" data-state="loading">Завантаження…</p>
+  <div class="alert" role="alert" tabindex="-1" data-state="error" hidden></div>
+  <p class="state" data-state="empty" hidden>Банерів немає — головна відкриється одразу з категорій.</p>
+  <ul class="list" data-state="list" hidden></ul>
+  <p class="row-msg" role="status" data-msg></p>
+
+  <dialog class="dlg" aria-labelledby="dlg-title" data-dialog>
+    <form method="dialog" class="dlg-form" data-form novalidate>
+      <div class="dlg-head">
+        <h2 id="dlg-title" data-dlg-title>Банер</h2>
+        <button type="button" class="close" data-close aria-label="Закрити">×</button>
+      </div>
+      <div class="alert" role="alert" tabindex="-1" data-form-error hidden></div>
+      <div data-i18n-slot></div>
+
+      <label for="b-link">Куди веде кнопка</label>
+      <select id="b-link" data-link></select>
+      <input type="text" maxlength="200" placeholder="напр. catalog/?sale=1" data-custom-link hidden aria-label="Своя адреса" />
+
+      <fieldset>
+        <legend>Колір</legend>
+        <div class="tints">
+          {TINTS.map((t) => (
+            <label class={`tint-opt tint-${t.value}`}><input type="radio" name="tint" value={t.value} /><span>{t.label}</span></label>
+          ))}
+        </div>
+      </fieldset>
+
+      <label class="check"><input type="checkbox" data-mascot /> Показати ведмедика справа</label>
+      <label class="check"><input type="checkbox" data-active /> Показувати на сайті</label>
+
+      <div class="dlg-bar">
+        <button class="btn" type="submit" data-save>Зберегти</button>
+        <button class="danger" type="button" data-delete hidden>Видалити</button>
+      </div>
+    </form>
+  </dialog>
+</Admin>
+
+<script>
+  import { requireStaff, supabase, dbError, type Localized } from '../../lib/admin';
+  import { I18nEditor } from '../../lib/i18n-editor';
+
+  type Banner = { id: string; title: Localized; body: Localized; cta: Localized; href: string; tint: string; mascot: boolean; active: boolean; position: number };
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const states = [...document.querySelectorAll<HTMLElement>('[data-state]')];
+  const show = (name: string) => states.forEach((s) => (s.hidden = s.dataset.state !== name));
+  const text = (n: Localized) => n.uk || n.pl || n.en || Object.values(n).find(Boolean) || '—';
+
+  const editor = new I18nEditor([
+    { key: 'title', label: 'Заголовок', maxLength: 80, required: true },
+    { key: 'body', label: 'Текст під заголовком', maxLength: 160 },
+    { key: 'cta', label: 'Напис на кнопці', maxLength: 40 },
+  ], 'banner');
+  $('[data-i18n-slot]').append(editor.root);
+  const dialog = $<HTMLDialogElement>('[data-dialog]');
+  const form = $<HTMLFormElement>('[data-form]');
+  const linkSel = $<HTMLSelectElement>('[data-link]');
+  const customLink = $<HTMLInputElement>('[data-custom-link]');
+  let banners: Banner[] = [];
+  let editing: Banner | null = null;
+
+  const msg = (t: string) => { $('[data-msg]').textContent = t; };
+  const formError = (t: string) => { const e = $('[data-form-error]'); e.textContent = t; e.hidden = !t; if (t) e.focus(); };
+
+  async function load() {
+    const [b, c] = await Promise.all([
+      supabase!.from('banners').select('*').order('position').order('created_at'),
+      supabase!.from('categories').select('slug,name').order('position'),
+    ]);
+    if (b.error || c.error) { $('[data-state="error"]').textContent = dbError(b.error ?? c.error); return show('error'); }
+    banners = b.data as Banner[];
+    // Куди може вести кнопка: каталог, акції, будь-яка категорія або своя адреса.
+    linkSel.replaceChildren(
+      new Option('Каталог — усі іграшки', 'catalog/'),
+      new Option('Каталог — тільки зі знижкою', 'catalog/?sale=1'),
+      ...c.data.map((cat) => new Option(`Категорія: ${text(cat.name as Localized)}`, `catalog/${cat.slug}/`)),
+      new Option('Своя адреса…', '__custom'),
+    );
+    render();
+  }
+
+  function render() {
+    $('[data-state="list"]').replaceChildren(...banners.map((b, i) => {
+      const li = document.createElement('li');
+      li.className = `row tint-${b.tint}`;
+      li.dataset.bannerId = b.id;
+      li.innerHTML = '<span class="nm"><b></b><span class="sub"></span></span><span class="tools"></span>';
+      li.querySelector('b')!.textContent = text(b.title);
+      li.querySelector('.sub')!.textContent = `${b.active ? 'показується' : 'приховано'} · кнопка → /${b.href}`;
+      if (!b.active) li.classList.add('inactive');
+      const tools = li.querySelector('.tools')!;
+      const btn = (label: string, aria: string, fn: () => void, disabled = false, cls = '') => {
+        const x = document.createElement('button');
+        x.type = 'button'; x.textContent = label; x.setAttribute('aria-label', aria); x.disabled = disabled; x.className = cls;
+        x.addEventListener('click', fn);
+        tools.append(x);
+      };
+      btn('▲', `${text(b.title)}: вище`, () => move(i, -1), i === 0);
+      btn('▼', `${text(b.title)}: нижче`, () => move(i, 1), i === banners.length - 1);
+      btn('Змінити', `Змінити: ${text(b.title)}`, () => open(b), false, 'edit');
+      return li;
+    }));
+    show(banners.length ? 'list' : 'empty');
+  }
+
+  async function move(i: number, dir: -1 | 1) {
+    const j = i + dir;
+    [banners[i], banners[j]] = [banners[j]!, banners[i]!];
+    render();
+    const results = await Promise.all(banners.map((b, k) => b.position === k ? null : supabase!.from('banners').update({ position: k }).eq('id', b.id)));
+    banners.forEach((b, k) => (b.position = k));
+    const failed = results.find((r) => r?.error);
+    if (failed) { msg(dbError(failed.error)); load(); } else msg('Порядок збережено ✓');
+  }
+
+  const syncCustom = () => { customLink.hidden = linkSel.value !== '__custom'; };
+  linkSel.addEventListener('change', syncCustom);
+
+  function open(b: Banner | null) {
+    editing = b;
+    formError('');
+    $('[data-dlg-title]').textContent = b ? 'Банер' : 'Новий банер';
+    editor.set({ title: b?.title ?? {}, body: b?.body ?? {}, cta: b?.cta ?? {} });
+    const href = b?.href ?? 'catalog/';
+    const known = [...linkSel.options].some((o) => o.value === href);
+    linkSel.value = known ? href : '__custom';
+    customLink.value = known ? '' : href;
+    syncCustom();
+    form.querySelector<HTMLInputElement>(`[name=tint][value="${CSS.escape(b?.tint ?? 'pink')}"]`)!.checked = true;
+    $<HTMLInputElement>('[data-mascot]').checked = b?.mascot ?? false;
+    $<HTMLInputElement>('[data-active]').checked = b?.active ?? true;
+    $('[data-delete]').hidden = !b;
+    dialog.showModal();
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const err = editor.validate();
+    if (err) return formError(err);
+    const href = linkSel.value === '__custom' ? customLink.value.trim().replace(/^\/+/, '') : linkSel.value;
+    if (!/^[a-z0-9/?=&_.-]*$/.test(href)) return formError('Своя адреса: лише латиниця, цифри та / ? = & _ . - , напр. catalog/swords/');
+    const v = editor.get();
+    const row = {
+      title: v.title, body: v.body, cta: v.cta, href,
+      tint: form.querySelector<HTMLInputElement>('[name=tint]:checked')!.value,
+      mascot: $<HTMLInputElement>('[data-mascot]').checked,
+      active: $<HTMLInputElement>('[data-active]').checked,
+    };
+    const save = $<HTMLButtonElement>('[data-save]');
+    save.disabled = true;
+    const res = editing
+      ? await supabase!.from('banners').update(row).eq('id', editing.id)
+      : await supabase!.from('banners').insert({ ...row, position: banners.length });
+    save.disabled = false;
+    if (res.error) return formError(dbError(res.error));
+    dialog.close();
+    msg(editing ? 'Банер збережено ✓' : 'Банер додано ✓');
+    load();
+  });
+
+  $('[data-delete]').addEventListener('click', async () => {
+    if (!editing || !confirm('Видалити цей банер?')) return;
+    const { error } = await supabase!.from('banners').delete().eq('id', editing.id);
+    if (error) return formError(dbError(error));
+    dialog.close();
+    msg('Банер видалено.');
+    load();
+  });
+
+  $('[data-add]').addEventListener('click', () => open(null));
+  $('[data-close]').addEventListener('click', () => dialog.close());
+  dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+
+  requireStaff().then(load).catch(() => {});
+</script>
+
+<style>
+  .head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  h1 { font-size: 28px; font-weight: 900; }
+  .hint { color: var(--ink-2); font-weight: 600; margin: 6px 0 16px; }
+  [data-state][hidden] { display: none; }
+  .state { color: var(--ink-2); font-weight: 700; }
+  .alert { padding: 12px 16px; border-radius: var(--radius-sm); background: var(--tint-red); border: 2px solid var(--tint-red-border); font-weight: 700; }
+  .alert[hidden] { display: none; }
+  .row-msg { font-weight: 700; color: var(--ink-2); min-height: 1.5em; }
+  .list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .list :global(.row) { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 14px 16px; border: 2px solid var(--tint-border, var(--line)); border-radius: var(--radius); }
+  .list :global(.row.inactive) { opacity: 0.6; }
+  .list :global(.nm) { display: grid; min-width: 0; }
+  .list :global(.nm b) { font-size: 18px; }
+  .list :global(.sub) { font-size: 13px; color: var(--ink-2); font-weight: 600; overflow-wrap: anywhere; }
+  .list :global(.tools) { display: flex; gap: 6px; }
+  .list :global(.tools button) { min-width: 40px; min-height: 40px; border: 2px solid var(--line); border-radius: 10px; background: var(--surface); font-weight: 800; cursor: pointer; }
+  .list :global(.tools button:disabled) { opacity: 0.35; cursor: default; }
+  .list :global(.tools .edit) { padding: 0 14px; color: var(--accent-text); }
+
+  .dlg { width: min(600px, calc(100% - 24px)); max-height: calc(100dvh - 24px); padding: 24px; border: 0; border-radius: var(--radius); background: var(--surface); color: var(--ink); box-shadow: var(--shadow-hover); overflow: auto; }
+  .dlg::backdrop { background: rgb(23 18 31 / 0.55); }
+  .dlg-form { display: grid; gap: 12px; }
+  .dlg-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .dlg-head h2 { font-size: 22px; }
+  .close { width: 44px; height: 44px; border: 0; border-radius: 50%; background: none; font-size: 28px; cursor: pointer; color: var(--ink-2); }
+  .dlg-form > label { font-weight: 800; }
+  select, input[type='text'] { width: 100%; min-height: 46px; padding: 10px 14px; border: 2px solid var(--line); border-radius: 12px; background: var(--surface); font-weight: 600; }
+  input[hidden] { display: none; }
+  fieldset { border: 0; margin: 0; padding: 0; }
+  legend { font-weight: 800; margin-bottom: 8px; padding: 0; }
+  .tints { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tint-opt { position: relative; cursor: pointer; }
+  .tint-opt input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+  .tint-opt span { display: inline-flex; min-height: 40px; align-items: center; padding: 6px 14px; border: 2px solid var(--tint-border); border-radius: 999px; font-weight: 700; }
+  .tint-opt input:checked + span { outline: 3px solid var(--pink-600); outline-offset: 2px; }
+  .tint-opt input:focus-visible + span { outline: 3px solid var(--pink-500); outline-offset: 2px; }
+  .check { display: flex; align-items: center; gap: 10px; font-weight: 700; cursor: pointer; }
+  .check input { width: 22px; height: 22px; accent-color: var(--pink-600); }
+  .dlg-bar { display: flex; justify-content: space-between; gap: 12px; }
+  .dlg-bar .btn { min-width: 160px; }
+  .danger { border: 2px solid var(--tint-red-border); background: var(--surface); color: var(--sale); border-radius: 999px; padding: 10px 18px; font-weight: 800; cursor: pointer; }
+  .danger[hidden] { display: none; }
+</style>

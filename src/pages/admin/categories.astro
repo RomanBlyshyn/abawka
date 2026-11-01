@@ -1,0 +1,254 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import Icon from '../../components/Icon.astro';
+
+// Іконки, які можна обрати для категорії (малюються тим самим компонентом, що й на сайті).
+const ICONS = ['sword', 'rabbit', 'helicopter', 'balloon', 'chess', 'ball', 'car', 'puzzle', 'book', 'palette', 'bear', 'star'];
+const ICON_NAMES: Record<string, string> = {
+  sword: 'меч', rabbit: 'кролик', helicopter: 'гелікоптер', balloon: 'кулька', chess: 'шахи', ball: 'м’яч',
+  car: 'машинка', puzzle: 'пазл', book: 'книжка', palette: 'палітра', bear: 'ведмедик', star: 'зірка',
+};
+const TINTS = [
+  { value: 'pink', label: 'рожевий' }, { value: 'yellow', label: 'жовтий' }, { value: 'red', label: 'червоний' },
+  { value: 'blue', label: 'синій' }, { value: 'green', label: 'зелений' },
+];
+---
+<Admin title="Категорії">
+  <div class="head">
+    <h1>Категорії</h1>
+    <button type="button" class="btn" data-add>+ Додати категорію</button>
+  </div>
+  <p class="hint">Порядок тут = порядок у меню сайту. Видалити можна лише порожню категорію.</p>
+
+  <p class="state" data-state="loading">Завантаження…</p>
+  <div class="alert" role="alert" tabindex="-1" data-state="error" hidden></div>
+  <ul class="list" data-state="list" hidden></ul>
+  <p class="row-msg" role="status" data-msg></p>
+
+  <!-- Іконки для клонування в JS -->
+  <div hidden data-icon-palette>
+    {ICONS.map((name) => <span data-icon={name}><Icon name={name} size={24} /></span>)}
+  </div>
+
+  <dialog class="dlg" aria-labelledby="dlg-title" data-dialog>
+    <form method="dialog" class="dlg-form" data-form novalidate>
+      <div class="dlg-head">
+        <h2 id="dlg-title" data-dlg-title>Категорія</h2>
+        <button type="button" class="close" data-close aria-label="Закрити">×</button>
+      </div>
+      <div class="alert" role="alert" tabindex="-1" data-form-error hidden></div>
+      <div data-i18n-slot></div>
+
+      <fieldset>
+        <legend>Іконка</legend>
+        <div class="icons">
+          {ICONS.map((name) => (
+            <label class="icon-opt" title={ICON_NAMES[name]}>
+              <input type="radio" name="icon" value={name} aria-label={ICON_NAMES[name]} />
+              <span><Icon name={name} size={26} /></span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Колір плитки</legend>
+        <div class="tints">
+          {TINTS.map((t) => (
+            <label class={`tint-opt tint-${t.value}`}>
+              <input type="radio" name="tint" value={t.value} />
+              <span>{t.label}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <details class="advanced">
+        <summary>Адреса сторінки (необов'язково)</summary>
+        <label for="cat-slug">Частина адреси після <code>/catalog/</code></label>
+        <input id="cat-slug" type="text" maxlength="60" data-slug />
+      </details>
+
+      <div class="dlg-bar">
+        <button class="btn" type="submit" data-save>Зберегти</button>
+        <button class="danger" type="button" data-delete hidden>Видалити</button>
+      </div>
+    </form>
+  </dialog>
+</Admin>
+
+<script>
+  import { requireStaff, supabase, slugify, dbError, type Localized } from '../../lib/admin';
+  import { I18nEditor } from '../../lib/i18n-editor';
+
+  type Cat = { id: string; slug: string; name: Localized; icon: string; tint: string; position: number; products: { count: number }[] };
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const states = [...document.querySelectorAll<HTMLElement>('[data-state]')];
+  const show = (name: string) => states.forEach((s) => (s.hidden = s.dataset.state !== name));
+  const nameOf = (n: Localized) => n.uk || n.pl || n.en || Object.values(n).find(Boolean) || '—';
+  const iconSvg = (name: string) => (document.querySelector(`[data-icon-palette] [data-icon="${CSS.escape(name)}"]`)?.innerHTML ?? '');
+
+  const editor = new I18nEditor([{ key: 'name', label: 'Назва', maxLength: 60, required: true }], 'cat');
+  $('[data-i18n-slot]').append(editor.root);
+  const dialog = $<HTMLDialogElement>('[data-dialog]');
+  const form = $<HTMLFormElement>('[data-form]');
+  const slugInput = $<HTMLInputElement>('[data-slug]');
+  let cats: Cat[] = [];
+  let editing: Cat | null = null;
+  let slugTouched = false;
+
+  editor.onChange = () => {
+    if (!slugTouched && !editing) {
+      const n = editor.get().name!;
+      slugInput.value = slugify(n.en || n.uk || n.pl || Object.values(n)[0] || '');
+    }
+  };
+  slugInput.addEventListener('input', () => { slugTouched = true; });
+
+  const msg = (t: string) => { $('[data-msg]').textContent = t; };
+  const formError = (t: string) => { const e = $('[data-form-error]'); e.textContent = t; e.hidden = !t; if (t) e.focus(); };
+
+  async function load() {
+    const { data, error } = await supabase!.from('categories').select('id,slug,name,icon,tint,position,products(count)').order('position').order('created_at');
+    if (error) { $('[data-state="error"]').textContent = dbError(error); return show('error'); }
+    cats = data as Cat[];
+    render();
+  }
+
+  function render() {
+    $('[data-state="list"]').replaceChildren(...cats.map((c, i) => {
+      const li = document.createElement('li');
+      li.className = `row tint-${c.tint}`;
+      li.dataset.categoryId = c.id;
+      const count = c.products?.[0]?.count ?? 0;
+      li.innerHTML = `<span class="ic">${iconSvg(c.icon)}</span><span class="nm"><b></b><span class="sub"></span></span><span class="tools"></span>`;
+      li.querySelector('b')!.textContent = nameOf(c.name);
+      li.querySelector('.sub')!.textContent = `${count} ${count === 1 ? 'товар' : count >= 2 && count <= 4 ? 'товари' : 'товарів'} · /catalog/${c.slug}/`;
+      const tools = li.querySelector('.tools')!;
+      const btn = (label: string, aria: string, fn: () => void, disabled = false, cls = '') => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.textContent = label; b.setAttribute('aria-label', aria); b.disabled = disabled; b.className = cls;
+        b.addEventListener('click', fn);
+        tools.append(b);
+      };
+      btn('▲', `${nameOf(c.name)}: вище`, () => move(i, -1), i === 0);
+      btn('▼', `${nameOf(c.name)}: нижче`, () => move(i, 1), i === cats.length - 1);
+      btn('Змінити', `Змінити: ${nameOf(c.name)}`, () => open(c), false, 'edit');
+      return li;
+    }));
+    show('list');
+  }
+
+  async function move(i: number, dir: -1 | 1) {
+    const j = i + dir;
+    [cats[i], cats[j]] = [cats[j]!, cats[i]!];
+    render();
+    const results = await Promise.all(cats.map((c, k) => c.position === k ? null : supabase!.from('categories').update({ position: k }).eq('id', c.id)));
+    cats.forEach((c, k) => (c.position = k));
+    const failed = results.find((r) => r?.error);
+    if (failed) { msg(dbError(failed.error)); load(); } else msg('Порядок збережено ✓');
+  }
+
+  function open(c: Cat | null) {
+    editing = c;
+    slugTouched = Boolean(c);
+    formError('');
+    $('[data-dlg-title]').textContent = c ? `Категорія: ${nameOf(c.name)}` : 'Нова категорія';
+    editor.set({ name: c?.name ?? {} });
+    form.querySelector<HTMLInputElement>(`[name=icon][value="${CSS.escape(c?.icon ?? 'star')}"]`)!.checked = true;
+    form.querySelector<HTMLInputElement>(`[name=tint][value="${CSS.escape(c?.tint ?? 'pink')}"]`)!.checked = true;
+    slugInput.value = c?.slug ?? '';
+    $('[data-delete]').hidden = !c;
+    dialog.showModal();
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const err = editor.validate();
+    if (err) return formError(err);
+    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slugInput.value)) {
+      ($('.advanced') as HTMLDetailsElement).open = true;
+      return formError('Адреса: лише малі латинські літери, цифри й дефіси.');
+    }
+    const row = {
+      name: editor.get().name,
+      icon: form.querySelector<HTMLInputElement>('[name=icon]:checked')!.value,
+      tint: form.querySelector<HTMLInputElement>('[name=tint]:checked')!.value,
+      slug: slugInput.value,
+    };
+    const save = $<HTMLButtonElement>('[data-save]');
+    save.disabled = true;
+    const res = editing
+      ? await supabase!.from('categories').update(row).eq('id', editing.id)
+      : await supabase!.from('categories').insert({ ...row, position: cats.length });
+    save.disabled = false;
+    if (res.error) return formError(dbError(res.error));
+    dialog.close();
+    msg(editing ? 'Категорію збережено ✓' : 'Категорію додано ✓');
+    load();
+  });
+
+  $('[data-delete]').addEventListener('click', async () => {
+    if (!editing) return;
+    const count = editing.products?.[0]?.count ?? 0;
+    if (count > 0) return formError(`У категорії ${count} товар(ів). Спершу перенесіть їх в іншу категорію або видаліть.`);
+    if (!confirm(`Видалити категорію «${nameOf(editing.name)}»?`)) return;
+    const { error } = await supabase!.from('categories').delete().eq('id', editing.id);
+    if (error) return formError(dbError(error));
+    dialog.close();
+    msg('Категорію видалено.');
+    load();
+  });
+
+  $('[data-add]').addEventListener('click', () => open(null));
+  $('[data-close]').addEventListener('click', () => dialog.close());
+  dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+
+  requireStaff().then(load).catch(() => {});
+</script>
+
+<style>
+  .head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  h1 { font-size: 28px; font-weight: 900; }
+  .hint { color: var(--ink-2); font-weight: 600; margin: 6px 0 16px; }
+  [data-state][hidden] { display: none; }
+  .state { color: var(--ink-2); font-weight: 700; }
+  .alert { padding: 12px 16px; border-radius: var(--radius-sm); background: var(--tint-red); border: 2px solid var(--tint-red-border); font-weight: 700; }
+  .alert[hidden] { display: none; }
+  .row-msg { font-weight: 700; color: var(--ink-2); min-height: 1.5em; }
+
+  .list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .list :global(.row) { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 10px 14px; border: 2px solid var(--tint-border, var(--line)); border-radius: var(--radius); }
+  .list :global(.ic) { width: 52px; height: 52px; border-radius: 50%; background: var(--surface); display: grid; place-items: center; }
+  .list :global(.nm) { display: grid; min-width: 0; }
+  .list :global(.sub) { font-size: 13px; color: var(--ink-2); font-weight: 600; overflow-wrap: anywhere; }
+  .list :global(.tools) { display: flex; gap: 6px; }
+  .list :global(.tools button) { min-width: 40px; min-height: 40px; border: 2px solid var(--line); border-radius: 10px; background: var(--surface); font-weight: 800; cursor: pointer; }
+  .list :global(.tools button:disabled) { opacity: 0.35; cursor: default; }
+  .list :global(.tools .edit) { padding: 0 14px; color: var(--accent-text); }
+
+  .dlg { width: min(560px, calc(100% - 24px)); max-height: calc(100dvh - 24px); padding: 24px; border: 0; border-radius: var(--radius); background: var(--surface); color: var(--ink); box-shadow: var(--shadow-hover); overflow: auto; }
+  .dlg::backdrop { background: rgb(23 18 31 / 0.55); }
+  .dlg-form { display: grid; gap: 14px; }
+  .dlg-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .dlg-head h2 { font-size: 22px; }
+  .close { width: 44px; height: 44px; border: 0; border-radius: 50%; background: none; font-size: 28px; cursor: pointer; color: var(--ink-2); }
+  fieldset { border: 0; margin: 0; padding: 0; }
+  legend { font-weight: 800; margin-bottom: 8px; padding: 0; }
+  .icons { display: flex; flex-wrap: wrap; gap: 6px; }
+  .icon-opt, .tint-opt { position: relative; cursor: pointer; }
+  .icon-opt input, .tint-opt input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+  .icon-opt span { width: 48px; height: 48px; display: grid; place-items: center; border: 2px solid var(--line); border-radius: 12px; background: var(--surface); }
+  .icon-opt input:checked + span { border-color: var(--pink-600); background: var(--accent-soft); color: var(--accent-text); }
+  .tints { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tint-opt span { display: inline-flex; min-height: 40px; align-items: center; padding: 6px 14px; border: 2px solid var(--tint-border); border-radius: 999px; font-weight: 700; }
+  .tint-opt input:checked + span { outline: 3px solid var(--pink-600); outline-offset: 2px; }
+  .icon-opt input:focus-visible + span, .tint-opt input:focus-visible + span { outline: 3px solid var(--pink-500); outline-offset: 2px; }
+  .advanced summary { font-weight: 800; cursor: pointer; }
+  .advanced label { display: block; font-weight: 800; margin: 8px 0 6px; }
+  .advanced input { width: 100%; min-height: 46px; padding: 10px 14px; border: 2px solid var(--line); border-radius: 12px; background: var(--surface); }
+  .dlg-bar { display: flex; justify-content: space-between; gap: 12px; }
+  .dlg-bar .btn { min-width: 160px; }
+  .danger { border: 2px solid var(--tint-red-border); background: var(--surface); color: var(--sale); border-radius: 999px; padding: 10px 18px; font-weight: 800; cursor: pointer; }
+  .danger[hidden] { display: none; }
+</style>

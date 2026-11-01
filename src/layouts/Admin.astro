@@ -1,6 +1,7 @@
 ---
 // Адмінка: одна мова (українська), бо нею користуються власник і менеджери, а не покупці.
 import '../styles/global.css';
+import '../styles/admin.css';
 import Logo from '../components/Logo.astro';
 
 interface Props { title: string }
@@ -9,6 +10,8 @@ const NAV = [
   { href: '/admin/', label: 'Головна' },
   { href: '/admin/requests/', label: 'Заявки' },
   { href: '/admin/products/', label: 'Товари' },
+  { href: '/admin/categories/', label: 'Категорії' },
+  { href: '/admin/banners/', label: 'Банери' },
 ];
 const path = Astro.url.pathname;
 const current = (href: string) => (href === '/admin/' ? path === '/admin/' : path.startsWith(href));

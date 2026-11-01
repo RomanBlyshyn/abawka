@@ -12,7 +12,7 @@ export const session = () => {
 };
 
 type Row = Record<string, unknown> & { id: string };
-export interface Db { products: Row[]; categories: Row[]; product_images: Row[]; requests_table: Row[]; storage: string[]; requests: { method: string; url: string; body: unknown }[] }
+export interface Db { products: Row[]; categories: Row[]; product_images: Row[]; banners: Row[]; requests_table: Row[]; storage: string[]; requests: { method: string; url: string; body: unknown }[] }
 
 const cors = { 'access-control-allow-origin': '*', 'access-control-expose-headers': 'content-range' };
 const reply = (route: Route, body: unknown, status = 200) =>
@@ -32,11 +32,11 @@ export async function mockAdmin(page: Page, db: Db, opts: { role?: 'owner' | 'ma
     return reply(r, { translations });
   });
 
-  await page.route(/\/rest\/v1\/(products|categories|product_images|requests)\?/, async (route) => {
+  await page.route(/\/rest\/v1\/(products|categories|product_images|banners|requests)(\?|$)/, async (route) => {
     const req = route.request();
     const url = new URL(req.url());
     const name = url.pathname.split('/').pop()!;
-    const table = (name === 'requests' ? 'requests_table' : name) as 'products' | 'categories' | 'product_images' | 'requests_table';
+    const table = (name === 'requests' ? 'requests_table' : name) as 'products' | 'categories' | 'product_images' | 'banners' | 'requests_table';
     const rows = db[table];
     const single = (req.headers()['accept'] ?? '').includes('vnd.pgrst.object');
     const idEq = url.searchParams.get('id')?.replace(/^eq\./, '');
@@ -51,6 +51,7 @@ export async function mockAdmin(page: Page, db: Db, opts: { role?: 'owner' | 'ma
       let out = rows.filter(matches);
       if (url.searchParams.get('order')?.startsWith('position')) out = [...out].sort((a, b) => Number(a.position) - Number(b.position));
       if (table === 'products') out = out.map((p) => ({ ...p, images: db.product_images.filter((i) => i.product_id === p.id) }));
+      if (table === 'categories') out = out.map((c) => ({ ...c, products: [{ count: db.products.filter((p) => p.category_id === c.id).length }] }));
       return reply(route, single ? out[0] ?? null : out);
     }
     if (method === 'POST') {
@@ -107,6 +108,9 @@ export const sampleDb = (): Db => ({
     { id: 'p-chess', slug: 'chess', name: { uk: 'Шахи', en: 'Chess set' }, description: { uk: 'Дерев’яні' }, price: 3499, old_price: null, stock: 0, age_min: 6, hit: false, is_new: false, published: false, category_id: 'cat-games', position: 1 },
   ],
   product_images: [],
+  banners: [
+    { id: 'b-hits', title: { uk: 'Мечі — наш хіт' }, body: { uk: 'Для лицарів' }, cta: { uk: 'Дивитись' }, href: 'catalog/swords/', tint: 'pink', mascot: true, active: true, position: 0 },
+  ],
   requests_table: [],
   storage: [],
   requests: [],
