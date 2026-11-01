@@ -126,3 +126,16 @@ test.describe('catalog filters — what the buyer actually sees', () => {
     await expect(page.locator('[data-item]').filter({ visible: true })).toContainText('Knight sword');
   });
 });
+
+test('search from the header: only matching cards are on screen (client report: "sword")', async ({ page }) => {
+  await page.goto('/en/');
+  await page.locator('#q').fill('sword');
+  await page.locator('#q').press('Enter');
+  await expect(page.locator('[data-found]')).toHaveText('Found: 2 items');
+  const visible = page.locator('[data-item]').filter({ visible: true });
+  await expect(visible).toHaveCount(2);
+  await expect(visible.nth(0)).toContainText('sword');
+  await expect(visible.nth(1)).toContainText('sword');
+  await page.getByRole('link', { name: /Clear search/ }).click();
+  await expect(page.locator('[data-item]').filter({ visible: true })).toHaveCount(7);
+});
