@@ -1,0 +1,32 @@
+# Netlify: статична збірка Astro. Змінні середовища задаються в Netlify (Site configuration → Environment variables):
+#   PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY — публічні ключі Supabase (дані каталогу при збірці)
+#   SITE_URL — адреса сайту з доменом (sitemap, hreflang), напр. https://abawka.pl
+# Неіснуючі адреси → 404 мовою сайту: public/_redirects.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "24"
+
+# Безпека для всіх сторінок. Без CSP: сторінки мають вбудовані скрипти (тема, кошик до першого малювання).
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
+
+# Адмінка не потрапляє в пошук навіть за прямим посиланням.
+[[headers]]
+  for = "/admin/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Cache-Control = "no-store"
+
+# Файли з хешем у назві не змінюються — кешуємо назавжди.
+[[headers]]
+  for = "/_astro/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

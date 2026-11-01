@@ -16,7 +16,7 @@ const ref = new URL(env.PUBLIC_SUPABASE_URL).hostname.split('.')[0];
 if (!env.SUPABASE_ACCESS_TOKEN) throw new Error('SUPABASE_ACCESS_TOKEN порожній у .env');
 
 // Ключі, які отримують функції (лише потрібні їм, а не весь .env).
-const FUNCTION_SECRETS = ['DEEPL_API_KEY', 'TELEGRAM_BOT_TOKEN', 'SITE_URL'];
+const FUNCTION_SECRETS = ['DEEPL_API_KEY', 'TELEGRAM_BOT_TOKEN', 'SITE_URL', 'NETLIFY_BUILD_HOOK_URL'];
 // Функції, які кличуть не з браузера (база, Telegram): без перевірки JWT на шлюзі, права перевіряють самі.
 const PUBLIC_FUNCTIONS = ['telegram', 'rates'];
 const secretValues = Object.values(env).filter((v) => v.length >= 8);

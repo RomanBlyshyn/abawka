@@ -46,13 +46,39 @@ const current = (href: string) => (href === '/admin/' ? path === '/admin/' : pat
         </nav>
         <div class="who" data-who hidden>
           <span data-who-email></span>
+          <button type="button" class="publish" data-publish title="Зміни з адмінки з'являться на сайті за 1–2 хвилини">Оновити сайт</button>
           <button type="button" class="logout" data-logout>Вийти</button>
         </div>
       </div>
     </header>
     <main class="wrap admin-main">
+      <p class="publish-msg" role="status" data-publish-msg></p>
       <slot />
     </main>
+    <script>
+      import { supabase } from '../lib/supabase-client';
+
+      // «Оновити сайт»: сайт статичний, тож зміни з адмінки потрапляють на нього після перезбірки на Netlify.
+      const btn = document.querySelector<HTMLButtonElement>('[data-publish]');
+      const out = document.querySelector<HTMLElement>('[data-publish-msg]')!;
+      btn?.addEventListener('click', async () => {
+        if (!supabase) return;
+        btn.disabled = true;
+        out.textContent = 'Запускаємо оновлення…';
+        const { data, error } = await supabase.functions.invoke('publish').catch(() => ({ data: null, error: {} as { context?: Response } }));
+        btn.disabled = false;
+        if (!error) {
+          out.textContent = data?.throttled
+            ? 'Оновлення вже запущене щойно — зачекайте 1–2 хвилини.'
+            : 'Сайт оновлюється ✓ Зміни з’являться за 1–2 хвилини.';
+          return;
+        }
+        const status = (error as { context?: Response }).context?.status;
+        out.textContent = status === 503
+          ? 'Сайт ще не підключено до хостингу — оновлення запрацює після запуску.'
+          : 'Не вдалося запустити оновлення. Спробуйте ще раз за хвилину.';
+      });
+    </script>
   </body>
 </html>
 
@@ -72,6 +98,10 @@ const current = (href: string) => (href === '/admin/' ? path === '/admin/' : pat
   .who span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   /* Пунктів меню багато: на екранах до 1280px email ховаємо, лишаємо «Вийти». */
   @media (max-width: 1280px) { .who span { display: none; } }
+  .publish { border: 2px solid var(--accent-border); background: var(--accent-soft); color: var(--accent-text); border-radius: 999px; padding: 6px 14px; font-weight: 800; cursor: pointer; flex: none; }
+  .publish:disabled { opacity: 0.6; cursor: default; }
+  .publish-msg { margin: 0 0 12px; font-weight: 700; color: var(--ink-2); }
+  .publish-msg:empty { display: none; }
   .logout { border: 2px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 14px; font-weight: 800; cursor: pointer; flex: none; }
   .logout:hover { border-color: var(--pink-500); color: var(--accent-text); }
   .admin-main { padding-block: 32px 64px; }
