@@ -135,5 +135,9 @@
   "form.error.stock": "Certains jouets ne sont plus disponibles en cette quantité. Rechargez le panier et vérifiez les quantités.",
   "form.error.rate": "Trop de demandes en peu de temps. Réessayez dans quelques minutes : vos saisies sont conservées.",
   "legal.englishOnly": "Ce document est disponible en anglais.",
-  "form.deliveryNote": "Le propriétaire conviendra personnellement avec vous du mode et du coût de livraison."
+  "form.deliveryNote": "Le propriétaire conviendra personnellement avec vous du mode et du coût de livraison.",
+  "notFound.title": "Page introuvable",
+  "notFound.text": "Ce jouet est peut-être épuisé, ou l’adresse contient une faute de frappe.",
+  "notFound.catalog": "Voir le catalogue",
+  "notFound.home": "Accueil"
 }

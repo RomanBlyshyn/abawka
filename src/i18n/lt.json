@@ -137,5 +137,9 @@
   "form.error.stock": "Kai kurių žaislų nebeturime tokio kiekio. Atnaujinkite krepšelio puslapį ir patikrinkite kiekius.",
   "form.error.rate": "Per daug užklausų per trumpą laiką. Bandykite po kelių minučių – įvesti duomenys išsaugoti.",
   "legal.englishOnly": "Šis dokumentas pateikiamas anglų kalba.",
-  "form.deliveryNote": "Pristatymo būdą ir kainą savininkas suderins su jumis asmeniškai."
+  "form.deliveryNote": "Pristatymo būdą ir kainą savininkas suderins su jumis asmeniškai.",
+  "notFound.title": "Puslapis nerastas",
+  "notFound.text": "Galbūt šis žaislas jau išparduotas arba adrese yra klaida.",
+  "notFound.catalog": "Į katalogą",
+  "notFound.home": "Į pradžią"
 }

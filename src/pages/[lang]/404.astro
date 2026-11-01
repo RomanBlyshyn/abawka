@@ -1,0 +1,10 @@
+---
+import NotFound from '../../components/NotFound.astro';
+import { LOCALES, type Locale } from '../../i18n/config';
+
+// Хостинг показує цю сторінку для неіснуючих адрес своєї мови (public/_redirects).
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
+}
+---
+<NotFound locale={Astro.params.lang as Locale} />

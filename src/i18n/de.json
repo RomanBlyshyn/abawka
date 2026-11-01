@@ -133,5 +133,9 @@
   "form.error.stock": "Einige Spielsachen sind nicht mehr in dieser Menge verfügbar. Laden Sie den Warenkorb neu und prüfen Sie die Mengen.",
   "form.error.rate": "Zu viele Anfragen in kurzer Zeit. Bitte versuchen Sie es in ein paar Minuten erneut – Ihre Eingaben bleiben erhalten.",
   "legal.englishOnly": "Dieses Dokument ist auf Englisch verfügbar.",
-  "form.deliveryNote": "Versandart und -kosten bespricht der Inhaber persönlich mit Ihnen."
+  "form.deliveryNote": "Versandart und -kosten bespricht der Inhaber persönlich mit Ihnen.",
+  "notFound.title": "Seite nicht gefunden",
+  "notFound.text": "Vielleicht ist dieses Spielzeug ausverkauft oder die Adresse enthält einen Tippfehler.",
+  "notFound.catalog": "Zum Katalog",
+  "notFound.home": "Startseite"
 }

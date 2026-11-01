@@ -137,5 +137,9 @@
   "form.error.stock": "Części zabawek nie ma już w potrzebnej ilości. Odśwież stronę koszyka i sprawdź ilości.",
   "form.error.rate": "Za dużo zgłoszeń w krótkim czasie. Spróbuj ponownie za kilka minut — wpisane dane zostały zachowane.",
   "legal.englishOnly": "Ten dokument jest dostępny w języku angielskim.",
-  "form.deliveryNote": "Sposób i koszt dostawy właściciel ustali z Tobą osobiście."
+  "form.deliveryNote": "Sposób i koszt dostawy właściciel ustali z Tobą osobiście.",
+  "notFound.title": "Nie znaleziono strony",
+  "notFound.text": "Może ten produkt został już wyprzedany albo w adresie jest błąd.",
+  "notFound.catalog": "Do katalogu",
+  "notFound.home": "Strona główna"
 }

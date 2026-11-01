@@ -137,5 +137,9 @@
   "form.error.stock": "Některé hračky už nejsou v potřebném množství. Obnovte stránku košíku a zkontrolujte množství.",
   "form.error.rate": "Příliš mnoho žádostí v krátké době. Zkuste to za pár minut – zadané údaje zůstaly zachovány.",
   "legal.englishOnly": "Tento dokument je k dispozici v angličtině.",
-  "form.deliveryNote": "Způsob a cenu doručení s vámi majitel domluví osobně."
+  "form.deliveryNote": "Způsob a cenu doručení s vámi majitel domluví osobně.",
+  "notFound.title": "Stránka nenalezena",
+  "notFound.text": "Možná je tato hračka už vyprodaná, nebo je v adrese chyba.",
+  "notFound.catalog": "Do katalogu",
+  "notFound.home": "Na úvodní stránku"
 }

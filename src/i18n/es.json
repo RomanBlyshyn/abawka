@@ -135,5 +135,9 @@
   "form.error.stock": "Algunos juguetes ya no están disponibles en esa cantidad. Actualiza el carrito y revisa las cantidades.",
   "form.error.rate": "Demasiadas solicitudes en poco tiempo. Inténtalo en unos minutos; tus datos se conservan.",
   "legal.englishOnly": "Este documento está disponible en inglés.",
-  "form.deliveryNote": "El propietario acordará contigo personalmente el método y el coste de envío."
+  "form.deliveryNote": "El propietario acordará contigo personalmente el método y el coste de envío.",
+  "notFound.title": "Página no encontrada",
+  "notFound.text": "Quizá este juguete se ha agotado o hay un error en la dirección.",
+  "notFound.catalog": "Ir al catálogo",
+  "notFound.home": "Página de inicio"
 }

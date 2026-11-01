@@ -133,5 +133,9 @@
   "form.error.stock": "Some toys are no longer available in that quantity. Refresh the cart page and check the quantities.",
   "form.error.rate": "Too many requests in a short time. Please try again in a few minutes — what you entered is kept.",
   "legal.englishOnly": "This document is available in English.",
-  "form.deliveryNote": "The owner will arrange the delivery method and cost with you personally."
+  "form.deliveryNote": "The owner will arrange the delivery method and cost with you personally.",
+  "notFound.title": "Page not found",
+  "notFound.text": "Maybe this toy has sold out, or there is a typo in the address.",
+  "notFound.catalog": "Go to the catalogue",
+  "notFound.home": "Home page"
 }

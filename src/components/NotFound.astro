@@ -1,0 +1,35 @@
+---
+// Сторінка «не знайдено»: ведмедик і шляхи назад до покупок.
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import mascot from '../assets/mascot.webp';
+import type { Locale } from '../i18n/config';
+import { useTranslations } from '../i18n';
+import { href } from '../lib/format';
+
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+---
+<Base locale={locale} title={t('notFound.title')} noindex>
+  <div class="wrap not-found">
+    <Image src={mascot} alt="" widths={[200, 400]} sizes="200px" class="bear" loading="eager" />
+    <p class="code" aria-hidden="true">404</p>
+    <h1>{t('notFound.title')}</h1>
+    <p class="text">{t('notFound.text')}</p>
+    <div class="actions">
+      <a class="btn" href={href(locale, 'catalog/')}>{t('notFound.catalog')}</a>
+      <a class="btn btn-light" href={href(locale, '')}>{t('notFound.home')}</a>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .not-found { display: grid; justify-items: center; text-align: center; gap: 12px; padding-block: 40px 20px; max-width: 640px; }
+  .bear { width: 180px; height: auto; transform: rotate(-8deg); }
+  .code { margin: 0; font-size: clamp(56px, 12vw, 96px); font-weight: 900; line-height: 1; color: var(--accent-text); }
+  h1 { font-size: clamp(26px, 5vw, 36px); font-weight: 900; }
+  .text { margin: 0 0 8px; color: var(--ink-2); font-weight: 600; font-size: 17px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+  .actions .btn-light { border: 2px solid var(--accent-border); }
+</style>
