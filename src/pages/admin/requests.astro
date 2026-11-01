@@ -19,6 +19,7 @@ import Admin from '../../layouts/Admin.astro';
   <div class="alert" role="alert" tabindex="-1" data-state="error" hidden></div>
   <p class="state empty" data-state="empty" hidden>Тут поки порожньо.</p>
   <ul class="list" data-state="list" hidden></ul>
+  <p class="list-msg" role="status" data-list-msg></p>
 
   <template data-card>
     <li class="req">
@@ -52,6 +53,7 @@ import Admin from '../../layouts/Admin.astro';
         <textarea rows="3" maxlength="2000" data-note placeholder="Напр.: оплатила на картку, відправити в п'ятницю"></textarea>
         <button type="button" class="btn btn-light" data-save-note>Зберегти нотатку</button>
       </details>
+      <button type="button" class="delete" data-delete hidden>Видалити заявку</button>
       <p class="row-msg" role="status" data-row-msg></p>
     </li>
   </template>
@@ -105,6 +107,8 @@ import Admin from '../../layouts/Admin.astro';
     render();
   }
 
+  let isOwner = false;
+
   function render() {
     for (const t of ['new', 'work']) {
       const n = rows.filter((r) => TABS[t]!.includes(r.status)).length;
@@ -140,6 +144,21 @@ import Admin from '../../layouts/Admin.astro';
       q('[data-promo]').textContent = r.promo_code ? `Промокод ${r.promo_code}: −${formatMoney(r.discount)} ${r.currency} · ` : '';
       q<HTMLTextAreaElement>('[data-note]').value = r.staff_note;
       q('[data-has-note]').hidden = !r.staff_note;
+      // Видалення — лише власник (RLS), напр. коли покупець просить стерти свої дані (GDPR).
+      // Тільки скасовані й виконані: інакше зарезервований товар не повернувся б на склад.
+      q('[data-delete]').hidden = !isOwner;
+      q('[data-delete]').addEventListener('click', async () => {
+        if (!['cancelled', 'done'].includes(r.status)) {
+          q('[data-row-msg]').textContent = 'Спершу змініть статус на «Скасовано» (товар повернеться на склад) або «Виконано».';
+          return;
+        }
+        if (!confirm(`Видалити заявку № ${r.id} назавжди разом з даними покупця?`)) return;
+        const { error } = await supabase!.from('requests').delete().eq('id', r.id);
+        if (error) { q('[data-row-msg]').textContent = dbError(error); return; }
+        rows = rows.filter((x) => x.id !== r.id);
+        render();
+        $('[data-list-msg]').textContent = `Заявку № ${r.id} видалено.`;
+      });
 
       q<HTMLSelectElement>('[data-status]').addEventListener('change', async (e) => {
         const sel = e.currentTarget as HTMLSelectElement;
@@ -174,7 +193,7 @@ import Admin from '../../layouts/Admin.astro';
   document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((b) => b.addEventListener('click', () => { tab = b.dataset.tab!; render(); }));
   $('[data-refresh]').addEventListener('click', load);
 
-  requireStaff().then(load).catch(() => {});
+  requireStaff().then((me) => { isOwner = me.role === 'owner'; return load(); }).catch(() => {});
 </script>
 
 <style>
@@ -216,4 +235,8 @@ import Admin from '../../layouts/Admin.astro';
   .row-msg { margin: 0; font-weight: 700; color: var(--ink-2); }
   .row-msg:empty { display: none; }
   @media (max-width: 720px) { .req-body { grid-template-columns: 1fr; } .total { grid-column: 1; } }
+  .delete { justify-self: start; border: 0; background: none; padding: 4px 0; color: var(--sale); font-weight: 800; cursor: pointer; text-decoration: underline; }
+  .delete[hidden] { display: none; }
+  .list-msg { font-weight: 700; color: var(--ink-2); }
+  .list-msg:empty { display: none; }
 </style>

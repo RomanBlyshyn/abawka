@@ -80,3 +80,32 @@ test.describe('admin: requests', () => {
     expect(db.requests.find((r) => r.method === 'PATCH')!.body).toEqual({ staff_note: 'Оплатила на картку' });
   });
 });
+
+test.describe('admin: deleting a request (GDPR erase)', () => {
+  test('owner deletes only cancelled or completed requests; manager has no button', async ({ page }) => {
+    const db = sampleDb();
+    db.requests_table.push(req(1101), req(1102, { status: 'cancelled', name: 'Erase Me' }));
+    await mockAdmin(page, db);
+    await page.goto('/admin/requests/');
+    const fresh = page.locator('.req[data-request-id="1101"]');
+    await fresh.getByRole('button', { name: 'Видалити заявку' }).click();
+    await expect(fresh.locator('[data-row-msg]')).toContainText('Спершу змініть статус на «Скасовано»');
+    expect(db.requests.filter((r) => r.method === 'DELETE')).toHaveLength(0);
+
+    await page.getByRole('tab', { name: /Скасовані/ }).click();
+    page.once('dialog', (d) => d.accept());
+    await page.locator('.req[data-request-id="1102"]').getByRole('button', { name: 'Видалити заявку' }).click();
+    await expect(page.locator('[data-list-msg]')).toHaveText('Заявку № 1102 видалено.');
+    expect(db.requests.find((r) => r.method === 'DELETE')!.url).toContain('id=eq.1102');
+  });
+
+  test('manager: no delete button', async ({ page }) => {
+    const db = sampleDb();
+    db.requests_table.push(req(1103, { status: 'cancelled' }));
+    await mockAdmin(page, db, { role: 'manager' });
+    await page.goto('/admin/requests/');
+    await page.getByRole('tab', { name: /Скасовані/ }).click();
+    await expect(page.locator('.req[data-request-id="1103"]')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Видалити заявку' })).toHaveCount(0);
+  });
+});
