@@ -26,6 +26,7 @@
 - `src/i18n/` — `config.ts` (мови), `<мова>.json` (тексти інтерфейсу), `index.ts` (`useTranslations`)
 - `src/layouts/`, `src/components/` — верстка
 - `src/data/` — справжні дані магазину до підключення бази (тільки те, що дав клієнт)
+- `src/pages/admin/` — адмінка (лише українською, `src/layouts/Admin.astro`); дані через `src/lib/supabase-client.ts`, права обмежує RLS. E2E адмінки підміняють Supabase (`tests/e2e/admin.spec.ts`), справжню базу й пошту не чіпають
 - `tests/fixtures/seed.json` — тестові дані для e2e (знижки, відгуки, товар без наявності); збираються в `dist-test/`, на сайт не потрапляють
 - `supabase/` — міграції, Edge Functions
 - `docs/brand/` — лого від клієнта; `docs/` — скріншоти для README

@@ -1,0 +1,231 @@
+---
+import Admin from '../../layouts/Admin.astro';
+import Icon from '../../components/Icon.astro';
+---
+<Admin title="Вхід">
+  <p class="state" data-state="loading">Завантаження…</p>
+
+  <p class="state alert" data-state="config" hidden>
+    Адмінка не налаштована: немає ключів Supabase у <code>.env</code>.
+  </p>
+
+  <!-- Вхід -->
+  <section class="card auth" data-state="login" hidden>
+    <h1>Вхід в адмінку</h1>
+    <form data-login-form novalidate>
+      <div class="alert" role="alert" tabindex="-1" data-login-error hidden></div>
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" autocomplete="username" required />
+      <label for="password">Пароль</label>
+      <div class="pw">
+        <input id="password" name="password" type="password" autocomplete="current-password" required />
+        <button type="button" class="show-pw" data-show-pw aria-pressed="false">Показати</button>
+      </div>
+      <button class="btn wide" type="submit" data-login-submit>Увійти</button>
+    </form>
+    <button type="button" class="link" data-to="forgot">Забули пароль?</button>
+  </section>
+
+  <!-- Забули пароль -->
+  <section class="card auth" data-state="forgot" hidden>
+    <h1>Відновлення пароля</h1>
+    <p class="muted">Введіть email — надішлемо лист із посиланням, щоб задати новий пароль.</p>
+    <form data-forgot-form novalidate>
+      <div class="alert" role="alert" tabindex="-1" data-forgot-error hidden></div>
+      <div class="ok" role="status" data-forgot-ok hidden>
+        Якщо цей email є в команді магазину, лист уже в дорозі. Перевірте пошту (і папку «Спам»).
+      </div>
+      <label for="forgot-email">Email</label>
+      <input id="forgot-email" name="email" type="email" autocomplete="username" required />
+      <button class="btn wide" type="submit" data-forgot-submit>Надіслати лист</button>
+    </form>
+    <button type="button" class="link" data-to="login">← Назад до входу</button>
+  </section>
+
+  <!-- Увійшов, але не в команді -->
+  <section class="card auth" data-state="denied" hidden>
+    <h1>Немає доступу</h1>
+    <p class="muted">Ви увійшли як <b data-denied-email></b>, але цей email не доданий у команду магазину. Попросіть власника додати вас.</p>
+    <button class="btn wide" type="button" data-logout>Вийти</button>
+  </section>
+
+  <!-- Головна адмінки -->
+  <section data-state="dashboard" hidden>
+    <h1 class="hello">Вітаємо! <span class="role" data-role></span></h1>
+    <div class="tiles">
+      <a class="tile" href="/admin/products/" data-soon>
+        <Icon name="star" size={28} /><b>Товари</b><span data-count="products">—</span>
+      </a>
+      <a class="tile" href="/admin/categories/" data-soon>
+        <Icon name="filter" size={28} /><b>Категорії</b><span data-count="categories">—</span>
+      </a>
+      <a class="tile" href="/admin/banners/" data-soon>
+        <Icon name="chat" size={28} /><b>Банери на головній</b><span data-count="banners">—</span>
+      </a>
+      <a class="tile" href="/admin/team/" data-soon data-owner-only hidden>
+        <Icon name="phone" size={28} /><b>Команда</b><span data-count="staff">—</span>
+      </a>
+    </div>
+    <p class="muted soon-note">Розділи з позначкою «скоро» з'являться на наступних кроках.</p>
+    <a class="btn btn-light site-link" href="/" target="_blank">Відкрити сайт ↗</a>
+  </section>
+</Admin>
+
+<script>
+  import { supabase, supabaseConfigured, currentRole } from '../../lib/supabase-client';
+
+  const states = [...document.querySelectorAll<HTMLElement>('[data-state]')];
+  const show = (name: string) => states.forEach((s) => (s.hidden = s.dataset.state !== name));
+  const $ = <T extends HTMLElement = HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
+
+  /** Повідомлення про помилку зрозумілою мовою; введене у формі не чіпаємо. */
+  function explain(error: { status?: number; message?: string; code?: string } | null): string {
+    if (!error) return '';
+    if (error.status === 429 || error.code === 'over_request_rate_limit' || error.code === 'over_email_send_rate_limit')
+      return 'Забагато спроб. Зачекайте хвилину й спробуйте ще раз.';
+    if (error.code === 'invalid_credentials' || error.status === 400) return 'Невірний email або пароль.';
+    if (error.code === 'email_not_confirmed') return 'Email ще не підтверджено.';
+    return 'Не вдалося з\'єднатися. Перевірте інтернет і спробуйте ще раз.';
+  }
+  const setAlert = (el: HTMLElement, text: string) => { el.textContent = text; el.hidden = !text; if (text) el.focus(); };
+
+  async function route() {
+    if (!supabase) return show('config');
+    try {
+      const me = await currentRole();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return show(location.hash === '#forgot' ? 'forgot' : 'login');
+      $('[data-who-email]').textContent = session.user.email ?? '';
+      $('[data-who]').hidden = false;
+      if (!me) {
+        $('[data-denied-email]').textContent = session.user.email ?? '';
+        return show('denied');
+      }
+      $('[data-role]').textContent = me.role === 'owner' ? 'власник' : 'менеджер';
+      document.querySelectorAll<HTMLElement>('[data-owner-only]').forEach((e) => (e.hidden = me.role !== 'owner'));
+      show('dashboard');
+      loadCounts();
+    } catch {
+      show('login');
+      setAlert($('[data-login-error]'), explain({}));
+    }
+  }
+
+  async function loadCounts() {
+    for (const table of ['products', 'categories', 'banners', 'staff']) {
+      const { count } = await supabase!.from(table).select('*', { count: 'exact', head: true });
+      const el = document.querySelector(`[data-count="${table}"]`);
+      if (el && count !== null) el.textContent = String(count);
+    }
+  }
+
+  // Перемикання вхід ↔ відновлення.
+  document.querySelectorAll<HTMLButtonElement>('[data-to]').forEach((b) => b.addEventListener('click', () => {
+    const to = b.dataset.to!;
+    if (to === 'forgot') $<HTMLInputElement>('#forgot-email').value = $<HTMLInputElement>('#email').value;
+    show(to);
+    $<HTMLInputElement>(to === 'forgot' ? '#forgot-email' : '#email').focus();
+  }));
+
+  // Показати / сховати пароль.
+  $('[data-show-pw]').addEventListener('click', (e) => {
+    const btn = e.currentTarget as HTMLButtonElement;
+    const pw = $<HTMLInputElement>('#password');
+    const visible = pw.type === 'password';
+    pw.type = visible ? 'text' : 'password';
+    btn.setAttribute('aria-pressed', String(visible));
+    btn.textContent = visible ? 'Сховати' : 'Показати';
+  });
+
+  $<HTMLFormElement>('[data-login-form]').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.currentTarget as HTMLFormElement;
+    const errBox = $('[data-login-error]');
+    const email = $<HTMLInputElement>('#email').value.trim();
+    const password = $<HTMLInputElement>('#password').value;
+    if (!email || !password) return setAlert(errBox, 'Введіть email і пароль.');
+    const submit = $<HTMLButtonElement>('[data-login-submit]');
+    submit.disabled = true;
+    submit.textContent = 'Входимо…';
+    const { error } = await supabase!.auth.signInWithPassword({ email, password }).catch(() => ({ error: {} as never }));
+    submit.disabled = false;
+    submit.textContent = 'Увійти';
+    if (error) return setAlert(errBox, explain(error));
+    setAlert(errBox, '');
+    form.reset();
+    route();
+  });
+
+  $<HTMLFormElement>('[data-forgot-form]').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errBox = $('[data-forgot-error]');
+    const ok = $('[data-forgot-ok]');
+    const email = $<HTMLInputElement>('#forgot-email').value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setAlert(errBox, 'Перевірте email.');
+    const submit = $<HTMLButtonElement>('[data-forgot-submit]');
+    submit.disabled = true;
+    const { error } = await supabase!.auth
+      .resetPasswordForEmail(email, { redirectTo: `${location.origin}/admin/reset/` })
+      .catch(() => ({ error: {} as never }));
+    submit.disabled = false;
+    if (error) { ok.hidden = true; return setAlert(errBox, explain(error)); }
+    // Не кажемо, чи є такий email у команді — щоб сторонні не могли це перевіряти.
+    setAlert(errBox, '');
+    ok.hidden = false;
+  });
+
+  document.querySelectorAll('[data-logout]').forEach((b) => b.addEventListener('click', async () => {
+    await supabase?.auth.signOut();
+    $('[data-who]').hidden = true;
+    show('login');
+  }));
+
+  // Розділи, яких ще немає, поки що не відкриваємо — лише позначка «скоро».
+  document.querySelectorAll<HTMLAnchorElement>('[data-soon]').forEach((a) => {
+    a.classList.add('soon');
+    a.setAttribute('aria-disabled', 'true');
+    a.addEventListener('click', (e) => e.preventDefault());
+  });
+
+  if (!supabaseConfigured) show('config');
+  else route();
+</script>
+
+<style>
+  h1 { font-size: 26px; font-weight: 900; margin-bottom: 12px; }
+  .state[hidden], .card[hidden], section[hidden] { display: none; }
+  .card { max-width: 420px; margin: 24px auto; padding: 28px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+  form { display: grid; gap: 8px; }
+  label { font-weight: 800; margin-top: 6px; }
+  input[type='email'], input[type='password'], input[type='text'] {
+    width: 100%; min-height: 46px; padding: 10px 14px; border: 2px solid var(--line); border-radius: 12px; background: var(--surface);
+  }
+  input:focus { border-color: var(--pink-500); outline: none; }
+  .pw { position: relative; }
+  .pw input { padding-right: 96px; }
+  .show-pw { position: absolute; right: 6px; top: 50%; translate: 0 -50%; border: 0; background: none; color: var(--accent-text); font-weight: 800; cursor: pointer; padding: 8px; }
+  .wide { width: 100%; margin-top: 12px; min-height: 48px; }
+  .link { margin-top: 14px; border: 0; background: none; color: var(--accent-text); font-weight: 800; cursor: pointer; padding: 4px 0; }
+  .link:hover { text-decoration: underline; }
+  .alert { padding: 10px 14px; border-radius: var(--radius-sm); background: var(--tint-red); border: 2px solid var(--tint-red-border); font-weight: 700; }
+  .alert[hidden], .ok[hidden] { display: none; }
+  .ok { padding: 10px 14px; border-radius: var(--radius-sm); background: var(--tint-green); border: 2px solid var(--tint-green-border); font-weight: 700; }
+  .muted { color: var(--ink-2); font-weight: 600; }
+
+  .hello { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .role { padding: 4px 12px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-text); font-size: 14px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-top: 20px; }
+  .tile {
+    position: relative; display: grid; gap: 6px; padding: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+  .tile[hidden] { display: none; }
+  .tile :global(svg) { color: var(--accent-text); }
+  .tile b { font-size: 18px; }
+  .tile span { font-size: 28px; font-weight: 900; }
+  .tile:not(.soon):hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+  .tile.soon { cursor: default; opacity: 0.75; }
+  .tile.soon::after { content: 'скоро'; position: absolute; top: 14px; right: 14px; padding: 2px 10px; border-radius: 999px; background: var(--line); font-size: 12px; font-weight: 800; }
+  .soon-note { margin-top: 16px; }
+  .site-link { margin-top: 8px; border: 2px solid var(--accent-border); }
+</style>

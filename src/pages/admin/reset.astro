@@ -1,0 +1,90 @@
+---
+import Admin from '../../layouts/Admin.astro';
+---
+<Admin title="Новий пароль">
+  <p class="state" data-state="loading">Перевіряємо посилання…</p>
+
+  <section class="card" data-state="form" hidden>
+    <h1>Новий пароль</h1>
+    <p class="muted">Для <b data-email></b>. Щонайменше 8 символів.</p>
+    <form data-reset-form novalidate>
+      <div class="alert" role="alert" tabindex="-1" data-error hidden></div>
+      <label for="pw1">Новий пароль</label>
+      <input id="pw1" type="password" autocomplete="new-password" minlength="8" required />
+      <label for="pw2">Повторіть пароль</label>
+      <input id="pw2" type="password" autocomplete="new-password" minlength="8" required />
+      <button class="btn wide" type="submit" data-submit>Зберегти пароль</button>
+    </form>
+  </section>
+
+  <section class="card" data-state="expired" hidden>
+    <h1>Посилання не спрацювало</h1>
+    <p class="muted">Воно застаріло, вже було використане або відкрите в іншому браузері чи на іншому пристрої. Запросіть нове й відкрийте лист на тому ж пристрої, де натискали «Забули пароль?».</p>
+    <a class="btn wide" href="/admin/#forgot">Надіслати новий лист</a>
+  </section>
+
+  <section class="card" data-state="done" hidden>
+    <h1>Готово!</h1>
+    <p class="muted">Пароль збережено. Відкриваємо адмінку…</p>
+  </section>
+</Admin>
+
+<script>
+  import { supabase } from '../../lib/supabase-client';
+
+  const states = [...document.querySelectorAll<HTMLElement>('[data-state]')];
+  const show = (name: string) => states.forEach((s) => (s.hidden = s.dataset.state !== name));
+  const $ = <T extends HTMLElement = HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
+
+  async function init() {
+    if (!supabase) return show('expired');
+    // Посилання з листа несе одноразовий код; supabase-js сам обмінює його на сесію (detectSessionInUrl).
+    const params = new URLSearchParams(location.search + location.hash.replace(/^#/, '&'));
+    if (params.get('error') || params.get('error_code')) return show('expired');
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return show('expired');
+    $('[data-email]').textContent = session.user.email ?? '';
+    history.replaceState(null, '', location.pathname); // прибрати код з адреси
+    show('form');
+    $<HTMLInputElement>('#pw1').focus();
+  }
+
+  $<HTMLFormElement>('[data-reset-form]').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const err = $('[data-error]');
+    const say = (text: string) => { err.textContent = text; err.hidden = !text; if (text) err.focus(); };
+    const pw1 = $<HTMLInputElement>('#pw1').value;
+    const pw2 = $<HTMLInputElement>('#pw2').value;
+    if (pw1.length < 8) return say('Пароль має бути щонайменше 8 символів.');
+    if (pw1 !== pw2) return say('Паролі не збігаються.');
+    const submit = $<HTMLButtonElement>('[data-submit]');
+    submit.disabled = true;
+    const { error } = await supabase!.auth.updateUser({ password: pw1 }).catch(() => ({ error: { message: 'network' } as never }));
+    submit.disabled = false;
+    if (error) {
+      return say(error.code === 'same_password'
+        ? 'Новий пароль збігається зі старим — придумайте інший.'
+        : error.code === 'weak_password'
+          ? 'Пароль занадто простий — додайте цифри чи інші символи.'
+          : 'Не вдалося зберегти. Перевірте інтернет і спробуйте ще раз.');
+    }
+    show('done');
+    setTimeout(() => location.assign('/admin/'), 1200);
+  });
+
+  init();
+</script>
+
+<style>
+  h1 { font-size: 26px; font-weight: 900; margin-bottom: 12px; }
+  [data-state][hidden] { display: none; }
+  .card { max-width: 420px; margin: 24px auto; padding: 28px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+  form { display: grid; gap: 8px; }
+  label { font-weight: 800; margin-top: 6px; }
+  input { width: 100%; min-height: 46px; padding: 10px 14px; border: 2px solid var(--line); border-radius: 12px; background: var(--surface); }
+  input:focus { border-color: var(--pink-500); outline: none; }
+  .wide { width: 100%; margin-top: 12px; min-height: 48px; }
+  .alert { padding: 10px 14px; border-radius: var(--radius-sm); background: var(--tint-red); border: 2px solid var(--tint-red-border); font-weight: 700; }
+  .alert[hidden] { display: none; }
+  .muted { color: var(--ink-2); font-weight: 600; }
+</style>
