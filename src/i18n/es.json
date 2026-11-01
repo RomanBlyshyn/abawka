@@ -136,5 +136,7 @@
   "thanks.title": "¡Gracias por tu solicitud!",
   "thanks.number": "Número de solicitud: {n}",
   "thanks.text": "El propietario te contactará pronto por el medio elegido para acordar envío y pago.",
-  "thanks.continue": "Seguir comprando"
+  "thanks.continue": "Seguir comprando",
+  "form.error.stock": "Algunos juguetes ya no están disponibles en esa cantidad. Actualiza el carrito y revisa las cantidades.",
+  "form.error.rate": "Demasiadas solicitudes en poco tiempo. Inténtalo en unos minutos; tus datos se conservan."
 }

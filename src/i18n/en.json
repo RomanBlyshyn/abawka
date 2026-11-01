@@ -134,5 +134,7 @@
   "thanks.title": "Thank you for your request!",
   "thanks.number": "Request number: {n}",
   "thanks.text": "The owner will contact you soon the way you chose to arrange delivery and payment.",
-  "thanks.continue": "Continue shopping"
+  "thanks.continue": "Continue shopping",
+  "form.error.stock": "Some toys are no longer available in that quantity. Refresh the cart page and check the quantities.",
+  "form.error.rate": "Too many requests in a short time. Please try again in a few minutes — what you entered is kept."
 }

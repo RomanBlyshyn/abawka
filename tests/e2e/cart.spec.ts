@@ -1,4 +1,23 @@
-import { expect, test, type Page } from '@playwright/test';
+import { type Page } from '@playwright/test';
+import { expect, test } from './fixtures';
+
+// Підмінена функція бази submit_request (див. supabase/migrations/…_requests.sql).
+// «sold-out» у кошику → помилка залишку; ім'я «Spammy» → ліміт частоти; інакше заявка №1042.
+const sent: unknown[] = [];
+let networkDown = false; // тест «немає мережі» вмикає, щоб запит обірвався
+test.beforeEach(async ({ page }) => {
+  sent.length = 0;
+  networkDown = false;
+  await page.route(/\/rest\/v1\/rpc\/submit_request/, async (route) => {
+    if (networkDown) return route.abort('internetdisconnected');
+    const { payload } = route.request().postDataJSON();
+    sent.push(payload);
+    const fail = (message: string) => route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ code: 'P0001', message }) });
+    if (payload.lines.some((l: { slug: string }) => l.slug === 'walking-capybara') && payload.comment === 'race') return fail('stock:walking-capybara');
+    if (payload.name === 'Spammy') return fail('rate_limited');
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 1042 }) });
+  });
+});
 
 const setCart = async (page: Page, lines: { slug: string; qty: number }[]) => {
   await page.goto('/en/');
@@ -99,20 +118,20 @@ test.describe('request form', () => {
     await expect(delivery.locator('option', { hasText: 'Wrocław' })).toHaveCount(0);
   });
 
-  test('network error: "not sent, try again", nothing typed is lost', async ({ page, context }) => {
+  test('network error: "not sent, try again", nothing typed is lost', async ({ page }) => {
     await setCart(page, [{ slug: 'toy-sword', qty: 1 }]);
     await page.goto('/en/cart/');
     await fillValid(page);
     await page.getByLabel('Comment (optional)').fill('Gift wrap please');
-    await context.setOffline(true);
+    networkDown = true;
     await page.getByRole('button', { name: 'Send request' }).click();
     await expect(page.getByRole('alert')).toContainText('Not sent');
     await expect(page.getByLabel('Name')).toHaveValue('Anna');
     await expect(page.getByLabel('Comment (optional)')).toHaveValue('Gift wrap please');
     await expect(page.getByRole('button', { name: 'Send request' })).toBeEnabled();
-    await context.setOffline(false);
+    networkDown = false;
     await page.getByRole('button', { name: 'Send request' }).click();
-    await expect(page).toHaveURL(/\/en\/thanks\/\?n=D-\d{6}&demo=1$/);
+    await expect(page).toHaveURL(/\/en\/thanks\/\?n=1042$/);
   });
 
   test('draft survives a page reload', async ({ page }) => {
@@ -137,9 +156,33 @@ test.describe('request form', () => {
     await page.getByRole('button', { name: 'Надіслати заявку' }).click();
     await expect(page).toHaveURL(/\/uk\/thanks\//);
     await expect(page.getByRole('heading', { name: 'Дякуємо за заявку!' })).toBeVisible();
-    await expect(page.getByText(/Номер заявки: D-\d{6}/)).toBeVisible();
-    await expect(page.getByText(/Демо-режим/)).toBeVisible();
+    await expect(page.getByText('Номер заявки: 1042')).toBeVisible();
+    await expect(page.getByText(/Демо-режим/)).toBeHidden();
     await expect(page.locator('[data-cart-count]')).toBeHidden();
+    // У базу йдуть лише slug і кількість — ціну рахує сервер.
+    expect(sent[0]).toMatchObject({ name: 'Олена', method: 'call', country: 'UA', locale: 'uk', consent: true, lines: [{ slug: 'toy-sword', qty: 2 }] });
+    expect(JSON.stringify(sent[0])).not.toContain('price');
+  });
+
+  test('someone bought the last pieces meanwhile: clear message, cart and form kept', async ({ page }) => {
+    await setCart(page, [{ slug: 'walking-capybara', qty: 1 }]);
+    await page.goto('/en/cart/');
+    await fillValid(page);
+    await page.getByLabel('Comment (optional)').fill('race');
+    await page.getByRole('button', { name: 'Send request' }).click();
+    await expect(page.getByRole('alert')).toContainText('no longer available in that quantity');
+    await expect(page.getByLabel('Name')).toHaveValue('Anna');
+    await expect(page.locator('[data-cart-count]')).toHaveText('1');
+  });
+
+  test('too many requests: asks to wait, keeps the input', async ({ page }) => {
+    await setCart(page, [{ slug: 'toy-sword', qty: 1 }]);
+    await page.goto('/en/cart/');
+    await fillValid(page);
+    await page.getByLabel('Name').fill('Spammy');
+    await page.getByRole('button', { name: 'Send request' }).click();
+    await expect(page.getByRole('alert')).toContainText('Too many requests');
+    await expect(page.getByLabel('Name')).toHaveValue('Spammy');
   });
 
   test('thank-you page ignores a malicious number in the URL', async ({ page }) => {

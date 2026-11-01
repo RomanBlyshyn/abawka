@@ -12,7 +12,7 @@ export const session = () => {
 };
 
 type Row = Record<string, unknown> & { id: string };
-export interface Db { products: Row[]; categories: Row[]; product_images: Row[]; storage: string[]; requests: { method: string; url: string; body: unknown }[] }
+export interface Db { products: Row[]; categories: Row[]; product_images: Row[]; requests_table: Row[]; storage: string[]; requests: { method: string; url: string; body: unknown }[] }
 
 const cors = { 'access-control-allow-origin': '*', 'access-control-expose-headers': 'content-range' };
 const reply = (route: Route, body: unknown, status = 200) =>
@@ -32,10 +32,11 @@ export async function mockAdmin(page: Page, db: Db, opts: { role?: 'owner' | 'ma
     return reply(r, { translations });
   });
 
-  await page.route(/\/rest\/v1\/(products|categories|product_images)/, async (route) => {
+  await page.route(/\/rest\/v1\/(products|categories|product_images|requests)\?/, async (route) => {
     const req = route.request();
     const url = new URL(req.url());
-    const table = url.pathname.split('/').pop() as 'products' | 'categories' | 'product_images';
+    const name = url.pathname.split('/').pop()!;
+    const table = (name === 'requests' ? 'requests_table' : name) as 'products' | 'categories' | 'product_images' | 'requests_table';
     const rows = db[table];
     const single = (req.headers()['accept'] ?? '').includes('vnd.pgrst.object');
     const idEq = url.searchParams.get('id')?.replace(/^eq\./, '');
@@ -92,7 +93,7 @@ export async function mockAdmin(page: Page, db: Db, opts: { role?: 'owner' | 'ma
   });
 
   // Сесія як після входу: supabase-js читає її з localStorage.
-  const ref = new URL(process.env.PUBLIC_SUPABASE_URL ?? 'https://uvpoanwkoikudjdbreys.supabase.co').hostname.split('.')[0];
+  const ref = 'abawka-test'; // див. playwright.config.ts: тестова збірка ходить на https://abawka-test.supabase.co
   await page.addInitScript(([key, value]) => localStorage.setItem(key, value), [`sb-${ref}-auth-token`, JSON.stringify(session())]);
 }
 
@@ -106,6 +107,7 @@ export const sampleDb = (): Db => ({
     { id: 'p-chess', slug: 'chess', name: { uk: 'Шахи', en: 'Chess set' }, description: { uk: 'Дерев’яні' }, price: 3499, old_price: null, stock: 0, age_min: 6, hit: false, is_new: false, published: false, category_id: 'cat-games', position: 1 },
   ],
   product_images: [],
+  requests_table: [],
   storage: [],
   requests: [],
 });

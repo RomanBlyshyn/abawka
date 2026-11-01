@@ -1,4 +1,5 @@
-import { expect, test, type Page, type Route } from '@playwright/test';
+import { type Page, type Route } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 // Supabase у тестах підміняємо: перевіряємо поведінку адмінки, не чіпаючи справжню базу й пошту.
 const USER = { id: '11111111-1111-1111-1111-111111111111', email: 'owner@abawka.test', aud: 'authenticated', role: 'authenticated', app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };

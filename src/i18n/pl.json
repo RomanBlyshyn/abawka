@@ -138,5 +138,7 @@
   "thanks.title": "Dziękujemy za zgłoszenie!",
   "thanks.number": "Numer zgłoszenia: {n}",
   "thanks.text": "Właściciel wkrótce skontaktuje się z Tobą wybranym sposobem, aby ustalić dostawę i płatność.",
-  "thanks.continue": "Kontynuuj zakupy"
+  "thanks.continue": "Kontynuuj zakupy",
+  "form.error.stock": "Części zabawek nie ma już w potrzebnej ilości. Odśwież stronę koszyka i sprawdź ilości.",
+  "form.error.rate": "Za dużo zgłoszeń w krótkim czasie. Spróbuj ponownie za kilka minut — wpisane dane zostały zachowane."
 }

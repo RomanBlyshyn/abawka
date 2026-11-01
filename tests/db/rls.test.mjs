@@ -123,3 +123,93 @@ test('photo storage: staff can list objects (needed to delete), strangers cannot
   assert.ok((await as(MANAGER, `select count(*)::int n from storage.objects where bucket_id = 'catalog'`)).rows[0].n >= 1);
   assert.equal((await as(STRANGER, `select count(*)::int n from storage.objects`)).rows[0].n, 0);
 });
+
+// ── Заявки ──────────────────────────────────────────────────────────────────
+const order = (over = {}) => JSON.stringify({
+  name: 'Anna', method: 'call', contact: '+48 600 000 000', country: 'PL', delivery: 'inpost', comment: '',
+  locale: 'pl', consent: true, website: '', lines: [{ slug: 'bobo-balloon', qty: 2 }], ...over,
+});
+async function submit(payload, ip = '10.0.0.1') {
+  await db.exec('reset role');
+  await db.query(`select set_config('request.headers', $1, false)`, [JSON.stringify({ 'x-forwarded-for': `${ip}, 172.16.0.1` })]);
+  await db.exec(`set role anon; set request.jwt.claim.sub = ''`);
+  try { return (await db.query('select public.submit_request($1::jsonb) r', [payload])).rows[0].r; }
+  finally { await db.exec('reset role'); }
+}
+const stockOf = async (slug) => (await admin(`select stock from public.products where slug = $1`, [slug])).rows[0].stock;
+
+test('request: price comes from the database, stock is reserved, buyer cannot read requests', async () => {
+  await admin(`update public.products set stock = 10, price = 599 where slug = 'bobo-balloon'`);
+  const r = await submit(order({ lines: [{ slug: 'bobo-balloon', qty: 2, price: 1 }] }), '10.0.0.10'); // ціна з браузера ігнорується
+  assert.ok(r.id >= 1001);
+  const row = (await admin(`select total, items, ip, status, currency from public.requests where id = $1`, [r.id])).rows[0];
+  assert.equal(row.total, 1198);
+  assert.equal(row.items[0].price, 599);
+  assert.equal(row.ip, '10.0.0.10');
+  assert.equal(row.status, 'new');
+  assert.equal(await stockOf('bobo-balloon'), 8);
+  assert.equal((await as('anon', 'select count(*)::int n from public.requests')).rows[0].n, 0);
+  assert.ok((await as(MANAGER, 'select count(*)::int n from public.requests')).rows[0].n >= 1);
+});
+
+test('request: not enough stock or unpublished product is refused and nothing is reserved', async () => {
+  await admin(`update public.products set stock = 1 where slug = 'chess'`);
+  await rejects(submit(order({ lines: [{ slug: 'bobo-balloon', qty: 1 }, { slug: 'chess', qty: 2 }] }), '10.0.0.11'), /stock:chess/);
+  assert.equal(await stockOf('chess'), 1);
+  const bobo = await stockOf('bobo-balloon');
+  assert.ok(bobo >= 0); // перший рядок відкотився разом з усією транзакцією
+  await admin(`update public.products set published = false where slug = 'chess'`);
+  await rejects(submit(order({ lines: [{ slug: 'chess', qty: 1 }] }), '10.0.0.11'), /stock:chess/);
+  await admin(`update public.products set published = true where slug = 'chess'`);
+});
+
+test('request: server-side validation mirrors the form', async () => {
+  const cases = [
+    [{ name: 'A' }, /invalid:name/],
+    [{ method: 'pigeon' }, /invalid:method/],
+    [{ contact: '123' }, /invalid:contact/],
+    [{ method: 'email', contact: 'not-an-email' }, /invalid:contact/],
+    [{ method: 'telegram', contact: '@ab' }, /invalid:contact/],
+    [{ country: 'Poland' }, /invalid:country/],
+    [{ delivery: '<script>' }, /invalid:delivery/],
+    [{ consent: false }, /invalid:consent/],
+    [{ lines: [] }, /empty/],
+    [{ lines: [{ slug: 'chess', qty: 0 }] }, /invalid:lines/],
+    [{ lines: [{ slug: 'chess', qty: 'lots' }] }, /invalid:lines/],
+  ];
+  for (const [over, re] of cases) await rejects(submit(order(over), '10.0.0.12'), re, JSON.stringify(over));
+  const ok = await submit(order({ method: 'telegram', contact: '@abawka_fan', lines: [{ slug: 'chess', qty: 1 }] }), '10.0.0.12');
+  assert.ok(ok.id > 0);
+});
+
+test('request: honeypot gets a fake success and nothing is stored', async () => {
+  const before = (await admin('select count(*)::int n from public.requests')).rows[0].n;
+  const r = await submit(order({ website: 'http://spam.example' }), '10.0.0.13');
+  assert.equal(r.id, 0);
+  assert.equal((await admin('select count(*)::int n from public.requests')).rows[0].n, before);
+});
+
+test('request: more than 5 in 10 minutes from one address is refused', async () => {
+  await admin(`update public.products set stock = 100 where slug = 'bobo-balloon'`);
+  for (let i = 0; i < 5; i++) await submit(order({ lines: [{ slug: 'bobo-balloon', qty: 1 }] }), '10.0.0.99');
+  await rejects(submit(order({ lines: [{ slug: 'bobo-balloon', qty: 1 }] }), '10.0.0.99'), /rate_limited/);
+  assert.ok((await submit(order({ lines: [{ slug: 'bobo-balloon', qty: 1 }] }), '10.0.0.98')).id > 0); // інша адреса — можна
+});
+
+test('request: staff changes status and note only; cancelling returns stock, un-cancelling reserves again', async () => {
+  await admin(`update public.products set stock = 5 where slug = 'knight-sword'`);
+  const { id } = await submit(order({ lines: [{ slug: 'knight-sword', qty: 3 }] }), '10.0.0.20');
+  assert.equal(await stockOf('knight-sword'), 2);
+  await rejects(as(MANAGER, `update public.requests set total = 1 where id = ${id}`), /лише статус/);
+  await as(MANAGER, `update public.requests set status = 'cancelled', staff_note = 'передумав' where id = ${id}`);
+  assert.equal(await stockOf('knight-sword'), 5);
+  await as(MANAGER, `update public.requests set status = 'contacted' where id = ${id}`);
+  assert.equal(await stockOf('knight-sword'), 2);
+  await rejects(as(MANAGER, `delete from public.requests where id = ${id} returning id`).then((r) => { if (!r.rows.length) throw new Error('blocked'); }), /blocked/);
+  assert.equal((await as(OWNER, `delete from public.requests where id = ${id} returning id`)).rows.length, 1);
+});
+
+test('request: nobody can insert directly, only through submit_request', async () => {
+  await rejects(as('anon', `insert into public.requests (locale, name, method, contact, country, delivery, currency, total, items) values ('pl','Bot','call','+48600000000','PL','x','EUR',0,'[{}]')`), /row-level security|permission denied/);
+  await rejects(as(OWNER, `insert into public.requests (locale, name, method, contact, country, delivery, currency, total, items) values ('pl','Bot','call','+48600000000','PL','x','EUR',0,'[{}]')`), /row-level security/);
+});

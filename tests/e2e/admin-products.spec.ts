@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { mockAdmin, sampleDb } from './helpers/supabase-mock';
 
 test.describe('admin: product list', () => {

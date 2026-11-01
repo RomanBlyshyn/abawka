@@ -53,6 +53,9 @@ import Icon from '../../components/Icon.astro';
   <section data-state="dashboard" hidden>
     <h1 class="hello">Вітаємо! <span class="role" data-role></span></h1>
     <div class="tiles">
+      <a class="tile" href="/admin/requests/">
+        <Icon name="cart" size={28} /><b>Нові заявки</b><span data-count="requests">—</span>
+      </a>
       <a class="tile" href="/admin/products/">
         <Icon name="star" size={28} /><b>Товари</b><span data-count="products">—</span>
       </a>
@@ -113,8 +116,9 @@ import Icon from '../../components/Icon.astro';
   }
 
   async function loadCounts() {
-    for (const table of ['products', 'categories', 'banners', 'staff']) {
-      const { count } = await supabase!.from(table).select('*', { count: 'exact', head: true });
+    for (const table of ['requests', 'products', 'categories', 'banners', 'staff']) {
+      const q = supabase!.from(table).select('*', { count: 'exact', head: true });
+      const { count } = await (table === 'requests' ? q.eq('status', 'new') : q);
       const el = document.querySelector(`[data-count="${table}"]`);
       if (el && count !== null) el.textContent = String(count);
     }
