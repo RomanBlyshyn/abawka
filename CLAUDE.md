@@ -15,6 +15,7 @@
 - Встановити: `npm install`
 - Секрети: скопіювати `.env.example` → `.env`, заповнити.
 - Розробка: `npm run dev` → http://localhost:4321/
+- Репозиторій публічний: `npm run hooks:install` (один раз) ставить pre-commit, що не пускає в коміт значення з `.env` і схоже на ключі; вручну — `npm run check:secrets`.
 - Перевірка типів: `npm run check`; перекладів: `npm run check:i18n`; збірка: `npm run build`
 - E2E-тести: `npm run test:e2e` (самі збирають сайт і піднімають preview на 4390).
 - Тести бази: `npm run test:db` — міграції й RLS на PGlite (Postgres у Node, без Docker), заглушки Supabase в `tests/db/supabase-stubs.sql`.
