@@ -58,6 +58,17 @@ export function formatMoney(minor: number, locale: string, currency = selected()
     .format((rate ? Math.round(minor * rate) : minor) / 100);
 }
 
+/** Сума в базовій валюті (центи) → у вибраній валюті (центи), для фільтра ціни. Без курсу — як є. */
+export function convertMinor(minor: number, currency = selected()): number {
+  const rate = currency !== base && rates?.[currency] && rates[base] ? rates[currency]!.perEur / rates[base]!.perEur : null;
+  return rate ? Math.round(minor * rate) : minor;
+}
+
+/** Символ вибраної валюти для підписів («€», «zł», «₴», «$»). */
+export function currencySymbol(locale: string, currency = selected()): string {
+  return new Intl.NumberFormat(locale, { style: 'currency', currency }).formatToParts(0).find((p) => p.type === 'currency')?.value ?? currency;
+}
+
 /** Дата й джерело курсу для примітки «орієнтовно». */
 export const rateInfo = (currency = selected()) => (currency === base ? null : rates?.[currency] ?? null);
 

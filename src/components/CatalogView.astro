@@ -6,7 +6,7 @@ import { Image } from 'astro:assets';
 import mascot from '../assets/mascot.webp';
 import { LOCALES, type Locale } from '../i18n/config';
 import { plural, useTranslations } from '../i18n';
-import { getCategories, getProducts, pick, type Category } from '../lib/data';
+import { BASE_CURRENCY, getCategories, getProducts, pick, type Category } from '../lib/data';
 import { AGE_GROUPS } from '../lib/age';
 import { href } from '../lib/format';
 
@@ -16,6 +16,7 @@ const t = useTranslations(locale);
 const categories = getCategories();
 const products = getProducts().filter((p) => !category || p.category === category.slug);
 const title = category ? pick(category.name, locale) : t('catalog.all');
+const baseSymbol = new Intl.NumberFormat(locale, { style: 'currency', currency: BASE_CURRENCY }).formatToParts(0).find((x) => x.type === 'currency')?.value ?? BASE_CURRENCY;
 
 // Пошук іде по назвах усіма мовами і без діакритики: «kapibara» знайде «Kapybara», «capibara» і «капібара».
 const norm = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
@@ -62,11 +63,11 @@ const pluralForms = Object.fromEntries(['zero', 'one', 'two', 'few', 'many', 'ot
         </fieldset>
 
         <fieldset class="block">
-          <legend>{t('catalog.price')}, €</legend>
+          <legend>{t('catalog.price')}, <span data-price-symbol>{baseSymbol}</span></legend>
           <div class="price-row">
-            <label><span class="sr-only">{t('catalog.price')} {t('catalog.priceFrom')}</span><input type="number" name="min" min="0" step="1" inputmode="numeric" placeholder={t('catalog.priceFrom')} /></label>
+            <label><span class="sr-only">{t('catalog.price')} {t('catalog.priceFrom')}</span><input type="number" name="min" min="0" step="any" inputmode="decimal" placeholder={t('catalog.priceFrom')} /></label>
             <span aria-hidden="true">—</span>
-            <label><span class="sr-only">{t('catalog.price')} {t('catalog.priceTo')}</span><input type="number" name="max" min="0" step="1" inputmode="numeric" placeholder={t('catalog.priceTo')} /></label>
+            <label><span class="sr-only">{t('catalog.price')} {t('catalog.priceTo')}</span><input type="number" name="max" min="0" step="any" inputmode="decimal" placeholder={t('catalog.priceTo')} /></label>
           </div>
         </fieldset>
 
@@ -130,6 +131,8 @@ const pluralForms = Object.fromEntries(['zero', 'one', 'two', 'few', 'many', 'ot
 })} />
 
 <script>
+  import { convertMinor, currencySymbol, CURRENCY_EVENT } from '../lib/currency';
+
   const cfg = JSON.parse(document.getElementById('catalog-i18n')!.textContent!);
   const form = document.querySelector<HTMLFormElement>('[data-filters]')!;
   const sortSel = document.querySelector<HTMLSelectElement>('[data-sort]')!;
@@ -166,8 +169,10 @@ const pluralForms = Object.fromEntries(['zero', 'one', 'two', 'few', 'many', 'ot
   function apply() {
     const data = new FormData(form);
     const selAges = data.getAll('age[]').map(String);
-    const min = num(data.get('min'));
-    const max = num(data.get('max'));
+    // «Від» більше за «до» — не порожній список, а той самий діапазон навпаки.
+    let min = num(data.get('min'));
+    let max = num(data.get('max'));
+    if (min !== null && max !== null && min > max) [min, max] = [max, min];
     const onlyStock = data.has('stock');
     const onlySale = data.has('sale');
     const words = norm(q).split(/\s+/).filter(Boolean);
@@ -175,7 +180,8 @@ const pluralForms = Object.fromEntries(['zero', 'one', 'two', 'few', 'many', 'ot
     let visible = 0;
     for (const el of items) {
       const d = el.dataset;
-      const priceMajor = Number(d.price) / 100;
+      // Ціни на картках — у вибраній валюті, тож і фільтр рахує в ній (а не завжди в євро).
+      const priceMajor = convertMinor(Number(d.price)) / 100;
       const ok =
         (!selAges.length || selAges.some((a) => Number(d.age) <= AGE_MAX[a])) &&
         (min === null || priceMajor >= min) &&
@@ -220,6 +226,10 @@ const pluralForms = Object.fromEntries(['zero', 'one', 'two', 'few', 'many', 'ot
     const qs = next.toString();
     history.replaceState(null, '', qs ? `?${qs}` : location.pathname);
   }
+
+  // Перемкнули валюту — оновити символ у підписі й перерахувати фільтр.
+  const symbol = document.querySelector<HTMLElement>('[data-price-symbol]')!;
+  window.addEventListener(CURRENCY_EVENT, () => { symbol.textContent = currencySymbol(cfg.locale); apply(); });
 
   form.addEventListener('submit', (e) => e.preventDefault());
   form.addEventListener('input', apply);
