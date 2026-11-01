@@ -165,6 +165,6 @@ test('hovered category tile is not clipped by its scroll container', async ({ pa
 });
 
 test('currency switch stays hidden until prices can be converted', async ({ page }) => {
-  await page.goto('/en/');
-  await expect(page.locator('[data-currency-label]')).toHaveCount(0);
+  await page.goto('/en/'); // курсів немає (тестова база віддає 404)
+  await expect(page.locator('[data-currency-switch]')).toBeHidden();
 });

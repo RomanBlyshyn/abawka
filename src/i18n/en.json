@@ -147,5 +147,8 @@
   "cart.promo.min": "This code works for orders from {sum}.",
   "cart.promo.error": "Could not check the code. Please try again.",
   "form.error.promo": "The promo code is no longer valid — we removed it and updated the total. Please send the request again.",
-  "price.lowest30": "Lowest price in the 30 days before the discount: {price}"
+  "price.lowest30": "Lowest price in the 30 days before the discount: {price}",
+  "price.approx": "Prices in {currency} are approximate: {source} rate of {date}. Requests are calculated in {base}.",
+  "price.source.ECB": "ECB",
+  "price.source.NBU": "NBU"
 }

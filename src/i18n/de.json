@@ -147,5 +147,8 @@
   "cart.promo.min": "Der Code gilt ab einem Bestellwert von {sum}.",
   "cart.promo.error": "Der Code konnte nicht geprüft werden. Bitte versuchen Sie es erneut.",
   "form.error.promo": "Der Gutscheincode ist nicht mehr gültig — wir haben ihn entfernt und die Summe aktualisiert. Bitte senden Sie die Anfrage erneut.",
-  "price.lowest30": "Niedrigster Preis der 30 Tage vor der Reduzierung: {price}"
+  "price.lowest30": "Niedrigster Preis der 30 Tage vor der Reduzierung: {price}",
+  "price.approx": "Preise in {currency} sind Richtwerte: {source}-Kurs vom {date}. Anfragen werden in {base} berechnet.",
+  "price.source.ECB": "EZB",
+  "price.source.NBU": "NBU"
 }

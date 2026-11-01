@@ -149,5 +149,8 @@
   "cart.promo.min": "El código es válido para pedidos desde {sum}.",
   "cart.promo.error": "No se pudo comprobar el código. Inténtalo de nuevo.",
   "form.error.promo": "El código promocional ya no es válido: lo hemos quitado y actualizado el total. Envía la solicitud de nuevo.",
-  "price.lowest30": "Precio más bajo en los 30 días anteriores al descuento: {price}"
+  "price.lowest30": "Precio más bajo en los 30 días anteriores al descuento: {price}",
+  "price.approx": "Los precios en {currency} son aproximados: tipo del {source} del {date}. La solicitud se calcula en {base}.",
+  "price.source.ECB": "BCE",
+  "price.source.NBU": "NBU"
 }

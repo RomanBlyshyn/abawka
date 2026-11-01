@@ -151,5 +151,8 @@
   "cart.promo.min": "Kodas galioja užsakymams nuo {sum}.",
   "cart.promo.error": "Nepavyko patikrinti kodo. Bandykite dar kartą.",
   "form.error.promo": "Nuolaidos kodas nebegalioja — jį pašalinome ir atnaujinome sumą. Išsiųskite užklausą dar kartą.",
-  "price.lowest30": "Mažiausia kaina per 30 dienų iki nuolaidos: {price}"
+  "price.lowest30": "Mažiausia kaina per 30 dienų iki nuolaidos: {price}",
+  "price.approx": "Kainos {currency} yra orientacinės: {source} kursas {date}. Užklausą skaičiuojame {base}.",
+  "price.source.ECB": "ECB",
+  "price.source.NBU": "NBU"
 }

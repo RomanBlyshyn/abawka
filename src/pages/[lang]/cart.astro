@@ -44,7 +44,7 @@ const forms = Object.fromEntries(['zero', 'one', 'two', 'few', 'many', 'other'].
                 <a class={`thumb tint-${cat.tint}`} href={href(locale, `product/${p.slug}/`)} tabindex="-1" aria-hidden="true">{p.images?.[0] ? <img src={imageUrl(p.images[0], 400)} width="72" height="72" alt="" loading="lazy" /> : <Icon name={cat.icon} size={36} />}</a>
                 <div class="line-info">
                   <a class="line-name" href={href(locale, `product/${p.slug}/`)}>{name}</a>
-                  <span class="unit">{formatPrice(p.price, BASE_CURRENCY, locale)}</span>
+                  <span class="unit" data-price-minor={p.price}>{formatPrice(p.price, BASE_CURRENCY, locale)}</span>
                   <p class="warn" data-warn hidden></p>
                 </div>
                 <div class="qty" role="group" aria-label={`${t('product.qty')}: ${name}`}>
@@ -76,6 +76,7 @@ const forms = Object.fromEntries(['zero', 'one', 'two', 'few', 'many', 'other'].
         </form>
         <p class="sum-discount" data-discount-row hidden><span data-discount-label></span><strong data-discount></strong></p>
         <p class="sum-total"><span>{t('cart.total')}</span><strong data-sum-total></strong></p>
+        <p class="sum-note" data-currency-note hidden></p>
         <p class="sum-note">{t('cart.priceNote')}</p>
       </aside>
     </div>
@@ -111,9 +112,11 @@ const forms = Object.fromEntries(['zero', 'one', 'two', 'few', 'many', 'other'].
 <script>
   import { CART_EVENT, readCart, readPromo, setQty, writeCart, writePromo } from '../../lib/cart-client';
   import { checkPromo, PromoError, type PromoResult } from '../../lib/request-client';
+  import { CURRENCY_EVENT, formatMoney } from '../../lib/currency';
 
   const cfg = JSON.parse(document.getElementById('cart-cfg')!.textContent!);
-  const money = new Intl.NumberFormat(cfg.locale, { style: 'currency', currency: cfg.currency, minimumFractionDigits: 2 });
+  // Суми — у вибраній валюті (орієнтовно); у заявку йдуть товари, а суму рахує сервер у базовій валюті.
+  const money = { format: (major: number) => formatMoney(Math.round(major * 100), cfg.locale) };
   const plural = (n: number) => `${n} ${cfg.forms[new Intl.PluralRules(cfg.locale).select(n)] ?? cfg.forms.other}`;
   const rows = new Map([...document.querySelectorAll<HTMLElement>('[data-line]')].map((r) => [r.dataset.line!, r]));
   const list = document.querySelector<HTMLElement>('.lines')!;
@@ -250,6 +253,7 @@ const forms = Object.fromEntries(['zero', 'one', 'two', 'few', 'many', 'other'].
   });
 
   window.addEventListener(CART_EVENT, render);
+  window.addEventListener(CURRENCY_EVENT, render);
   window.addEventListener('storage', (e) => { if (e.key === 'cart') render(); });
   render();
 </script>
@@ -308,6 +312,7 @@ const forms = Object.fromEntries(['zero', 'one', 'two', 'few', 'many', 'other'].
   .sum-total { display: flex; justify-content: space-between; align-items: baseline; font-weight: 800; font-size: 18px; }
   .sum-total strong { font-size: 28px; font-weight: 900; min-height: 1.2em; }
   .sum-note { font-size: 14px; color: var(--ink-2); font-weight: 600; }
+  .sum-note[hidden] { display: none; }
 
   .empty { text-align: center; padding: 40px 16px; display: grid; justify-items: center; gap: 8px; }
   .empty-bear { width: 160px; height: auto; }

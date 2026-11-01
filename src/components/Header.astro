@@ -3,6 +3,7 @@ import Icon from './Icon.astro';
 import Logo from './Logo.astro';
 import { LOCALES, LOCALE_NAMES, type Locale } from '../i18n/config';
 import { useTranslations } from '../i18n';
+import { BASE_CURRENCY } from '../lib/data';
 import { getCategories, pick } from '../lib/data';
 import { href } from '../lib/format';
 
@@ -13,8 +14,6 @@ const categories = getCategories();
 // Шлях без префікса мови, щоб перемикач вів на ту саму сторінку іншою мовою.
 const rest = Astro.url.pathname.split('/').slice(2).join('/');
 const CURRENCIES = ['EUR', 'PLN', 'UAH', 'USD'];
-// Вимкнено до етапу 6: без перерахунку цін вибір валюти показував би неправду.
-const CURRENCY_SWITCH = false;
 ---
 <header class="site-header">
   <div class="topbar">
@@ -43,14 +42,16 @@ const CURRENCY_SWITCH = false;
         </ul>
       </details>
 
-      {CURRENCY_SWITCH && (
-        <details class="dd">
-          <summary aria-label={t('header.currency')}><span data-currency-label>EUR</span><Icon name="chevron-down" size={14} /></summary>
-          <ul class="dd-menu">
-            {CURRENCIES.map((c) => <li><button type="button" data-set-currency={c}>{c}</button></li>)}
-          </ul>
-        </details>
-      )}
+      {/* Схований, доки не завантажились курси: без них вибір валюти показував би неправду. */}
+      <details class="dd" data-currency-switch hidden>
+        <summary aria-label={t('header.currency')}><span data-currency-label>{BASE_CURRENCY}</span><Icon name="chevron-down" size={14} /></summary>
+        <ul class="dd-menu">
+          {CURRENCIES.map((c) => <li><button type="button" data-set-currency={c}>{c}</button></li>)}
+        </ul>
+      </details>
+      <script is:inline type="application/json" id="currency-cfg" set:html={JSON.stringify({
+        base: BASE_CURRENCY, approx: t('price.approx'), sources: { ECB: t('price.source.ECB'), NBU: t('price.source.NBU') },
+      })} />
 
       <!-- Прихована до запуску JS: без скрипта тема просто йде за системою. -->
       <button class="theme" type="button" data-theme-toggle aria-pressed="false" aria-label={t('header.darkTheme')} hidden>
@@ -76,6 +77,7 @@ const CURRENCY_SWITCH = false;
 </header>
 
 <script>
+  import { applyPrices, available, CURRENCY_EVENT, loadRates, rateInfo, select, selected } from '../lib/currency';
   // Закрити інші випадаючі списки при відкритті одного і при кліку поза ними.
   const dds = [...document.querySelectorAll<HTMLDetailsElement>('.dd')];
   dds.forEach((d) => d.addEventListener('toggle', () => { if (d.open) dds.forEach((o) => { if (o !== d) o.open = false; }); }));
@@ -102,17 +104,39 @@ const CURRENCY_SWITCH = false;
     });
   }
 
-  // Вибір валюти поки тільки запам'ятовується; перерахунок цін — етап 6.
-  const label = document.querySelector('[data-currency-label]');
-  const allowed = [...document.querySelectorAll<HTMLButtonElement>('[data-set-currency]')].map((b) => b.dataset.setCurrency);
-  const saved = (() => { try { return localStorage.getItem('currency'); } catch { return null; } })();
-  if (saved && label && allowed.includes(saved)) label.textContent = saved;
-  document.querySelectorAll<HTMLButtonElement>('[data-set-currency]').forEach((b) => b.addEventListener('click', () => {
-    const c = b.dataset.setCurrency!;
-    try { localStorage.setItem('currency', c); } catch { /* приватний режим */ }
-    if (label) label.textContent = c;
-    b.closest('details')!.open = false;
-  }));
+  // Валюта: ціни з data-price-minor перераховуються за курсом; примітки [data-currency-note] пояснюють, що це орієнтовно.
+  const sw = document.querySelector<HTMLElement>('[data-currency-switch]');
+  if (sw) {
+    const cfg = JSON.parse(document.getElementById('currency-cfg')!.textContent!);
+    const lang = document.documentElement.lang;
+    const dateFmt = new Intl.DateTimeFormat(lang, { day: 'numeric', month: 'long', year: 'numeric' });
+    const sync = () => {
+      const c = selected();
+      sw.querySelector('[data-currency-label]')!.textContent = c;
+      sw.querySelectorAll<HTMLButtonElement>('[data-set-currency]').forEach((b) => {
+        b.parentElement!.hidden = !available().includes(b.dataset.setCurrency!);
+        b.setAttribute('aria-pressed', String(b.dataset.setCurrency === c));
+      });
+      applyPrices(lang);
+      const info = rateInfo();
+      document.querySelectorAll<HTMLElement>('[data-currency-note]').forEach((n) => {
+        n.hidden = !info;
+        n.textContent = info
+          ? cfg.approx.replace('{currency}', c).replace('{source}', cfg.sources[info.source] ?? info.source)
+            .replace('{date}', dateFmt.format(new Date(info.date))).replace('{base}', cfg.base)
+          : '';
+      });
+    };
+    sw.querySelectorAll<HTMLButtonElement>('[data-set-currency]').forEach((b) => b.addEventListener('click', () => {
+      select(b.dataset.setCurrency!);
+      b.closest('details')!.open = false;
+    }));
+    window.addEventListener(CURRENCY_EVENT, sync);
+    loadRates(cfg.base).then(() => {
+      sw.hidden = available().length < 2;
+      window.dispatchEvent(new CustomEvent(CURRENCY_EVENT)); // кошик і швидка заявка теж перерахують суми
+    });
+  }
 </script>
 
 <style>

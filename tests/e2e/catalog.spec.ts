@@ -59,11 +59,12 @@ test.describe('catalog filters', () => {
     await page.fill('#q', 'kapibara');
     await page.press('#q', 'Enter');
     await expect(page).toHaveURL(/\/uk\/catalog\/\?q=kapibara/);
-    expect(await visibleNames(page)).toEqual(['Капібара, що ходить, на батарейках']);
+    // poll: фільтр застосовує скрипт сторінки вже після переходу
+    await expect.poll(() => visibleNames(page)).toEqual(['Капібара, що ходить, на батарейках']);
     await expect(page.locator('[data-search-line]')).toContainText('kapibara');
     await expect(page.locator('#q')).toHaveValue('kapibara');
     await page.goto('/cs/catalog/?q=mec');
-    expect((await visibleNames(page)).length).toBe(2); // «Meč» без háčku
+    await expect.poll(async () => (await visibleNames(page)).length).toBe(2); // «Meč» без háčku
   });
 
   test('category page lists only its products and marks itself', async ({ page }) => {

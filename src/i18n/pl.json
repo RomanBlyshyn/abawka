@@ -151,5 +151,8 @@
   "cart.promo.min": "Kod obowiązuje przy zamówieniu od {sum}.",
   "cart.promo.error": "Nie udało się sprawdzić kodu. Spróbuj ponownie.",
   "form.error.promo": "Kod rabatowy już nie obowiązuje — usunęliśmy go i zaktualizowaliśmy sumę. Wyślij zgłoszenie ponownie.",
-  "price.lowest30": "Najniższa cena z 30 dni przed obniżką: {price}"
+  "price.lowest30": "Najniższa cena z 30 dni przed obniżką: {price}",
+  "price.approx": "Ceny w {currency} są orientacyjne: kurs {source} z {date}. Zgłoszenie liczymy w {base}.",
+  "price.source.ECB": "EBC",
+  "price.source.NBU": "NBU"
 }

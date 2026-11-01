@@ -149,5 +149,8 @@
   "cart.promo.min": "Ce code est valable à partir de {sum} de commande.",
   "cart.promo.error": "Impossible de vérifier le code. Veuillez réessayer.",
   "form.error.promo": "Le code promo n’est plus valable : nous l’avons retiré et mis à jour le total. Veuillez renvoyer la demande.",
-  "price.lowest30": "Prix le plus bas des 30 jours précédant la réduction : {price}"
+  "price.lowest30": "Prix le plus bas des 30 jours précédant la réduction : {price}",
+  "price.approx": "Les prix en {currency} sont indicatifs : taux {source} du {date}. La demande est calculée en {base}.",
+  "price.source.ECB": "BCE",
+  "price.source.NBU": "NBU"
 }

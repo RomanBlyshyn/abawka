@@ -18,7 +18,7 @@ if (!env.SUPABASE_ACCESS_TOKEN) throw new Error('SUPABASE_ACCESS_TOKEN поро�
 // Ключі, які отримують функції (лише потрібні їм, а не весь .env).
 const FUNCTION_SECRETS = ['DEEPL_API_KEY', 'TELEGRAM_BOT_TOKEN', 'SITE_URL'];
 // Функції, які кличуть не з браузера (база, Telegram): без перевірки JWT на шлюзі, права перевіряють самі.
-const PUBLIC_FUNCTIONS = ['telegram'];
+const PUBLIC_FUNCTIONS = ['telegram', 'rates'];
 const secretValues = Object.values(env).filter((v) => v.length >= 8);
 
 function supabase(args) {

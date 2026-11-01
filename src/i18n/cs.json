@@ -151,5 +151,8 @@
   "cart.promo.min": "Kód platí pro objednávky od {sum}.",
   "cart.promo.error": "Kód se nepodařilo ověřit. Zkuste to znovu.",
   "form.error.promo": "Slevový kód už neplatí — odebrali jsme ho a aktualizovali součet. Odešlete žádost znovu.",
-  "price.lowest30": "Nejnižší cena za 30 dní před slevou: {price}"
+  "price.lowest30": "Nejnižší cena za 30 dní před slevou: {price}",
+  "price.approx": "Ceny v {currency} jsou orientační: kurz {source} ze dne {date}. Žádost počítáme v {base}.",
+  "price.source.ECB": "ECB",
+  "price.source.NBU": "NBU"
 }

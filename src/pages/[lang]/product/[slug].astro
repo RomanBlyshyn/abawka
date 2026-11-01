@@ -22,6 +22,7 @@ const name = pick(p.name, locale);
 const category = getCategories().find((c) => c.slug === p.category)!;
 const oldPrice = p.oldPrice && p.oldPrice > p.price ? p.oldPrice : undefined;
 const discount = oldPrice ? Math.round((1 - p.price / oldPrice) * 100) : 0;
+const [lowestBefore, lowestAfter] = t('price.lowest30').split('{price}');
 const inStock = p.stock > 0;
 const images = p.images ?? [];
 const description = pick(p.description, locale);
@@ -80,10 +81,11 @@ const related = [...others.filter((o) => o.category === p.category), ...others.f
 
         <div class="price-box">
           <div class="prices">
-            {oldPrice && <s class="old"><span class="sr-only">{t('card.oldPrice')}: </span>{formatPrice(oldPrice, BASE_CURRENCY, locale)}</s>}
-            <span class:list={['price', { sale: oldPrice }]}>{formatPrice(p.price, BASE_CURRENCY, locale)}</span>
+            {oldPrice && <s class="old"><span class="sr-only">{t('card.oldPrice')}: </span><span data-price-minor={oldPrice}>{formatPrice(oldPrice, BASE_CURRENCY, locale)}</span></s>}
+            <span class:list={['price', { sale: oldPrice }]} data-price-minor={p.price}>{formatPrice(p.price, BASE_CURRENCY, locale)}</span>
           </div>
-          {oldPrice && <p class="lowest">{t('price.lowest30').replace('{price}', formatPrice(p.lowest30 ?? p.price, BASE_CURRENCY, locale))}</p>}
+          {oldPrice && <p class="lowest">{lowestBefore}<span data-price-minor={p.lowest30 ?? p.price}>{formatPrice(p.lowest30 ?? p.price, BASE_CURRENCY, locale)}</span>{lowestAfter}</p>}
+          <p class="currency-note" data-currency-note hidden></p>
           <p class:list={['stock', { out: !inStock }]}>{inStock ? t('product.inStock') : t('card.outOfStock')}</p>
 
           {inStock && (
@@ -96,7 +98,7 @@ const related = [...others.filter((o) => o.category === p.category), ...others.f
               <button class="btn add" type="button" data-add-to-cart={p.slug} data-stock={p.stock} data-qty-input="#qty">
                 <Icon name="cart" size={20} /> {t('card.toCart')}
               </button>
-              <button class="btn btn-light quick" type="button" data-quick-order={p.slug} data-price={p.price} data-currency={BASE_CURRENCY} aria-haspopup="dialog">
+              <button class="btn btn-light quick" type="button" data-quick-order={p.slug} data-price={p.price} aria-haspopup="dialog">
                 {t('product.quickOrder')}
               </button>
             </div>
@@ -154,6 +156,8 @@ const related = [...others.filter((o) => o.category === p.category), ...others.f
 </Base>
 
 <script>
+  import { formatMoney } from '../../../lib/currency';
+
   // Кількість: кнопки −/+ і ручне введення в межах 1..max.
   const input = document.querySelector<HTMLInputElement>('#qty');
   if (input) {
@@ -184,7 +188,7 @@ const related = [...others.filter((o) => o.category === p.category), ...others.f
       dialog.querySelector('[data-quick-qty]')!.textContent = String(qty);
       const total = dialog.querySelector<HTMLElement>('[data-quick-total]')!;
       const price = Number(quickBtn.dataset.price);
-      total.textContent = new Intl.NumberFormat(document.documentElement.lang, { style: 'currency', currency: quickBtn.dataset.currency!, minimumFractionDigits: 2 }).format((price * qty) / 100);
+      total.textContent = formatMoney(price * qty, document.documentElement.lang);
       dialog.showModal();
     });
     dialog.querySelector('[data-quick-close]')!.addEventListener('click', () => dialog.close());
@@ -226,6 +230,8 @@ const related = [...others.filter((o) => o.category === p.category), ...others.f
   .price.sale { color: var(--sale); }
   .old { color: var(--ink-2); font-size: 18px; }
   .lowest { margin: 0; font-size: 14px; color: var(--ink-2); font-weight: 600; }
+  .currency-note { margin: 0; font-size: 13px; color: var(--ink-2); font-weight: 600; }
+  .currency-note[hidden] { display: none; }
   .stock { margin: 0; font-weight: 800; color: var(--green); }
   :global(:root[data-theme='dark']) .stock:not(.out) { color: #7fd38a; }
   .stock.out { color: var(--ink-2); }

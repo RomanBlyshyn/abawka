@@ -12,6 +12,7 @@ const category = getCategories().find((c) => c.slug === p.category);
 // Стара ціна показується тільки якщо вона справді вища — захист від помилки в даних.
 const oldPrice = p.oldPrice && p.oldPrice > p.price ? p.oldPrice : undefined;
 const discount = oldPrice ? Math.round((1 - p.price / oldPrice) * 100) : 0;
+const [lowestBefore, lowestAfter] = t('price.lowest30').split('{price}');
 const rating = new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(p.rating);
 const url = href(locale, `product/${p.slug}/`);
 const inStock = p.stock > 0;
@@ -49,9 +50,9 @@ const cover = p.images?.[0];
     </div>
     <div class="buy">
       <div class="prices">
-        {oldPrice && <s class="old"><span class="sr-only">{t('card.oldPrice')}: </span>{formatPrice(oldPrice, BASE_CURRENCY, locale)}</s>}
-        <span class:list={['price', { sale: oldPrice }]}>{formatPrice(p.price, BASE_CURRENCY, locale)}</span>
-        {oldPrice && <span class="lowest">{t('price.lowest30').replace('{price}', formatPrice(p.lowest30 ?? p.price, BASE_CURRENCY, locale))}</span>}
+        {oldPrice && <s class="old"><span class="sr-only">{t('card.oldPrice')}: </span><span data-price-minor={oldPrice}>{formatPrice(oldPrice, BASE_CURRENCY, locale)}</span></s>}
+        <span class:list={['price', { sale: oldPrice }]} data-price-minor={p.price}>{formatPrice(p.price, BASE_CURRENCY, locale)}</span>
+        {oldPrice && <span class="lowest">{lowestBefore}<span data-price-minor={p.lowest30 ?? p.price}>{formatPrice(p.lowest30 ?? p.price, BASE_CURRENCY, locale)}</span>{lowestAfter}</span>}
       </div>
       {inStock ? (
         <button class="btn add" type="button" data-add-to-cart={p.slug} data-stock={p.stock} aria-label={`${t('card.toCart')}: ${pick(p.name, locale)}`}>

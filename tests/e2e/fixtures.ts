@@ -12,6 +12,8 @@ export const test = base.extend({
       route.fulfill({ status: 404, contentType: 'application/json', body: '{"message":"not mocked in this test"}' }));
     await page.route(/abawka-test\.supabase\.co\/storage\/v1\/object\/public\//, (route) =>
       route.fulfill({ contentType: 'image/png', body: PNG }));
+    // Курсів за замовчуванням немає (перемикач валют схований); тести валют підставляють свої.
+    await page.route(/abawka-test\.supabase\.co\/rest\/v1\/exchange_rates/, (route) => route.fulfill({ json: [] }));
     await use(page);
   },
 });
