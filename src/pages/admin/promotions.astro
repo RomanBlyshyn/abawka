@@ -1,0 +1,354 @@
+---
+import Admin from '../../layouts/Admin.astro';
+---
+<Admin title="Акції">
+  <h1>Акції</h1>
+  <p class="state" data-state="loading">Завантаження…</p>
+  <div class="alert" role="alert" tabindex="-1" data-state="error" hidden></div>
+  <p class="state" data-state="owner-only" hidden>Розділ «Акції» доступний лише власнику магазину.</p>
+
+  <div data-state="ready" hidden>
+    <section class="card" aria-labelledby="sale-h">
+      <h2 id="sale-h">Знижки на товари</h2>
+      <p class="hint">Виберіть товари й вкажіть знижку у відсотках — на сайті з'явиться закреслена стара ціна. Поруч сайт сам покаже «найнижчу ціну за 30 днів», як вимагає закон ЄС. Зміни видно на сайті після оновлення сайту.</p>
+      <label class="inline">Вибрати всю категорію
+        <select data-pick-cat><option value="">—</option></select>
+      </label>
+      <ul class="plist" data-products></ul>
+      <div class="sale-bar">
+        <label class="inline">Знижка, %
+          <input type="number" inputmode="numeric" min="1" max="90" step="1" data-percent />
+        </label>
+        <button class="btn" type="button" data-start>Запустити знижку</button>
+        <button class="btn btn-light" type="button" data-end>Завершити знижку</button>
+      </div>
+      <p class="row-msg" role="status" data-sale-msg></p>
+    </section>
+
+    <section class="card" aria-labelledby="promo-h">
+      <div class="head">
+        <h2 id="promo-h">Промокоди</h2>
+        <button type="button" class="btn" data-add-promo>+ Новий промокод</button>
+      </div>
+      <p class="hint">Покупець вводить код у кошику, знижку перевіряє й рахує сервер.</p>
+      <p class="state" data-promo-empty hidden>Промокодів ще немає.</p>
+      <ul class="list" data-promos></ul>
+      <p class="row-msg" role="status" data-promo-msg></p>
+    </section>
+  </div>
+
+  <dialog class="dlg" aria-labelledby="promo-dlg-title" data-dialog>
+    <form method="dialog" class="dlg-form" data-form novalidate>
+      <div class="dlg-head">
+        <h2 id="promo-dlg-title">Новий промокод</h2>
+        <button type="button" class="close" data-close aria-label="Закрити">×</button>
+      </div>
+      <div class="alert" role="alert" tabindex="-1" data-form-error hidden></div>
+
+      <label for="p-code">Код</label>
+      <div class="code-row">
+        <input id="p-code" type="text" maxlength="30" autocomplete="off" spellcheck="false" placeholder="напр. SUMMER10" />
+        <button type="button" class="btn btn-light" data-generate>Згенерувати</button>
+      </div>
+
+      <fieldset>
+        <legend>Знижка</legend>
+        <div class="kinds">
+          <label class="check"><input type="radio" name="kind" value="percent" checked /> у відсотках</label>
+          <label class="check"><input type="radio" name="kind" value="amount" /> сумою</label>
+        </div>
+      </fieldset>
+      <label for="p-value" data-value-label>Скільки відсотків (1–90)</label>
+      <input id="p-value" type="text" inputmode="decimal" />
+
+      <label for="p-min">Мінімальна сума замовлення (необов'язково)</label>
+      <input id="p-min" type="text" inputmode="decimal" placeholder="0" />
+
+      <div class="two">
+        <div><label for="p-from">Діє з (необов'язково)</label><input id="p-from" type="date" /></div>
+        <div><label for="p-to">Діє до, включно (необов'язково)</label><input id="p-to" type="date" /></div>
+      </div>
+
+      <label for="p-max">Скільки разів можна використати (необов'язково)</label>
+      <input id="p-max" type="number" inputmode="numeric" min="1" step="1" placeholder="без обмеження" />
+
+      <div class="dlg-bar"><button class="btn" type="submit" data-save>Створити промокод</button></div>
+    </form>
+  </dialog>
+</Admin>
+
+<script>
+  import { requireStaff, supabase, dbError, parseMoney, formatMoney, type Localized } from '../../lib/admin';
+
+  type Product = { id: string; name: Localized; price: number; old_price: number | null; category_id: string; published: boolean };
+  type Category = { id: string; name: Localized };
+  type Promo = { code: string; kind: 'percent' | 'amount'; value: number; min_total: number; starts_at: string | null; ends_at: string | null; max_uses: number | null; used: number; active: boolean };
+
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const states = [...document.querySelectorAll<HTMLElement>('[data-state]')];
+  const show = (name: string) => states.forEach((s) => (s.hidden = s.dataset.state !== name));
+  const text = (n: Localized) => n.uk || n.pl || n.en || Object.values(n).find(Boolean) || '—';
+  const dateFmt = new Intl.DateTimeFormat('uk', { day: 'numeric', month: 'short', year: 'numeric' });
+  let currency = 'EUR';
+  let products: Product[] = [];
+  let categories: Category[] = [];
+  let promos: Promo[] = [];
+  const money = (cents: number) => `${formatMoney(cents)} ${currency}`;
+
+  async function load() {
+    const [s, p, c, pr] = await Promise.all([
+      supabase!.from('settings').select('base_currency').maybeSingle(),
+      supabase!.from('products').select('id,name,price,old_price,category_id,published').order('position'),
+      supabase!.from('categories').select('id,name').order('position'),
+      supabase!.from('promo_codes').select('*').order('created_at', { ascending: false }),
+    ]);
+    const error = s.error ?? p.error ?? c.error ?? pr.error;
+    if (error) { $('[data-state="error"]').textContent = dbError(error); return show('error'); }
+    currency = s.data?.base_currency ?? 'EUR';
+    products = p.data as Product[];
+    categories = c.data as Category[];
+    promos = pr.data as Promo[];
+    renderProducts();
+    renderPromos();
+    show('ready');
+  }
+
+  // ── Знижки на товари ──────────────────────────────────────────────────────────
+  const picked = () => [...document.querySelectorAll<HTMLInputElement>('[data-products] input:checked')].map((i) => i.value);
+
+  function renderProducts() {
+    const keep = new Set(picked());
+    const sel = $<HTMLSelectElement>('[data-pick-cat]');
+    sel.replaceChildren(new Option('—', ''), new Option('Усі товари', '*'), ...categories.map((c) => new Option(text(c.name), c.id)));
+    $('[data-products]').replaceChildren(...products.map((p) => {
+      const li = document.createElement('li');
+      li.innerHTML = '<label class="prow"><input type="checkbox" /><span class="nm"><b></b><span class="sub"></span></span><span class="pr"></span></label>';
+      const box = li.querySelector('input')!;
+      box.value = p.id;
+      box.checked = keep.has(p.id);
+      li.querySelector('b')!.textContent = text(p.name);
+      const cat = categories.find((c) => c.id === p.category_id);
+      li.querySelector('.sub')!.textContent = `${cat ? text(cat.name) : '—'}${p.published ? '' : ' · не показується'}`;
+      const pr = li.querySelector('.pr')!;
+      if (p.old_price) {
+        const off = Math.round((1 - p.price / p.old_price) * 100);
+        pr.innerHTML = '<s></s> <b></b> <span class="badge"></span>';
+        pr.querySelector('s')!.textContent = money(p.old_price);
+        pr.querySelector('b')!.textContent = money(p.price);
+        pr.querySelector('.badge')!.textContent = `−${off}%`;
+        li.classList.add('on-sale');
+      } else {
+        pr.textContent = money(p.price);
+      }
+      return li;
+    }));
+  }
+
+  $<HTMLSelectElement>('[data-pick-cat]').addEventListener('change', (e) => {
+    const v = (e.target as HTMLSelectElement).value;
+    if (!v) return;
+    document.querySelectorAll<HTMLInputElement>('[data-products] input').forEach((i) => {
+      const p = products.find((x) => x.id === i.value)!;
+      if (v === '*' || p.category_id === v) i.checked = true;
+    });
+  });
+
+  const saleMsg = (t: string) => { $('[data-sale-msg]').textContent = t; };
+  const items = (n: number) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? 'товар' : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? 'товари' : 'товарів'}`;
+
+  $('[data-start]').addEventListener('click', async () => {
+    const ids = picked();
+    const percent = Number($<HTMLInputElement>('[data-percent]').value);
+    if (!ids.length) return saleMsg('Спершу виберіть товари.');
+    if (!Number.isInteger(percent) || percent < 1 || percent > 90) { saleMsg('Знижка — ціле число від 1 до 90 %.'); return $('[data-percent]').focus(); }
+    const { data, error } = await supabase!.rpc('start_sale', { product_ids: ids, percent });
+    if (error) return saleMsg(dbError(error));
+    saleMsg(`Знижку −${percent}% запущено: ${items(data as number)} ✓`);
+    load();
+  });
+
+  $('[data-end]').addEventListener('click', async () => {
+    const ids = picked().filter((id) => products.find((p) => p.id === id)?.old_price);
+    if (!ids.length) return saleMsg('Серед вибраних немає товарів зі знижкою.');
+    if (!confirm(`Повернути звичайну ціну для: ${items(ids.length)}?`)) return;
+    const { data, error } = await supabase!.rpc('end_sale', { product_ids: ids });
+    if (error) return saleMsg(dbError(error));
+    saleMsg(`Знижку завершено: ${items(data as number)} ✓`);
+    load();
+  });
+
+  // ── Промокоди ─────────────────────────────────────────────────────────────────
+  const promoMsg = (t: string) => { $('[data-promo-msg]').textContent = t; };
+  const dayBefore = (iso: string) => new Date(Date.parse(iso) - 86400e3);
+
+  function describe(p: Promo): string {
+    const parts = [p.kind === 'percent' ? `−${p.value}%` : `−${money(p.value)}`];
+    if (p.min_total) parts.push(`від ${money(p.min_total)}`);
+    if (p.starts_at) parts.push(`з ${dateFmt.format(new Date(p.starts_at))}`);
+    if (p.ends_at) parts.push(`до ${dateFmt.format(dayBefore(p.ends_at))} включно`);
+    parts.push(p.max_uses ? `використано ${p.used} з ${p.max_uses}` : `використано ${p.used}`);
+    const expired = (p.ends_at && Date.parse(p.ends_at) <= Date.now()) || (p.max_uses !== null && p.used >= p.max_uses);
+    parts.push(!p.active ? 'вимкнено' : expired ? 'вже не діє' : 'діє');
+    return parts.join(' · ');
+  }
+
+  function renderPromos() {
+    $('[data-promo-empty]').hidden = promos.length > 0;
+    $('[data-promos]').replaceChildren(...promos.map((p) => {
+      const li = document.createElement('li');
+      li.className = `row${p.active ? '' : ' inactive'}`;
+      li.dataset.promo = p.code;
+      li.innerHTML = '<span class="nm"><b></b><span class="sub"></span></span><span class="tools"></span>';
+      li.querySelector('b')!.textContent = p.code;
+      li.querySelector('.sub')!.textContent = describe(p);
+      const tools = li.querySelector('.tools')!;
+      const btn = (label: string, aria: string, fn: () => void) => {
+        const x = document.createElement('button');
+        x.type = 'button'; x.textContent = label; x.setAttribute('aria-label', aria); x.className = 'edit';
+        x.addEventListener('click', fn);
+        tools.append(x);
+      };
+      btn(p.active ? 'Вимкнути' : 'Увімкнути', `${p.active ? 'Вимкнути' : 'Увімкнути'}: ${p.code}`, () => toggle(p));
+      if (p.used === 0) btn('Видалити', `Видалити: ${p.code}`, () => remove(p));
+      return li;
+    }));
+  }
+
+  async function toggle(p: Promo) {
+    const { error } = await supabase!.from('promo_codes').update({ active: !p.active }).eq('code', p.code);
+    if (error) return promoMsg(dbError(error));
+    promoMsg(p.active ? `Промокод ${p.code} вимкнено.` : `Промокод ${p.code} знову діє ✓`);
+    load();
+  }
+
+  async function remove(p: Promo) {
+    if (!confirm(`Видалити промокод ${p.code}?`)) return;
+    const { error } = await supabase!.from('promo_codes').delete().eq('code', p.code);
+    if (error) return promoMsg(dbError(error));
+    promoMsg(`Промокод ${p.code} видалено.`);
+    load();
+  }
+
+  const dialog = $<HTMLDialogElement>('[data-dialog]');
+  const form = $<HTMLFormElement>('[data-form]');
+  const field = (id: string) => $<HTMLInputElement>(`#${id}`);
+  const kind = () => form.querySelector<HTMLInputElement>('[name=kind]:checked')!.value as Promo['kind'];
+  const formError = (t: string) => { const e = $('[data-form-error]'); e.textContent = t; e.hidden = !t; if (t) e.focus(); };
+  const syncKind = () => { $('[data-value-label]').textContent = kind() === 'percent' ? 'Скільки відсотків (1–90)' : `Сума знижки, ${currency}`; };
+  form.querySelectorAll('[name=kind]').forEach((r) => r.addEventListener('change', syncKind));
+
+  $('[data-add-promo]').addEventListener('click', () => {
+    form.reset();
+    formError('');
+    syncKind();
+    dialog.showModal();
+  });
+  $('[data-generate]').addEventListener('click', () => {
+    // Без схожих символів (0/O, 1/I), щоб код легко було продиктувати.
+    const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    field('p-code').value = Array.from(crypto.getRandomValues(new Uint8Array(8)), (b) => abc[b % abc.length]).join('');
+  });
+  field('p-code').addEventListener('input', (e) => {
+    const i = e.target as HTMLInputElement;
+    i.value = i.value.toUpperCase().replace(/\s/g, '');
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const code = field('p-code').value.trim().toUpperCase();
+    if (!/^[A-Z0-9-]{3,30}$/.test(code)) return formError('Код: 3–30 символів, лише латинські літери, цифри й дефіс.');
+    const k = kind();
+    const raw = field('p-value').value.trim();
+    const value = k === 'percent' ? Number(raw) : parseMoney(raw);
+    if (k === 'percent' && (!/^\d+$/.test(raw) || value! < 1 || value! > 90)) return formError('Знижка у відсотках — ціле число від 1 до 90.');
+    if (k === 'amount' && !(value! > 0)) return formError('Вкажіть суму знижки, напр. 5 або 4,99.');
+    const min = parseMoney(field('p-min').value) ?? 0;
+    if (Number.isNaN(min)) return formError('Мінімальна сума — число, напр. 30 або 29,99.');
+    const from = field('p-from').value;
+    const to = field('p-to').value;
+    if (from && to && to < from) return formError('Дата «до» має бути не раніше за дату «з».');
+    const maxRaw = field('p-max').value.trim();
+    if (maxRaw && !/^[1-9]\d{0,6}$/.test(maxRaw)) return formError('Кількість використань — ціле число від 1.');
+    // Дати — за часом браузера власника; «до» включно, тобто до початку наступного дня.
+    const startOf = (d: string) => new Date(`${d}T00:00:00`);
+    const row = {
+      code, kind: k, value, min_total: min,
+      starts_at: from ? startOf(from).toISOString() : null,
+      ends_at: to ? new Date(startOf(to).getTime() + 86400e3).toISOString() : null,
+      max_uses: maxRaw ? Number(maxRaw) : null,
+    };
+    const save = $<HTMLButtonElement>('[data-save]');
+    save.disabled = true;
+    const { error } = await supabase!.from('promo_codes').insert(row);
+    save.disabled = false;
+    if (error) return formError(error.code === '23505' ? `Промокод ${code} уже є — придумайте інший.` : dbError(error));
+    dialog.close();
+    promoMsg(`Промокод ${code} створено ✓`);
+    load();
+  });
+
+  $('[data-close]').addEventListener('click', () => dialog.close());
+  dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+
+  requireStaff()
+    .then((me) => (me.role === 'owner' ? load() : show('owner-only')))
+    .catch(() => {});
+</script>
+
+<style>
+  h1 { font-size: 28px; font-weight: 900; margin-bottom: 16px; }
+  h2 { font-size: 22px; font-weight: 900; }
+  .card { display: grid; gap: 12px; padding: 20px; margin-bottom: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+  .head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .hint { color: var(--ink-2); font-weight: 600; margin: 0; }
+  [data-state][hidden], [data-promo-empty][hidden] { display: none; }
+  .state { color: var(--ink-2); font-weight: 700; }
+  .alert { padding: 12px 16px; border-radius: var(--radius-sm); background: var(--tint-red); border: 2px solid var(--tint-red-border); font-weight: 700; }
+  .alert[hidden] { display: none; }
+  .row-msg { font-weight: 700; color: var(--ink-2); min-height: 1.5em; margin: 0; }
+  .inline { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-weight: 800; }
+  .inline select, .inline input { width: auto; min-width: 120px; }
+  select, input[type='text'], input[type='number'], input[type='date'] { width: 100%; min-height: 46px; padding: 10px 14px; border: 2px solid var(--line); border-radius: 12px; background: var(--surface); font-weight: 600; }
+  input:focus, select:focus { border-color: var(--pink-500); outline: none; }
+
+  .plist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 420px; overflow: auto; }
+  .plist :global(.prow) { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 14px; border: 2px solid var(--line); border-radius: 12px; cursor: pointer; }
+  .plist :global(.prow input) { width: 22px; height: 22px; accent-color: var(--pink-600); }
+  .plist :global(.on-sale .prow) { border-color: var(--accent-border); background: var(--accent-soft); }
+  .plist :global(.nm) { display: grid; min-width: 0; }
+  .plist :global(.sub) { font-size: 13px; color: var(--ink-2); font-weight: 600; }
+  .plist :global(.pr) { text-align: right; font-weight: 700; }
+  .plist :global(.pr s) { color: var(--ink-2); font-weight: 600; }
+  .plist :global(.badge) { padding: 2px 8px; border-radius: 999px; background: var(--sale); color: #fff; font-size: 12px; font-weight: 900; }
+  .sale-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .sale-bar .btn-light { border: 2px solid var(--accent-border); }
+
+  .list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .list :global(.row) { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 14px 16px; border: 2px solid var(--line); border-radius: var(--radius); }
+  .list :global(.row.inactive) { opacity: 0.6; }
+  .list :global(.nm) { display: grid; min-width: 0; }
+  .list :global(.nm b) { font-size: 18px; letter-spacing: 0.04em; }
+  .list :global(.sub) { font-size: 13px; color: var(--ink-2); font-weight: 600; overflow-wrap: anywhere; }
+  .list :global(.tools) { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .list :global(.tools button) { min-height: 40px; padding: 0 14px; border: 2px solid var(--line); border-radius: 10px; background: var(--surface); font-weight: 800; cursor: pointer; color: var(--accent-text); }
+  @media (max-width: 560px) { .list :global(.row) { grid-template-columns: 1fr; } .list :global(.tools) { justify-content: flex-start; } }
+
+  .dlg { width: min(560px, calc(100% - 24px)); max-height: calc(100dvh - 24px); padding: 24px; border: 0; border-radius: var(--radius); background: var(--surface); color: var(--ink); box-shadow: var(--shadow-hover); overflow: auto; }
+  .dlg::backdrop { background: rgb(23 18 31 / 0.55); }
+  .dlg-form { display: grid; gap: 10px; }
+  .dlg-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .close { width: 44px; height: 44px; border: 0; border-radius: 50%; background: none; font-size: 28px; cursor: pointer; color: var(--ink-2); }
+  .dlg-form label { font-weight: 800; }
+  .code-row { display: flex; gap: 8px; }
+  .code-row input { flex: 1; min-width: 0; text-transform: uppercase; letter-spacing: 0.04em; }
+  .code-row .btn-light { border: 2px solid var(--accent-border); }
+  fieldset { border: 0; margin: 0; padding: 0; }
+  legend { font-weight: 800; margin-bottom: 6px; padding: 0; }
+  .kinds { display: flex; gap: 18px; flex-wrap: wrap; }
+  .check { display: flex; align-items: center; gap: 8px; font-weight: 700; cursor: pointer; }
+  .check input { width: 20px; height: 20px; accent-color: var(--pink-600); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .two > div { display: grid; gap: 6px; }
+  @media (max-width: 480px) { .two { grid-template-columns: 1fr; } }
+  .dlg-bar .btn { min-width: 200px; }
+</style>

@@ -65,6 +65,9 @@ import Icon from '../../components/Icon.astro';
       <a class="tile" href="/admin/banners/">
         <Icon name="chat" size={28} /><b>Банери на головній</b><span data-count="banners">—</span>
       </a>
+      <a class="tile" href="/admin/promotions/" data-owner-only hidden>
+        <Icon name="balloon" size={28} /><b>Акції й промокоди</b><span data-count="promo_codes">—</span>
+      </a>
       <a class="tile" href="/admin/team/" data-soon data-owner-only hidden>
         <Icon name="phone" size={28} /><b>Команда</b><span data-count="staff">—</span>
       </a>
@@ -135,7 +138,7 @@ import Icon from '../../components/Icon.astro';
   }
 
   async function loadCounts() {
-    for (const table of ['requests', 'products', 'categories', 'banners', 'staff']) {
+    for (const table of ['requests', 'products', 'categories', 'banners', 'promo_codes', 'staff']) {
       const q = supabase!.from(table).select('*', { count: 'exact', head: true });
       const { count } = await (table === 'requests' ? q.eq('status', 'new') : q);
       const el = document.querySelector(`[data-count="${table}"]`);

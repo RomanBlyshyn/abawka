@@ -12,6 +12,7 @@ const NAV = [
   { href: '/admin/products/', label: 'Товари' },
   { href: '/admin/categories/', label: 'Категорії' },
   { href: '/admin/banners/', label: 'Банери' },
+  { href: '/admin/promotions/', label: 'Акції', ownerOnly: true },
 ];
 const path = Astro.url.pathname;
 const current = (href: string) => (href === '/admin/' ? path === '/admin/' : path.startsWith(href));
@@ -38,7 +39,8 @@ const current = (href: string) => (href === '/admin/' ? path === '/admin/' : pat
       <div class="wrap admin-bar-in">
         <a href="/admin/" class="brand"><Logo /><span class="tag">адмінка</span></a>
         <nav class="admin-nav" aria-label="Розділи адмінки" data-who-nav hidden>
-          {NAV.map((n) => <a href={n.href} aria-current={current(n.href) ? 'page' : undefined}>{n.label}</a>)}
+          {/* ownerOnly: показує requireStaff() лише власнику */}
+          {NAV.map((n) => <a href={n.href} aria-current={current(n.href) ? 'page' : undefined} data-owner-only={n.ownerOnly || undefined} hidden={n.ownerOnly || undefined}>{n.label}</a>)}
         </nav>
         <div class="who" data-who hidden>
           <span data-who-email></span>

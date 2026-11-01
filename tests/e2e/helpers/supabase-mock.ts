@@ -11,8 +11,8 @@ export const session = () => {
   };
 };
 
-type Row = Record<string, unknown> & { id: string };
-export interface Db { products: Row[]; categories: Row[]; product_images: Row[]; banners: Row[]; requests_table: Row[]; storage: string[]; telegram: { chatId: number | null; actions: string[] }; requests: { method: string; url: string; body: unknown }[] }
+type Row = Record<string, unknown> & { id?: string };
+export interface Db { products: Row[]; categories: Row[]; product_images: Row[]; banners: Row[]; requests_table: Row[]; promo_codes: Row[]; settings: Row[]; storage: string[]; telegram: { chatId: number | null; actions: string[] }; requests: { method: string; url: string; body: unknown }[] }
 
 const cors = { 'access-control-allow-origin': '*', 'access-control-expose-headers': 'content-range' };
 const reply = (route: Route, body: unknown, status = 200) =>
@@ -40,14 +40,33 @@ export async function mockAdmin(page: Page, db: Db, opts: { role?: 'owner' | 'ma
     return reply(r, { translations });
   });
 
-  await page.route(/\/rest\/v1\/(products|categories|product_images|banners|requests)(\?|$)/, async (route) => {
+  // Акції: та сама логіка, що в start_sale/end_sale у базі.
+  await page.route(/\/rest\/v1\/rpc\/(start_sale|end_sale)/, async (route) => {
+    const fn = new URL(route.request().url()).pathname.split('/').pop()!;
+    const body = route.request().postDataJSON() as { product_ids: string[]; percent?: number };
+    db.requests.push({ method: 'RPC', url: fn, body });
+    if (opts.role === 'manager') return reply(route, { code: '42501', message: 'forbidden' }, 403);
+    let n = 0;
+    for (const p of db.products.filter((x) => body.product_ids.includes(x.id!))) {
+      if (fn === 'start_sale') {
+        const base = (p.old_price as number | null) ?? (p.price as number);
+        Object.assign(p, { old_price: base, price: Math.max(1, Math.round(base * (100 - body.percent!) / 100)) });
+        n++;
+      } else if (p.old_price) {
+        Object.assign(p, { price: p.old_price, old_price: null });
+        n++;
+      }
+    }
+    return reply(route, n);
+  });
+
+  await page.route(/\/rest\/v1\/(products|categories|product_images|banners|requests|promo_codes|settings)(\?|$)/, async (route) => {
     const req = route.request();
     const url = new URL(req.url());
     const name = url.pathname.split('/').pop()!;
-    const table = (name === 'requests' ? 'requests_table' : name) as 'products' | 'categories' | 'product_images' | 'banners' | 'requests_table';
+    const table = (name === 'requests' ? 'requests_table' : name) as 'products' | 'categories' | 'product_images' | 'banners' | 'requests_table' | 'promo_codes' | 'settings';
     const rows = db[table];
     const single = (req.headers()['accept'] ?? '').includes('vnd.pgrst.object');
-    const idEq = url.searchParams.get('id')?.replace(/^eq\./, '');
     // Фільтри виду col=eq.value (id, product_id …).
     const eqs = [...url.searchParams].filter(([, v]) => v.startsWith('eq.')).map(([k, v]) => [k, v.slice(3)] as const);
     const matches = (r: Row) => eqs.every(([k, v]) => String(r[k]) === v);
@@ -63,18 +82,19 @@ export async function mockAdmin(page: Page, db: Db, opts: { role?: 'owner' | 'ma
       return reply(route, single ? out[0] ?? null : out);
     }
     if (method === 'POST') {
-      const created = { id: `new-${rows.length + 1}`, ...(req.postDataJSON() as object) } as Row;
+      const created = { ...(table === 'promo_codes' ? { used: 0, active: true } : { id: `new-${rows.length + 1}` }), ...(req.postDataJSON() as object) } as Row;
+      if (table === 'promo_codes' && rows.some((r) => r.code === created.code)) return reply(route, { code: '23505', message: 'duplicate key' }, 409);
       rows.push(created);
       return reply(route, single ? created : [created], 201);
     }
     if (method === 'PATCH') {
-      const row = rows.find((r) => r.id === idEq);
+      const row = rows.find(matches);
       if (!row) return reply(route, { code: 'PGRST116', message: 'no rows' }, 406);
       Object.assign(row, req.postDataJSON());
       return reply(route, single ? row : [row]);
     }
     if (method === 'DELETE') {
-      db[table] = rows.filter((r) => r.id !== idEq) as Row[];
+      (db[table] as Row[]) = rows.filter((r) => !matches(r));
       return route.fulfill({ status: 204, headers: cors });
     }
     return reply(route, { message: 'unsupported' }, 400);
@@ -120,6 +140,8 @@ export const sampleDb = (): Db => ({
     { id: 'b-hits', title: { uk: 'Мечі — наш хіт' }, body: { uk: 'Для лицарів' }, cta: { uk: 'Дивитись' }, href: 'catalog/swords/', tint: 'pink', mascot: true, active: true, position: 0 },
   ],
   requests_table: [],
+  promo_codes: [],
+  settings: [{ base_currency: 'EUR' }],
   storage: [],
   requests: [],
   telegram: { chatId: null, actions: [] },
