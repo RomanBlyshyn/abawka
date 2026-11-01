@@ -53,7 +53,7 @@ import Icon from '../../components/Icon.astro';
   <section data-state="dashboard" hidden>
     <h1 class="hello">Вітаємо! <span class="role" data-role></span></h1>
     <div class="tiles">
-      <a class="tile" href="/admin/products/" data-soon>
+      <a class="tile" href="/admin/products/">
         <Icon name="star" size={28} /><b>Товари</b><span data-count="products">—</span>
       </a>
       <a class="tile" href="/admin/categories/" data-soon>
@@ -103,6 +103,7 @@ import Icon from '../../components/Icon.astro';
       }
       $('[data-role]').textContent = me.role === 'owner' ? 'власник' : 'менеджер';
       document.querySelectorAll<HTMLElement>('[data-owner-only]').forEach((e) => (e.hidden = me.role !== 'owner'));
+      document.querySelector<HTMLElement>('[data-who-nav]')!.hidden = false;
       show('dashboard');
       loadCounts();
     } catch {
@@ -177,6 +178,7 @@ import Icon from '../../components/Icon.astro';
   document.querySelectorAll('[data-logout]').forEach((b) => b.addEventListener('click', async () => {
     await supabase?.auth.signOut();
     $('[data-who]').hidden = true;
+    $('[data-who-nav]').hidden = true;
     show('login');
   }));
 

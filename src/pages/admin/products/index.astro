@@ -1,0 +1,171 @@
+---
+import Admin from '../../../layouts/Admin.astro';
+import Icon from '../../../components/Icon.astro';
+---
+<Admin title="Товари">
+  <div class="head">
+    <h1>Товари <span class="count" data-total></span></h1>
+    <a class="btn" href="/admin/products/edit/">+ Додати товар</a>
+  </div>
+
+  <div class="tools">
+    <label class="search">
+      <span class="sr-only">Пошук товару</span>
+      <Icon name="search" size={18} />
+      <input type="search" placeholder="Пошук за назвою…" data-search />
+    </label>
+    <label>
+      <span class="sr-only">Категорія</span>
+      <select data-category><option value="">Усі категорії</option></select>
+    </label>
+  </div>
+
+  <p class="state" data-state="loading">Завантаження…</p>
+  <div class="alert" role="alert" data-state="error" hidden>
+    Не вдалося завантажити товари. Перевірте інтернет і <button type="button" class="link" data-retry>спробуйте ще раз</button>.
+  </div>
+  <p class="state" data-state="empty" hidden>Нічого не знайдено.</p>
+
+  <ul class="list" data-state="list" hidden></ul>
+
+  <template data-row>
+    <li>
+      <a class="row" data-link>
+        <span class="thumb" data-thumb></span>
+        <span class="main">
+          <b data-name></b>
+          <span class="sub" data-category-name></span>
+        </span>
+        <span class="chips" data-chips></span>
+        <span class="price" data-price></span>
+        <span class="stock" data-stock></span>
+      </a>
+    </li>
+  </template>
+</Admin>
+
+<script>
+  import { requireStaff, supabase, formatMoney, type Localized } from '../../../lib/admin';
+
+  type Row = {
+    id: string; slug: string; name: Localized; price: number; old_price: number | null; stock: number;
+    hit: boolean; is_new: boolean; published: boolean; category_id: string;
+    images: { path: string; position: number }[];
+  };
+
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const states = [...document.querySelectorAll<HTMLElement>('[data-state]')];
+  const show = (name: string) => states.forEach((s) => (s.hidden = s.dataset.state !== name));
+  const nameOf = (n: Localized) => n.uk || n.pl || n.en || Object.values(n).find(Boolean) || '—';
+  const storage = `${import.meta.env.PUBLIC_SUPABASE_URL}/storage/v1/object/public/catalog/`;
+
+  let rows: Row[] = [];
+  let categories = new Map<string, string>();
+
+  async function load() {
+    show('loading');
+    const [p, c] = await Promise.all([
+      supabase!.from('products').select('id,slug,name,price,old_price,stock,hit,is_new,published,category_id,images:product_images(path,position)').order('position').order('created_at'),
+      supabase!.from('categories').select('id,name').order('position'),
+    ]);
+    if (p.error || c.error) return show('error');
+    rows = p.data as Row[];
+    categories = new Map(c.data.map((x) => [x.id as string, nameOf(x.name as Localized)]));
+    const sel = $<HTMLSelectElement>('[data-category]');
+    const keep = sel.value;
+    sel.replaceChildren(new Option('Усі категорії', ''), ...[...categories].map(([id, name]) => new Option(name, id)));
+    sel.value = keep;
+    render();
+  }
+
+  function render() {
+    const q = $<HTMLInputElement>('[data-search]').value.trim().toLowerCase();
+    const cat = $<HTMLSelectElement>('[data-category]').value;
+    const list = $('[data-state="list"]');
+    const tpl = $<HTMLTemplateElement>('[data-row]');
+    const visible = rows.filter((r) =>
+      (!cat || r.category_id === cat) &&
+      (!q || Object.values(r.name).some((n) => n?.toLowerCase().includes(q)) || r.slug.includes(q)));
+
+    $('[data-total]').textContent = String(rows.length);
+    list.replaceChildren(...visible.map((r) => {
+      const li = tpl.content.firstElementChild!.cloneNode(true) as HTMLElement;
+      li.querySelector<HTMLAnchorElement>('[data-link]')!.href = `/admin/products/edit/?id=${r.id}`;
+      li.querySelector('[data-name]')!.textContent = nameOf(r.name);
+      li.querySelector('[data-category-name]')!.textContent = categories.get(r.category_id) ?? '';
+      const cover = [...r.images].sort((a, b) => a.position - b.position)[0];
+      const thumb = li.querySelector<HTMLElement>('[data-thumb]')!;
+      if (cover) {
+        const img = new Image(56, 56);
+        img.src = `${storage}${cover.path}-400.webp`;
+        img.alt = '';
+        img.loading = 'lazy';
+        thumb.append(img);
+      } else thumb.textContent = 'немає фото';
+      const chips = li.querySelector('[data-chips]')!;
+      const chip = (text: string, cls: string) => { const s = document.createElement('span'); s.className = `chip ${cls}`; s.textContent = text; chips.append(s); };
+      if (!r.published) chip('прихований', 'hidden-chip');
+      if (r.hit) chip('хіт', 'hit');
+      if (r.is_new) chip('новинка', 'new');
+      if (r.old_price) chip(`−${Math.round((1 - r.price / r.old_price) * 100)}%`, 'sale');
+      li.querySelector('[data-price]')!.textContent = `${formatMoney(r.price)} €`;
+      const stock = li.querySelector<HTMLElement>('[data-stock]')!;
+      stock.textContent = r.stock > 0 ? `${r.stock} шт.` : 'немає';
+      stock.classList.toggle('out', r.stock === 0);
+      return li;
+    }));
+    show(visible.length ? 'list' : 'empty');
+  }
+
+  $('[data-search]').addEventListener('input', render);
+  $('[data-category]').addEventListener('change', render);
+  $('[data-retry]').addEventListener('click', load);
+
+  requireStaff().then(load).catch(() => {});
+</script>
+
+<style>
+  .head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  h1 { font-size: 28px; font-weight: 900; }
+  .count { color: var(--ink-2); font-size: 20px; }
+  .tools { display: flex; gap: 10px; flex-wrap: wrap; margin: 18px 0; }
+  .search { position: relative; flex: 1; min-width: 220px; }
+  .search :global(svg) { position: absolute; left: 14px; top: 50%; translate: 0 -50%; color: var(--ink-2); }
+  .search input { padding-left: 40px; }
+  input, select { width: 100%; min-height: 44px; padding: 8px 14px; border: 2px solid var(--line); border-radius: 12px; background: var(--surface); font-weight: 600; }
+  input:focus, select:focus { border-color: var(--pink-500); outline: none; }
+  [data-state][hidden] { display: none; }
+  .state { color: var(--ink-2); font-weight: 700; }
+  .alert { padding: 12px 16px; border-radius: var(--radius-sm); background: var(--tint-red); border: 2px solid var(--tint-red-border); font-weight: 700; }
+  .link { border: 0; background: none; padding: 0; color: var(--accent-text); font-weight: 800; text-decoration: underline; cursor: pointer; }
+
+  .list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .row {
+    display: grid; grid-template-columns: 56px minmax(0, 1fr) auto 100px 80px; align-items: center; gap: 14px;
+    padding: 10px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  }
+  .row:hover { border-color: var(--pink-500); }
+  .thumb { width: 56px; height: 56px; border-radius: 10px; background: var(--bg-soft); display: grid; place-items: center; overflow: hidden; font-size: 10px; text-align: center; color: var(--ink-2); font-weight: 700; line-height: 1.1; }
+  .thumb :global(img) { width: 100%; height: 100%; object-fit: cover; }
+  .main { display: grid; min-width: 0; }
+  .main b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sub { font-size: 13px; color: var(--ink-2); font-weight: 600; }
+  .chips { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+  .chips :global(.chip) { padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 800; }
+  .chips :global(.hit) { background: var(--yellow); color: var(--badge-ink); }
+  .chips :global(.new) { background: var(--green); color: #fff; }
+  .chips :global(.sale) { background: var(--red); color: #fff; }
+  .chips :global(.hidden-chip) { background: var(--line); color: var(--ink); }
+  .price { font-weight: 900; text-align: right; }
+  .stock { font-weight: 700; color: var(--ink-2); text-align: right; }
+  .stock.out { color: var(--sale); }
+
+  @media (max-width: 720px) {
+    .row { grid-template-columns: 56px minmax(0, 1fr) auto; grid-template-areas: 'thumb main price' 'thumb chips stock'; row-gap: 4px; }
+    .thumb { grid-area: thumb; }
+    .main { grid-area: main; }
+    .chips { grid-area: chips; justify-content: flex-start; }
+    .price { grid-area: price; }
+    .stock { grid-area: stock; }
+  }
+</style>
