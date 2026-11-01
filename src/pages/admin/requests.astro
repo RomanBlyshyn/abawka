@@ -40,7 +40,7 @@ import Admin from '../../layouts/Admin.astro';
       <div class="req-body">
         <div class="who">
           <b data-name></b>
-          <span class="contact"><span data-method></span>: <a data-contact-link target="_blank" rel="noopener"></a></span>
+          <span class="contact"><span data-method></span>: <a data-contact-link></a></span>
           <span class="muted" data-where></span>
           <p class="comment" data-comment hidden></p>
         </div>
@@ -125,6 +125,7 @@ import Admin from '../../layouts/Admin.astro';
       const link = q<HTMLAnchorElement>('[data-contact-link]');
       link.textContent = r.contact;
       link.href = contactHref(r);
+      if (link.href.startsWith('http')) { link.target = '_blank'; link.rel = 'noopener'; }
       q('[data-where]').textContent = `${regions.of(r.country) ?? r.country} · доставка: ${DELIVERY[r.delivery] ?? r.delivery} · мова сайту: ${r.locale.toUpperCase()}`;
       if (r.comment) { q('[data-comment]').textContent = `«${r.comment}»`; q('[data-comment]').hidden = false; }
       q('[data-items]').replaceChildren(...r.items.map((it) => {
