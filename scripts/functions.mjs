@@ -16,7 +16,9 @@ const ref = new URL(env.PUBLIC_SUPABASE_URL).hostname.split('.')[0];
 if (!env.SUPABASE_ACCESS_TOKEN) throw new Error('SUPABASE_ACCESS_TOKEN порожній у .env');
 
 // Ключі, які отримують функції (лише потрібні їм, а не весь .env).
-const FUNCTION_SECRETS = ['DEEPL_API_KEY', 'TELEGRAM_BOT_TOKEN'];
+const FUNCTION_SECRETS = ['DEEPL_API_KEY', 'TELEGRAM_BOT_TOKEN', 'SITE_URL'];
+// Функції, які кличуть не з браузера (база, Telegram): без перевірки JWT на шлюзі, права перевіряють самі.
+const PUBLIC_FUNCTIONS = ['telegram'];
 const secretValues = Object.values(env).filter((v) => v.length >= 8);
 
 function supabase(args) {
@@ -33,7 +35,7 @@ function supabase(args) {
 const [cmd, name] = process.argv.slice(2);
 if (cmd === 'deploy') {
   if (!/^[a-z0-9-]+$/.test(name ?? '')) throw new Error('Вкажи назву функції: node scripts/functions.mjs deploy translate');
-  supabase(['functions', 'deploy', name, '--use-api']);
+  supabase(['functions', 'deploy', name, '--use-api', ...(PUBLIC_FUNCTIONS.includes(name) ? ['--no-verify-jwt'] : [])]);
 } else if (cmd === 'secrets') {
   const dir = mkdtempSync(join(tmpdir(), 'abawka-'));
   const file = join(dir, 'secrets.env');

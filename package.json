@@ -13,7 +13,9 @@
     "db:push": "node scripts/db.mjs push",
     "staff:add": "node scripts/add-staff.mjs",
     "fn:secrets": "node scripts/functions.mjs secrets",
-    "fn:deploy": "node scripts/functions.mjs deploy"
+    "fn:deploy": "node scripts/functions.mjs deploy",
+    "tg:setup": "node scripts/telegram.mjs setup",
+    "tg:status": "node scripts/telegram.mjs status"
   },
   "author": "Roman <rb281926@gmail.com>",
   "type": "module",

@@ -70,6 +70,20 @@ import Icon from '../../components/Icon.astro';
       </a>
     </div>
     <p class="muted soon-note">Розділи з позначкою «скоро» з'являться на наступних кроках.</p>
+
+    <section class="tg" aria-labelledby="tg-title" data-tg hidden>
+      <h2 id="tg-title">Сповіщення в Telegram</h2>
+      <p data-tg-state="off">Нові заявки можуть приходити вам у Telegram одразу, як покупець їх надішле.</p>
+      <p data-tg-state="pending" hidden>Відкрийте бота й натисніть <b>Start</b> — ця сторінка сама побачить, коли все готово.</p>
+      <p data-tg-state="on" hidden>✅ Підключено: нові заявки приходять вам у Telegram.</p>
+      <div class="tg-actions">
+        <button class="btn" type="button" data-tg-state="off" data-tg-link>Підключити Telegram</button>
+        <a class="btn" target="_blank" rel="noopener" data-tg-state="pending" data-tg-open hidden>Відкрити бота ↗</a>
+        <button class="btn" type="button" data-tg-state="on" data-tg-test hidden>Надіслати перевірку</button>
+        <button class="btn btn-light" type="button" data-tg-state="on" data-tg-unlink hidden>Відключити</button>
+      </div>
+      <p class="muted" role="status" data-tg-msg></p>
+    </section>
     <a class="btn btn-light site-link" href="/" target="_blank">Відкрити сайт ↗</a>
   </section>
 </Admin>
@@ -109,6 +123,7 @@ import Icon from '../../components/Icon.astro';
       document.querySelector<HTMLElement>('[data-who-nav]')!.hidden = false;
       show('dashboard');
       loadCounts();
+      telegram(session.user.id);
     } catch {
       show('login');
       setAlert($('[data-login-error]'), explain({}));
@@ -122,6 +137,55 @@ import Icon from '../../components/Icon.astro';
       const el = document.querySelector(`[data-count="${table}"]`);
       if (el && count !== null) el.textContent = String(count);
     }
+  }
+
+  // Telegram: підключення бота для себе. Посилання з одноразовим кодом дає функція telegram.
+  async function telegram(userId: string) {
+    const box = $('[data-tg]');
+    const msg = $('[data-tg-msg]');
+    const view = (state: 'off' | 'pending' | 'on') =>
+      box.querySelectorAll<HTMLElement>('[data-tg-state]').forEach((e) => (e.hidden = e.dataset.tgState !== state));
+    const linked = async () => {
+      const { data } = await supabase!.from('staff').select('telegram_chat_id').eq('user_id', userId).maybeSingle();
+      return Boolean(data?.telegram_chat_id);
+    };
+    const call = async (action: string) => {
+      const { data, error } = await supabase!.functions.invoke('telegram', { body: { action } }).catch(() => ({ data: null, error: {} }));
+      return error ? null : (data as { url?: string; ok?: boolean });
+    };
+    let poll = 0;
+
+    box.querySelector('[data-tg-link]')!.addEventListener('click', async (e) => {
+      const btn = e.currentTarget as HTMLButtonElement;
+      btn.disabled = true;
+      msg.textContent = '';
+      const res = await call('link');
+      btn.disabled = false;
+      if (!res?.url) { msg.textContent = 'Не вдалося отримати посилання. Спробуйте ще раз за хвилину.'; return; }
+      $<HTMLAnchorElement>('[data-tg-open]').href = res.url;
+      view('pending');
+      // Чекаємо, поки людина натисне Start (до 10 хвилин).
+      const started = Date.now();
+      clearInterval(poll);
+      poll = window.setInterval(async () => {
+        if (Date.now() - started > 600e3) { clearInterval(poll); view('off'); msg.textContent = 'Час вийшов. Натисніть «Підключити Telegram» ще раз.'; return; }
+        if (await linked().catch(() => false)) { clearInterval(poll); view('on'); msg.textContent = ''; }
+      }, 2000);
+    });
+    box.querySelector('[data-tg-test]')!.addEventListener('click', async () => {
+      msg.textContent = 'Надсилаємо…';
+      msg.textContent = (await call('test'))?.ok
+        ? 'Надіслано — перевірте Telegram.'
+        : 'Не надіслано. Можливо, бота заблоковано: відкрийте його, натисніть Start і спробуйте ще раз.';
+    });
+    box.querySelector('[data-tg-unlink]')!.addEventListener('click', async () => {
+      if (!confirm('Відключити сповіщення? Нові заявки перестануть приходити вам у Telegram.')) return;
+      if ((await call('unlink'))?.ok) { view('off'); msg.textContent = 'Сповіщення відключено.'; }
+      else msg.textContent = 'Не вдалося. Спробуйте ще раз.';
+    });
+
+    view((await linked().catch(() => false)) ? 'on' : 'off');
+    box.hidden = false;
   }
 
   // Перемикання вхід ↔ відновлення.
@@ -234,4 +298,9 @@ import Icon from '../../components/Icon.astro';
   .tile.soon::after { content: 'скоро'; position: absolute; top: 14px; right: 14px; padding: 2px 10px; border-radius: 999px; background: var(--line); font-size: 12px; font-weight: 800; }
   .soon-note { margin-top: 16px; }
   .site-link { margin-top: 8px; border: 2px solid var(--accent-border); }
+  .tg { margin: 24px 0; padding: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); max-width: 640px; }
+  .tg[hidden], .tg [hidden] { display: none; }
+  .tg h2 { font-size: 20px; font-weight: 900; margin-bottom: 8px; }
+  .tg-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 4px; }
+  .tg-actions .btn-light { border: 2px solid var(--accent-border); }
 </style>

@@ -213,3 +213,30 @@ test('request: nobody can insert directly, only through submit_request', async (
   await rejects(as('anon', `insert into public.requests (locale, name, method, contact, country, delivery, currency, total, items) values ('pl','Bot','call','+48600000000','PL','x','EUR',0,'[{}]')`), /row-level security|permission denied/);
   await rejects(as(OWNER, `insert into public.requests (locale, name, method, contact, country, delivery, currency, total, items) values ('pl','Bot','call','+48600000000','PL','x','EUR',0,'[{}]')`), /row-level security/);
 });
+
+test('telegram: a new request signals the telegram function with its number only', async () => {
+  await admin('delete from net.calls');
+  await admin(`update public.products set stock = 10 where slug = 'bobo-balloon'`);
+  const r = await submit(order(), '10.0.0.30');
+  const calls = (await admin('select url, body from net.calls')).rows;
+  assert.equal(calls.length, 1);
+  assert.match(calls[0].url, /\/functions\/v1\/telegram$/);
+  assert.deepEqual(calls[0].body, { request: r.id });
+});
+
+test('telegram: if the signal fails, the request is still saved', async () => {
+  await admin(`create or replace function net.http_post(url text, body jsonb default '{}', params jsonb default '{}', headers jsonb default '{}', timeout_milliseconds int default 5000)
+    returns bigint language plpgsql as $$ begin raise exception 'network down'; end $$`);
+  try {
+    const r = await submit(order(), '10.0.0.31');
+    assert.equal((await admin('select count(*)::int n from public.requests where id = $1', [r.id])).rows[0].n, 1);
+  } finally {
+    await admin(`create or replace function net.http_post(url text, body jsonb default '{}', params jsonb default '{}', headers jsonb default '{}', timeout_milliseconds int default 5000)
+      returns bigint language sql as $$ insert into net.calls values (url, body) returning 1::bigint $$`);
+  }
+});
+
+test('telegram: a manager cannot change someone else\'s telegram chat', async () => {
+  const r = await as(MANAGER, `update public.staff set telegram_chat_id = 1 where user_id = '${OWNER}' returning user_id`);
+  assert.equal(r.rows.length, 0);
+});

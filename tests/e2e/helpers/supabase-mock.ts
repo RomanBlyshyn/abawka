@@ -12,18 +12,26 @@ export const session = () => {
 };
 
 type Row = Record<string, unknown> & { id: string };
-export interface Db { products: Row[]; categories: Row[]; product_images: Row[]; banners: Row[]; requests_table: Row[]; storage: string[]; requests: { method: string; url: string; body: unknown }[] }
+export interface Db { products: Row[]; categories: Row[]; product_images: Row[]; banners: Row[]; requests_table: Row[]; storage: string[]; telegram: { chatId: number | null; actions: string[] }; requests: { method: string; url: string; body: unknown }[] }
 
 const cors = { 'access-control-allow-origin': '*', 'access-control-expose-headers': 'content-range' };
 const reply = (route: Route, body: unknown, status = 200) =>
   route.fulfill({ status, contentType: 'application/json', headers: cors, body: body === undefined ? '' : JSON.stringify(body) });
 
 /** Увійти (сесія в localStorage) і підмінити auth + REST + functions. */
-export async function mockAdmin(page: Page, db: Db, opts: { role?: 'owner' | 'manager'; translate?: 'ok' | 'fail'; dbError?: { code: string; status: number }; storageError?: boolean } = {}) {
+export async function mockAdmin(page: Page, db: Db, opts: { role?: 'owner' | 'manager'; translate?: 'ok' | 'fail'; dbError?: { code: string; status: number }; storageError?: boolean; telegram?: 'fail' } = {}) {
   await page.route(/\/auth\/v1\/token/, (r) => reply(r, session()));
   await page.route(/\/auth\/v1\/user/, (r) => reply(r, USER));
   await page.route(/\/auth\/v1\/logout/, (r) => r.fulfill({ status: 204, headers: cors }));
-  await page.route(/\/rest\/v1\/staff\?/, (r) => reply(r, [{ role: opts.role ?? 'owner' }]));
+  await page.route(/\/rest\/v1\/staff\?/, (r) => reply(r, [{ role: opts.role ?? 'owner', telegram_chat_id: db.telegram.chatId }]));
+  await page.route(/\/functions\/v1\/telegram/, (r) => {
+    const { action } = r.request().postDataJSON();
+    db.telegram.actions.push(action);
+    if (opts.telegram === 'fail') return reply(r, { error: 'telegram' }, 502);
+    if (action === 'link') return reply(r, { url: 'https://t.me/abawka_test_bot?start=0123456789abcdef0123456789abcdef' });
+    if (action === 'unlink') db.telegram.chatId = null;
+    return reply(r, { ok: true });
+  });
 
   await page.route(/\/functions\/v1\/translate/, async (r) => {
     const { texts, targets } = r.request().postDataJSON();
@@ -114,4 +122,5 @@ export const sampleDb = (): Db => ({
   requests_table: [],
   storage: [],
   requests: [],
+  telegram: { chatId: null, actions: [] },
 });

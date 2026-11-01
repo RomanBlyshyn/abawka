@@ -14,3 +14,8 @@ grant usage on schema public, auth, storage to anon, authenticated;
 alter default privileges in schema public grant select, insert, update, delete on tables to anon, authenticated;
 alter default privileges in schema public grant usage on sequences to anon, authenticated;
 grant select, insert, update, delete on storage.objects to authenticated;
+-- pg_net: замість HTTP-запиту записуємо виклик у таблицю, щоб тест міг його перевірити.
+create schema net;
+create table net.calls (url text, body jsonb);
+create function net.http_post(url text, body jsonb default '{}', params jsonb default '{}', headers jsonb default '{}', timeout_milliseconds int default 5000)
+  returns bigint language sql as $$ insert into net.calls values (url, body) returning 1::bigint $$;
