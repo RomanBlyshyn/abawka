@@ -110,7 +110,7 @@
   "form.contact.phone": "Telefonní číslo",
   "form.contact.telegram": "Telegram: @přezdívka nebo číslo",
   "form.contact.email": "E-mail",
-  "form.contact.phoneHint": "S předvolbou, např. +420 600 000 000",
+  "form.contact.phoneHint": "Vyberte předvolbu země a zadejte číslo, např. 601 234 567",
   "form.country": "Země",
   "form.country.choose": "Vyberte zemi",
   "form.comment": "Poznámka (nepovinné)",
@@ -195,5 +195,9 @@
   "review.error.consent": "Je potřeba souhlas se zveřejněním.",
   "review.error.send": "Neodesláno. Zkuste to znovu — napsaný text zůstane.",
   "review.error.rate": "Příliš mnoho recenzí za sebou. Zkuste to za pár minut.",
-  "home.reviews.empty": "Zatím žádné recenze — buďte první!"
+  "home.reviews.empty": "Zatím žádné recenze — buďte první!",
+  "form.dial": "Předvolba země",
+  "form.country.search": "Hledat zemi",
+  "form.country.empty": "Nic nenalezeno",
+  "form.error.phoneCountry": "Číslo neodpovídá předvolbě {code}. Zkontrolujte počet číslic nebo vyberte jinou zemi."
 }

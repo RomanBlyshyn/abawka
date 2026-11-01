@@ -110,7 +110,7 @@
   "form.contact.phone": "Numer telefonu",
   "form.contact.telegram": "Telegram: @nick lub numer",
   "form.contact.email": "E-mail",
-  "form.contact.phoneHint": "Z kodem kraju, np. +48 600 000 000",
+  "form.contact.phoneHint": "Wybierz kierunkowy kraju i wpisz numer, np. 600 000 000",
   "form.country": "Kraj",
   "form.country.choose": "Wybierz kraj",
   "form.comment": "Komentarz (opcjonalnie)",
@@ -195,5 +195,9 @@
   "review.error.consent": "Potrzebna jest zgoda na publikację.",
   "review.error.send": "Nie wysłano. Spróbuj ponownie — wpisany tekst nie zniknie.",
   "review.error.rate": "Zbyt wiele opinii z rzędu. Spróbuj za kilka minut.",
-  "home.reviews.empty": "Nie ma jeszcze opinii — bądź pierwszy!"
+  "home.reviews.empty": "Nie ma jeszcze opinii — bądź pierwszy!",
+  "form.dial": "Kod kraju telefonu",
+  "form.country.search": "Szukaj kraju",
+  "form.country.empty": "Nic nie znaleziono",
+  "form.error.phoneCountry": "Ten numer nie pasuje do kierunkowego {code}. Sprawdź liczbę cyfr lub wybierz inny kraj."
 }

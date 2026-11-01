@@ -401,3 +401,12 @@ test('reviews: server-side validation, honeypot and rate limit', async () => {
   await rejects(review(goodReview(), '10.1.0.10'), /rate_limited/);
   await rejects(as('anon', `insert into public.reviews (author, rating, body, approved) values ('X', 5, '{"en":"fake"}', true)`), /row-level security/);
 });
+
+test('request: phone must be in international format (+country code), as the form sends it', async () => {
+  await admin(`update public.products set stock = 20 where slug = 'bobo-balloon'`);
+  await rejects(submit(order({ contact: '600000000' }), '10.2.0.1'), /invalid:contact/); // без коду країни
+  await rejects(submit(order({ contact: '+0600000000' }), '10.2.0.1'), /invalid:contact/);
+  await rejects(submit(order({ contact: '+4860' }), '10.2.0.1'), /invalid:contact/);
+  assert.ok((await submit(order({ contact: '+380671234567' }), '10.2.0.2')).id > 0);
+  assert.ok((await submit(order({ method: 'telegram', contact: '@olena_shop' }), '10.2.0.3')).id > 0);
+});

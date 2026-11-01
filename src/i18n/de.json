@@ -106,7 +106,7 @@
   "form.contact.phone": "Telefonnummer",
   "form.contact.telegram": "Telegram: @Name oder Nummer",
   "form.contact.email": "E-Mail",
-  "form.contact.phoneHint": "Mit Ländervorwahl, z. B. +49 151 0000000",
+  "form.contact.phoneHint": "Wählen Sie die Ländervorwahl und geben Sie Ihre Nummer ein, z. B. 151 23456789",
   "form.country": "Land",
   "form.country.choose": "Land wählen",
   "form.comment": "Kommentar (optional)",
@@ -191,5 +191,9 @@
   "review.error.consent": "Ihre Zustimmung zur Veröffentlichung ist erforderlich.",
   "review.error.send": "Nicht gesendet. Bitte versuchen Sie es erneut – Ihre Eingaben bleiben erhalten.",
   "review.error.rate": "Zu viele Bewertungen hintereinander. Bitte versuchen Sie es in ein paar Minuten erneut.",
-  "home.reviews.empty": "Noch keine Bewertungen – seien Sie der Erste!"
+  "home.reviews.empty": "Noch keine Bewertungen – seien Sie der Erste!",
+  "form.dial": "Ländervorwahl",
+  "form.country.search": "Land suchen",
+  "form.country.empty": "Nichts gefunden",
+  "form.error.phoneCountry": "Diese Nummer passt nicht zur Vorwahl {code}. Prüfen Sie die Anzahl der Ziffern oder wählen Sie ein anderes Land."
 }

@@ -110,7 +110,7 @@
   "form.contact.phone": "Telefono numeris",
   "form.contact.telegram": "Telegram: @vardas arba numeris",
   "form.contact.email": "El. paštas",
-  "form.contact.phoneHint": "Su šalies kodu, pvz. +370 600 00000",
+  "form.contact.phoneHint": "Pasirinkite šalies kodą ir įveskite numerį, pvz., 612 34567",
   "form.country": "Šalis",
   "form.country.choose": "Pasirinkite šalį",
   "form.comment": "Komentaras (neprivaloma)",
@@ -195,5 +195,9 @@
   "review.error.consent": "Reikia jūsų sutikimo paskelbti.",
   "review.error.send": "Neišsiųsta. Bandykite dar kartą — įvestas tekstas išliks.",
   "review.error.rate": "Per daug atsiliepimų iš eilės. Bandykite po kelių minučių.",
-  "home.reviews.empty": "Atsiliepimų dar nėra — būkite pirmi!"
+  "home.reviews.empty": "Atsiliepimų dar nėra — būkite pirmi!",
+  "form.dial": "Šalies kodas",
+  "form.country.search": "Ieškoti šalies",
+  "form.country.empty": "Nieko nerasta",
+  "form.error.phoneCountry": "Numeris netinka kodui {code}. Patikrinkite skaitmenų skaičių arba pasirinkite kitą šalį."
 }

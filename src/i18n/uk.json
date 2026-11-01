@@ -110,7 +110,7 @@
   "form.contact.phone": "Номер телефону",
   "form.contact.telegram": "Telegram: @нік або номер",
   "form.contact.email": "Email",
-  "form.contact.phoneHint": "З кодом країни, напр. +48 600 000 000",
+  "form.contact.phoneHint": "Виберіть код країни й введіть номер, напр. 67 123 45 67",
   "form.country": "Країна",
   "form.country.choose": "Оберіть країну",
   "form.comment": "Коментар (необов’язково)",
@@ -195,5 +195,9 @@
   "review.error.consent": "Потрібна ваша згода на публікацію.",
   "review.error.send": "Не надіслано. Спробуйте ще раз — введене не зникне.",
   "review.error.rate": "Забагато відгуків поспіль. Спробуйте за кілька хвилин.",
-  "home.reviews.empty": "Ще немає відгуків — будьте першими!"
+  "home.reviews.empty": "Ще немає відгуків — будьте першими!",
+  "form.dial": "Код країни телефону",
+  "form.country.search": "Пошук країни",
+  "form.country.empty": "Нічого не знайдено",
+  "form.error.phoneCountry": "Номер не підходить для коду {code}. Перевірте кількість цифр або виберіть іншу країну."
 }

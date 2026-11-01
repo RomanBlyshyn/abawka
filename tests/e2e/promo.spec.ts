@@ -1,5 +1,6 @@
 import { type Page } from '@playwright/test';
 import { expect, test } from './fixtures';
+import { pickCountry } from './helpers/form';
 
 // Підмінена check_promo/submit_request (див. supabase/migrations/…_promotions.sql):
 // SAVE10 — мінус 10 %; BIG50 — лише від 50 €; DOWN — мережа впала; інше — немає такого коду.
@@ -37,7 +38,7 @@ const fill = async (page: Page) => {
   const form = page.locator('[data-request-form]');
   await form.getByLabel('Name').fill('Anna');
   await form.getByLabel('Phone number').fill('+48 600 000 000');
-  await form.getByLabel('Country').selectOption('PL');
+  await pickCountry(form, /^Country/, 'Poland');
   await form.getByRole('checkbox').check();
   return form;
 };

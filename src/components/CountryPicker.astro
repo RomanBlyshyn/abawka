@@ -1,0 +1,91 @@
+---
+// Вибір країни замість системного <select> (клієнту не сподобався системний список): прапорці, пошук, Польща й Україна вгорі.
+// Тому в .htmlvalidate.json дозволено ролі listbox/option/combobox.
+// Доступний з клавіатури (кнопка + список з пошуком, шаблон combobox/listbox). Значення — у прихованому input.
+interface Option { code: string; label: string; /** Додатковий текст праворуч, напр. «+48». */ hint?: string }
+interface Props {
+  id: string;
+  name: string;
+  value: string;
+  options: Option[];
+  /** Скільки перших варіантів — «популярні» (після них розділювач). */
+  priority: number;
+  /** id підпису поля (для aria-labelledby). */
+  labelledby: string;
+  placeholder?: string;
+  searchLabel: string;
+  emptyLabel: string;
+  /** Компактна кнопка (лише прапорець і hint) — для коду телефону. */
+  compact?: boolean;
+  describedby?: string;
+}
+const { id, name, value, options, priority, labelledby, placeholder = '', searchLabel, emptyLabel, compact = false, describedby } = Astro.props;
+// Прапорець з коду країни: регіональні символи Unicode (на Windows показуються як дві літери — теж зрозуміло).
+const flag = (code: string) => String.fromCodePoint(...[...code].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
+const current = options.find((o) => o.code === value);
+---
+<div class:list={['cp', { compact }]} data-cp>
+  <input type="hidden" name={name} value={value} />
+  <button type="button" class="cp-btn" id={id} aria-haspopup="listbox" aria-expanded="false" aria-controls={`${id}-list`}
+    aria-labelledby={`${labelledby} ${id}`} aria-describedby={describedby} data-cp-btn>
+    <span class="cp-flag" aria-hidden="true" data-cp-flag>{current ? flag(current.code) : ''}</span>
+    <span class="cp-text" data-cp-text data-placeholder={placeholder}>{current ? (compact ? current.hint : current.label) : placeholder}</span>
+    <svg class="cp-caret" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+  </button>
+  <div class="cp-pop" data-cp-pop hidden>
+    <input type="text" class="cp-search" role="combobox" aria-label={searchLabel} aria-controls={`${id}-list`} aria-expanded="true" aria-autocomplete="list" autocomplete="off" spellcheck="false" data-cp-search />
+    <ul class="cp-list" role="listbox" id={`${id}-list`} aria-label={searchLabel} data-cp-list>
+      {options.map((o, i) => (
+        <li role="option" id={`${id}-o-${o.code}`} data-code={o.code} data-label={o.label} data-hint={o.hint ?? ''}
+          aria-selected={o.code === value ? 'true' : 'false'} class:list={{ sep: i === priority - 1 }}>
+          <span class="cp-flag" aria-hidden="true">{flag(o.code)}</span>
+          <span class="cp-name">{o.label}</span>
+          {o.hint && <span class="cp-hint">{o.hint}</span>}
+        </li>
+      ))}
+    </ul>
+    <p class="cp-empty" data-cp-empty hidden>{emptyLabel}</p>
+  </div>
+</div>
+
+<script>
+  import { initPickers } from '../lib/picker';
+  initPickers();
+</script>
+
+<style>
+  .cp { position: relative; min-width: 0; }
+  .cp-btn {
+    display: flex; align-items: center; gap: 10px; width: 100%; min-height: 46px; padding: 8px 12px 8px 14px;
+    border: 2px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); font: inherit; font-weight: 600; text-align: left; cursor: pointer;
+  }
+  .cp-btn:focus-visible, .cp-btn[aria-expanded='true'] { border-color: var(--pink-500); outline: none; }
+  .cp-btn[aria-invalid='true'] { border-color: var(--red); }
+  :global(:root[data-theme='dark']) .cp-btn[aria-invalid='true'] { border-color: var(--sale); }
+  .cp-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cp-text:empty::before { content: attr(data-placeholder); color: var(--ink-2); }
+  .cp-flag { font-size: 20px; line-height: 1; }
+  .cp-flag:empty { display: none; }
+  .cp-caret { flex: none; color: var(--ink-2); transition: transform 0.15s; }
+  .cp-btn[aria-expanded='true'] .cp-caret { transform: rotate(180deg); }
+  .compact .cp-btn { gap: 6px; padding-inline: 10px; }
+  .compact .cp-text { flex: none; overflow: visible; }
+
+  .cp-pop {
+    position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; width: max(100%, 280px); max-width: min(360px, calc(100vw - 32px));
+    padding: 8px; background: var(--surface); border: 2px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-hover);
+  }
+  .cp-pop[hidden] { display: none; }
+  .cp-search { width: 100%; min-height: 42px; padding: 8px 12px; border: 2px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); font: inherit; }
+  .cp-search:focus { border-color: var(--pink-500); outline: none; }
+  .cp-list { list-style: none; margin: 6px 0 0; padding: 0; max-height: 280px; overflow-y: auto; overscroll-behavior: contain; }
+  .cp-list li { display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+  .cp-list li[hidden] { display: none; }
+  .cp-list li.sep { margin-bottom: 6px; box-shadow: 0 7px 0 -6px var(--line); }
+  .cp-list li.active { background: var(--accent-soft); }
+  .cp-list li[aria-selected='true'] { color: var(--accent-text); font-weight: 800; }
+  .cp-name { flex: 1; min-width: 0; }
+  .cp-hint { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .cp-empty { margin: 8px 10px; color: var(--ink-2); font-weight: 600; }
+  .cp-empty[hidden] { display: none; }
+</style>

@@ -108,7 +108,7 @@
   "form.contact.phone": "Numéro de téléphone",
   "form.contact.telegram": "Telegram : @pseudo ou numéro",
   "form.contact.email": "E-mail",
-  "form.contact.phoneHint": "Avec indicatif, ex. +33 6 00 00 00 00",
+  "form.contact.phoneHint": "Choisissez l’indicatif du pays et saisissez votre numéro, p. ex. 6 12 34 56 78",
   "form.country": "Pays",
   "form.country.choose": "Choisissez un pays",
   "form.comment": "Commentaire (facultatif)",
@@ -193,5 +193,9 @@
   "review.error.consent": "Votre accord pour la publication est nécessaire.",
   "review.error.send": "Non envoyé. Veuillez réessayer — votre texte est conservé.",
   "review.error.rate": "Trop d’avis d’affilée. Réessayez dans quelques minutes.",
-  "home.reviews.empty": "Pas encore d’avis — soyez le premier !"
+  "home.reviews.empty": "Pas encore d’avis — soyez le premier !",
+  "form.dial": "Indicatif du pays",
+  "form.country.search": "Rechercher un pays",
+  "form.country.empty": "Aucun résultat",
+  "form.error.phoneCountry": "Ce numéro ne correspond pas à l’indicatif {code}. Vérifiez le nombre de chiffres ou choisissez un autre pays."
 }

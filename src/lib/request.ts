@@ -1,4 +1,4 @@
-// Правила перевірки заявки. Чистий модуль без DOM: на етапі 3 ті самі правила виконає сервер.
+// Правила перевірки заявки. Чистий модуль без DOM; сервер (submit_request) перевіряє те саме ще раз.
 export const METHODS = ['call', 'telegram', 'viber', 'whatsapp', 'email'] as const;
 export type Method = (typeof METHODS)[number];
 
@@ -6,6 +6,7 @@ export interface RequestLine { slug: string; qty: number }
 export interface RequestInput {
   name: string;
   method: Method;
+  /** Телефон — у міжнародному форматі (+48600000000), або @нік / email. */
   contact: string;
   country: string;
   delivery: string;
@@ -16,35 +17,40 @@ export interface RequestInput {
   promo?: string;
 }
 
-export type FieldError = 'name' | 'phone' | 'telegram' | 'email' | 'country' | 'consent' | 'empty';
+export type FieldError = 'name' | 'phone' | 'phoneCountry' | 'telegram' | 'email' | 'country' | 'consent' | 'empty';
 export type Errors = Partial<Record<'name' | 'contact' | 'country' | 'consent' | 'lines', FieldError>>;
 
 export const LIMITS = { name: 60, contact: 80, comment: 500 } as const;
 
-const PHONE = /^\+?\d{9,15}$/;
 const TG_USER = /^@?[A-Za-z0-9_]{5,32}$/;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
-/** Телефон без пробілів, дужок і дефісів: «+48 (600) 000-000» → «+48600000000». */
-export const normalizePhone = (s: string) => s.replace(/[\s()\-.]/g, '');
 
 /** Яким видом контакту має бути поле для обраного способу зв'язку. */
 export const contactKind = (m: Method): 'phone' | 'telegram' | 'email' =>
   m === 'email' ? 'email' : m === 'telegram' ? 'telegram' : 'phone';
 
-export function validateRequest(input: RequestInput, countries: readonly string[]): Errors {
+/** Схоже на телеграм-нік, а не на номер (є «@» або літери). */
+export const looksLikeUsername = (s: string) => /^@|[A-Za-z_]/.test(s.trim());
+
+/**
+ * phoneOk — перевірка номера за правилами країни (src/lib/phone.ts): у браузері це libphonenumber,
+ * у тестах — будь-яка функція. Порожній номер — «вкажіть номер», неправильний — «не підходить для країни».
+ */
+export function validateRequest(input: RequestInput & { rawContact?: string }, countries: readonly string[], phoneOk: (raw: string) => boolean): Errors {
   const errors: Errors = {};
   const name = input.name.trim();
   if (name.length < 2 || name.length > LIMITS.name) errors.name = 'name';
 
-  const contact = input.contact.trim();
+  const raw = (input.rawContact ?? input.contact).trim();
   const kind = contactKind(input.method);
   if (kind === 'email') {
-    if (!EMAIL.test(contact) || contact.length > LIMITS.contact) errors.contact = 'email';
-  } else if (kind === 'telegram') {
-    if (!TG_USER.test(contact) && !PHONE.test(normalizePhone(contact))) errors.contact = 'telegram';
-  } else if (!PHONE.test(normalizePhone(contact))) {
-    errors.contact = 'phone';
+    if (!EMAIL.test(raw) || raw.length > LIMITS.contact) errors.contact = 'email';
+  } else if (kind === 'telegram' && looksLikeUsername(raw)) {
+    if (!TG_USER.test(raw)) errors.contact = 'telegram';
+  } else if (!/\d/.test(raw)) {
+    errors.contact = kind === 'telegram' ? 'telegram' : 'phone';
+  } else if (!phoneOk(raw)) {
+    errors.contact = 'phoneCountry';
   }
 
   if (!countries.includes(input.country)) errors.country = 'country';

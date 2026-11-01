@@ -106,7 +106,7 @@
   "form.contact.phone": "Phone number",
   "form.contact.telegram": "Telegram: @username or number",
   "form.contact.email": "Email",
-  "form.contact.phoneHint": "With country code, e.g. +48 600 000 000",
+  "form.contact.phoneHint": "Choose the country code and enter your number, e.g. 600 000 000",
   "form.country": "Country",
   "form.country.choose": "Choose a country",
   "form.comment": "Comment (optional)",
@@ -191,5 +191,9 @@
   "review.error.consent": "Your consent to publish is needed.",
   "review.error.send": "Not sent. Please try again — what you typed is kept.",
   "review.error.rate": "Too many reviews in a row. Please try again in a few minutes.",
-  "home.reviews.empty": "No reviews yet — be the first!"
+  "home.reviews.empty": "No reviews yet — be the first!",
+  "form.dial": "Phone country code",
+  "form.country.search": "Search country",
+  "form.country.empty": "Nothing found",
+  "form.error.phoneCountry": "This number does not match the {code} country code. Check the number of digits or choose another country."
 }

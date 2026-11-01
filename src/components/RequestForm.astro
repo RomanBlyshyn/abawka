@@ -5,6 +5,8 @@ import { useTranslations } from '../i18n';
 import { LIMITS, METHODS } from '../lib/request';
 import { href } from '../lib/format';
 import { requestsLive } from '../lib/request-client';
+import CountryPicker from './CountryPicker.astro';
+import { getCountryCallingCode, type CountryCode } from 'libphonenumber-js/max';
 
 interface Props {
   locale: Locale;
@@ -23,6 +25,9 @@ const countries = [
   ...delivery.countries.filter((c) => !delivery.priority.includes(c)).sort((a, b) => collator.compare(regionNames.of(a)!, regionNames.of(b)!)),
 ].map((code) => ({ code, name: regionNames.of(code)! }));
 const defaultCountry = (delivery.defaultCountry as Record<string, string>)[locale] ?? '';
+// Код телефону: за замовчуванням — країна мови сайту, інакше Польща (магазин у Вроцлаві).
+const defaultDial = defaultCountry || 'PL';
+const dialOptions = countries.map((c) => ({ code: c.code, label: c.name, hint: `+${getCountryCallingCode(c.code as CountryCode)}` }));
 
 const methodLabel: Record<string, string> = {
   call: t('form.method.call'), telegram: 'Telegram', viber: 'Viber', whatsapp: 'WhatsApp', email: t('form.contact.email'),
@@ -37,7 +42,7 @@ const cfg = {
   thanks: href(locale, 'thanks/'),
   labels: { phone: t('form.contact.phone'), telegram: t('form.contact.telegram'), email: t('form.contact.email') },
   errors: {
-    name: t('form.error.name'), phone: t('form.error.phone'), telegram: t('form.error.telegram'), email: t('form.error.email'),
+    name: t('form.error.name'), phone: t('form.error.phone'), phoneCountry: t('form.error.phoneCountry'), telegram: t('form.error.telegram'), email: t('form.error.email'),
     country: t('form.error.country'), consent: t('form.error.consent'), empty: t('form.error.empty'),
   },
 };
@@ -63,23 +68,25 @@ const cfg = {
   </fieldset>
 
   <div class="field">
-    <label for={id('contact')} data-contact-label>{t('form.contact.phone')}</label>
-    <input id={id('contact')} name="contact" type="tel" autocomplete="tel" maxlength={LIMITS.contact} required aria-describedby={`${id('contact-hint')} ${id('contact-err')}`} />
+    <label for={id('contact')} id={id('contact-label')} data-contact-label>{t('form.contact.phone')}</label>
+    <div class="phone-row">
+      {/* Код країни телефону окремо від країни доставки: покупець у Польщі часто з українським номером. */}
+      <div class="dial" data-dial>
+        <CountryPicker id={id('dial')} name="dial" value={defaultDial} options={dialOptions} priority={delivery.priority.length}
+          labelledby={id('dial-label')} searchLabel={t('form.country.search')} emptyLabel={t('form.country.empty')} compact />
+        <span id={id('dial-label')} class="sr-only">{t('form.dial')}</span>
+      </div>
+      <input id={id('contact')} name="contact" type="tel" autocomplete="tel" maxlength={LIMITS.contact} required aria-describedby={`${id('contact-hint')} ${id('contact-err')}`} />
+    </div>
     <p class="hint" id={id('contact-hint')} data-contact-hint>{t('form.contact.phoneHint')}</p>
     <p class="err" id={id('contact-err')} data-err="contact" hidden></p>
   </div>
 
   <div class="field">
-    <label for={id('country')}>{t('form.country')}</label>
-    <select id={id('country')} name="country" required autocomplete="country" aria-describedby={id('country-err')}>
-      <option value="">{t('form.country.choose')}</option>
-      {countries.map((c, i) => (
-        <>
-          <option value={c.code} selected={c.code === defaultCountry}>{c.name}</option>
-          {i === delivery.priority.length - 1 && <option disabled>──────────</option>}
-        </>
-      ))}
-    </select>
+    <label for={id('country')} id={id('country-label')}>{t('form.country')}</label>
+    <CountryPicker id={id('country')} name="country" value={defaultCountry} options={countries.map((c) => ({ code: c.code, label: c.name }))}
+      priority={delivery.priority.length} labelledby={id('country-label')} placeholder={t('form.country.choose')}
+      searchLabel={t('form.country.search')} emptyLabel={t('form.country.empty')} describedby={id('country-err')} />
     <p class="err" id={id('country-err')} data-err="country" hidden></p>
     <p class="hint">{t('form.deliveryNote')}</p>
   </div>
@@ -115,18 +122,22 @@ const cfg = {
 <script is:inline type="application/json" data-request-cfg set:html={JSON.stringify({ ...cfg, summaryError: t('form.error.summary'), sendError: t('form.error.send'), stockError: t('form.error.stock'), rateError: t('form.error.rate'), promoError: t('form.error.promo'), phoneHint: t('form.contact.phoneHint') })} />
 
 <script>
-  import { contactKind, validateRequest, type Errors, type Method, type RequestLine } from '../lib/request';
+  import { contactKind, looksLikeUsername, validateRequest, type Errors, type Method, type RequestLine } from '../lib/request';
+  import { countryOf, loadPhone, phoneReady, toE164 } from '../lib/phone';
+  import { setPicker } from '../lib/picker';
   import { readCart, readPromo, writeCart, writePromo } from '../lib/cart-client';
   import { submitRequest, SubmitError } from '../lib/request-client';
 
   const DRAFT_KEY = 'request-draft';
-  const FIELDS = ['name', 'method', 'contact', 'country', 'comment'] as const;
+  const FIELDS = ['name', 'method', 'contact', 'dial', 'country', 'comment'] as const;
 
   document.querySelectorAll<HTMLFormElement>('[data-request-form]').forEach((form) => {
     const cfg = JSON.parse(form.nextElementSibling!.textContent!);
     const el = <T extends Element = HTMLInputElement>(sel: string) => form.querySelector<T>(sel)!;
     const contact = el('[name=contact]');
-    const country = el<HTMLSelectElement>('[name=country]');
+    const country = el('[name=country]');
+    const dial = el('[name=dial]');
+    let dialTouched = false; // код змінили вручну — більше не підлаштовуємо його під країну доставки
     const alertBox = el<HTMLElement>('[data-alert]');
     let tried = false;
 
@@ -139,7 +150,15 @@ const cfg = {
       contact.type = kind === 'email' ? 'email' : kind === 'phone' ? 'tel' : 'text';
       contact.autocomplete = kind === 'email' ? 'email' : kind === 'phone' ? 'tel' : 'off';
       el<HTMLElement>('[data-contact-hint]').hidden = kind !== 'phone';
+      syncDial();
     }
+    // Код країни потрібен лише для номера: для email і телеграм-ніка ховаємо.
+    function syncDial() {
+      const kind = contactKind(method());
+      el<HTMLElement>('[data-dial]').hidden = kind === 'email' || (kind === 'telegram' && looksLikeUsername(contact.value));
+    }
+    // Бібліотеку перевірки номера вантажимо, щойно покупець торкнувся форми.
+    form.addEventListener('focusin', () => { loadPhone().catch(() => {}); }, { once: true });
 
     // Чернетка: якщо сторінку оновили чи закрили вкладку — введене не пропадає.
     const saveDraft = () => {
@@ -152,6 +171,7 @@ const cfg = {
         for (const f of FIELDS) {
           if (typeof draft[f] !== 'string') continue;
           if (f === 'method') { const r = form.querySelector<HTMLInputElement>(`[name=method][value="${CSS.escape(draft.method)}"]`); if (r) r.checked = true; }
+          else if (f === 'dial' || f === 'country') { setPicker(el(`[name=${f}]`), draft[f]); if (f === 'dial') dialTouched = true; }
           else el<HTMLInputElement>(`[name=${f}]`).value = draft[f];
         }
       }
@@ -165,11 +185,15 @@ const cfg = {
       return [{ slug: form.dataset.slug!, qty }];
     }
 
+    const isPhone = () => contactKind(method()) !== 'email' && !(contactKind(method()) === 'telegram' && looksLikeUsername(contact.value));
     function collect() {
+      // Номер іде на сервер у міжнародному форматі (+48600000000), нік і email — як є.
+      const e164 = isPhone() ? toE164(contact.value, dial.value) : null;
       return {
         name: el('[name=name]').value,
         method: method(),
-        contact: contact.value,
+        contact: e164 ?? contact.value.trim(),
+        rawContact: contact.value,
         country: country.value,
         delivery: 'discuss', // доставку власник узгоджує з покупцем особисто
         comment: el<HTMLTextAreaElement>('[name=comment]').value.trim(),
@@ -182,10 +206,13 @@ const cfg = {
     function showErrors(errors: Errors) {
       for (const field of ['name', 'contact', 'country', 'consent'] as const) {
         const msg = form.querySelector<HTMLElement>(`[data-err=${field}]`)!;
-        const input = el(`[name=${field}]`);
+        // Для країни помилку показує кнопка вибору, а не приховане поле.
+        const input = field === 'country' ? el('#' + CSS.escape(`${cfg.mode}-country`)) : el(`[name=${field}]`);
         const code = errors[field];
         msg.hidden = !code;
-        msg.textContent = code ? cfg.errors[code] : '';
+        msg.textContent = code === 'phoneCountry'
+          ? cfg.errors.phoneCountry.replace('{code}', el('[data-dial] [data-cp-text]').textContent ?? '')
+          : code ? cfg.errors[code] : '';
         input.setAttribute('aria-invalid', String(!!code));
       }
     }
@@ -195,22 +222,35 @@ const cfg = {
       alertBox.textContent = text ?? '';
     };
 
-    form.addEventListener('input', () => {
+    const validate = () => validateRequest(collect(), cfg.countries, (raw) => toE164(raw, dial.value) !== null);
+    form.addEventListener('input', (e) => {
+      const name = (e.target as HTMLInputElement).name;
+      if (name === 'contact') {
+        // Вставили номер з «+380…» — перемикаємо код на країну номера.
+        const c = countryOf(contact.value);
+        if (c && c !== dial.value && el(`[data-dial] [data-code="${c}"]`)) { setPicker(dial, c); dialTouched = true; }
+        syncDial();
+      }
+      if (name === 'dial') dialTouched = true;
+      // Країна доставки підказує код телефону, поки покупець не вибрав його сам.
+      if (name === 'country' && !dialTouched && !contact.value.trim() && country.value) setPicker(dial, country.value);
       saveDraft();
-      if (tried) showErrors(validateRequest(collect(), cfg.countries));
+      if (tried && phoneReady()) showErrors(validate());
     });
     form.addEventListener('change', (e) => {
       const name = (e.target as HTMLInputElement).name;
       if (name === 'method') syncContact();
       saveDraft();
-      if (tried) showErrors(validateRequest(collect(), cfg.countries));
+      if (tried && phoneReady()) showErrors(validate());
     });
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       tried = true;
+      // Без бібліотеки номер не перевірити; не вантажиться (немає мережі) — сервер перевірить формат сам.
+      await loadPhone().catch(() => {});
       const input = collect();
-      const errors = validateRequest(input, cfg.countries);
+      const errors = phoneReady() ? validate() : validateRequest(input, cfg.countries, () => true);
       showErrors(errors);
       if (Object.keys(errors).length) {
         showAlert(errors.lines ? cfg.errors.empty : cfg.summaryError);
@@ -225,7 +265,8 @@ const cfg = {
       el<HTMLElement>('[data-submit-label]').hidden = true;
       el<HTMLElement>('[data-sending]').hidden = false;
       try {
-        const res = await submitRequest({ ...input, locale: cfg.locale, website: el('[name=website]').value });
+        const { rawContact: _raw, ...payload } = input; // на сервер — лише нормалізований номер
+        const res = await submitRequest({ ...payload, locale: cfg.locale, website: el('[name=website]').value });
         if (cfg.mode === 'cart') { writePromo(''); writeCart([]); }
         try { sessionStorage.removeItem(DRAFT_KEY); } catch { /* немає доступу — не страшно */ }
         const url = new URL(cfg.thanks, location.href);
@@ -255,6 +296,10 @@ const cfg = {
 
   .field { display: grid; gap: 6px; border: 0; margin: 0; padding: 0; min-width: 0; }
   .field > label, legend { font-weight: 800; padding: 0; margin-bottom: 2px; }
+  .phone-row { display: flex; gap: 8px; }
+  .phone-row input { flex: 1; min-width: 0; }
+  .dial { flex: none; }
+  .dial[hidden] { display: none; }
   input[type='text'], input[type='tel'], input[type='email'], select, textarea {
     width: 100%; min-height: 46px; padding: 10px 14px; border: 2px solid var(--line); border-radius: 12px; background: var(--surface);
   }

@@ -108,7 +108,7 @@
   "form.contact.phone": "Número de teléfono",
   "form.contact.telegram": "Telegram: @usuario o número",
   "form.contact.email": "Correo electrónico",
-  "form.contact.phoneHint": "Con prefijo, p. ej. +34 600 000 000",
+  "form.contact.phoneHint": "Elige el prefijo del país e introduce tu número, p. ej. 612 345 678",
   "form.country": "País",
   "form.country.choose": "Elige un país",
   "form.comment": "Comentario (opcional)",
@@ -193,5 +193,9 @@
   "review.error.consent": "Necesitamos tu consentimiento para publicarla.",
   "review.error.send": "No se ha enviado. Inténtalo de nuevo: lo que escribiste se conserva.",
   "review.error.rate": "Demasiadas opiniones seguidas. Inténtalo en unos minutos.",
-  "home.reviews.empty": "Aún no hay opiniones. ¡Sé el primero!"
+  "home.reviews.empty": "Aún no hay opiniones. ¡Sé el primero!",
+  "form.dial": "Prefijo del país",
+  "form.country.search": "Buscar país",
+  "form.country.empty": "No se ha encontrado nada",
+  "form.error.phoneCountry": "El número no corresponde al prefijo {code}. Revisa el número de dígitos o elige otro país."
 }

@@ -1,5 +1,6 @@
 import { type Page } from '@playwright/test';
 import { expect, test } from './fixtures';
+import { pickCountry } from './helpers/form';
 
 // Підмінена функція бази submit_request (див. supabase/migrations/…_requests.sql).
 // «sold-out» у кошику → помилка залишку; ім'я «Spammy» → ліміт частоти; інакше заявка №1042.
@@ -27,7 +28,7 @@ const setCart = async (page: Page, lines: { slug: string; qty: number }[]) => {
 const fillValid = async (page: Page, scope = page.locator('[data-request-form]').first()) => {
   await scope.getByLabel('Name').fill('Anna');
   await scope.getByLabel('Phone number').fill('+48 600 000 000');
-  await scope.getByLabel('Country').selectOption('PL');
+  await pickCountry(scope, /^Country/, 'Poland');
   await scope.getByRole('checkbox').check();
 };
 
@@ -79,7 +80,6 @@ test.describe('request form', () => {
   test('shows clear errors, focuses the first one, and fixes them live', async ({ page }) => {
     await setCart(page, [{ slug: 'toy-sword', qty: 1 }]);
     await page.goto('/en/cart/');
-    await page.getByLabel('Country').selectOption('');
     await page.getByRole('button', { name: 'Send request' }).click();
     await expect(page.getByRole('alert')).toHaveText('Please check the fields marked in red.');
     await expect(page.getByLabel('Name')).toBeFocused();
@@ -134,11 +134,11 @@ test.describe('request form', () => {
     await page.goto('/en/cart/');
     await page.getByLabel('Name').fill('Olena');
     await page.getByRole('radio', { name: 'Viber' }).check();
-    await page.getByLabel('Country').selectOption('UA');
+    await pickCountry(page, /^Country/, 'Ukraine');
     await page.reload();
     await expect(page.getByLabel('Name')).toHaveValue('Olena');
     await expect(page.getByRole('radio', { name: 'Viber' })).toBeChecked();
-    await expect(page.getByLabel('Country')).toHaveValue('UA');
+    await expect(page.getByRole('button', { name: /^Country/ })).toContainText('Ukraine');
   });
 
   test('successful request empties the cart and shows the thank-you page', async ({ page }) => {

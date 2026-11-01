@@ -110,7 +110,7 @@
   "form.contact.phone": "Номер телефона",
   "form.contact.telegram": "Telegram: @ник или номер",
   "form.contact.email": "Email",
-  "form.contact.phoneHint": "С кодом страны, напр. +48 600 000 000",
+  "form.contact.phoneHint": "Выберите код страны и введите номер, напр. 67 123 45 67",
   "form.country": "Страна",
   "form.country.choose": "Выберите страну",
   "form.comment": "Комментарий (необязательно)",
@@ -195,5 +195,9 @@
   "review.error.consent": "Нужно ваше согласие на публикацию.",
   "review.error.send": "Не отправлено. Попробуйте ещё раз — введённое не пропадёт.",
   "review.error.rate": "Слишком много отзывов подряд. Попробуйте через несколько минут.",
-  "home.reviews.empty": "Отзывов пока нет — будьте первыми!"
+  "home.reviews.empty": "Отзывов пока нет — будьте первыми!",
+  "form.dial": "Код страны телефона",
+  "form.country.search": "Поиск страны",
+  "form.country.empty": "Ничего не найдено",
+  "form.error.phoneCountry": "Номер не подходит для кода {code}. Проверьте количество цифр или выберите другую страну."
 }
