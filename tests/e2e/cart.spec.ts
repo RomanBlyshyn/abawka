@@ -200,3 +200,13 @@ test('cart page does not jump while loading (layout shift)', async ({ page }) =>
     expect(await page.evaluate(() => (window as unknown as { cls: number }).cls)).toBeLessThan(0.05);
   }
 });
+
+test('text areas use the site font, not the browser monospace default', async ({ page }) => {
+  await setCart(page, [{ slug: 'toy-sword', qty: 1 }]);
+  await page.goto('/en/cart/');
+  const [body, comment] = await Promise.all([
+    page.evaluate(() => getComputedStyle(document.body).fontFamily),
+    page.getByLabel('Comment (optional)').evaluate((e) => getComputedStyle(e).fontFamily),
+  ]);
+  expect(comment).toBe(body);
+});
