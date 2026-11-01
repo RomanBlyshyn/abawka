@@ -140,5 +140,6 @@
   "thanks.text": "Savininkas netrukus susisieks pasirinktu būdu dėl pristatymo ir apmokėjimo.",
   "thanks.continue": "Tęsti apsipirkimą",
   "form.error.stock": "Kai kurių žaislų nebeturime tokio kiekio. Atnaujinkite krepšelio puslapį ir patikrinkite kiekius.",
-  "form.error.rate": "Per daug užklausų per trumpą laiką. Bandykite po kelių minučių – įvesti duomenys išsaugoti."
+  "form.error.rate": "Per daug užklausų per trumpą laiką. Bandykite po kelių minučių – įvesti duomenys išsaugoti.",
+  "legal.englishOnly": "Šis dokumentas pateikiamas anglų kalba."
 }

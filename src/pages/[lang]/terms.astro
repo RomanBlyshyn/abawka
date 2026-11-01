@@ -1,0 +1,67 @@
+---
+// Регламент магазину (Terms of Sale). Шаблон під модель «заявка → підтвердження → оплата напряму»,
+// не юридична консультація — клієнту варто показати юристу.
+import LegalDoc from '../../components/legal/LegalDoc.astro';
+import Seller from '../../components/legal/Seller.astro';
+import { LOCALES, type Locale } from '../../i18n/config';
+import { href } from '../../lib/format';
+import { hours, shop } from '../../lib/shop';
+import { BASE_CURRENCY } from '../../lib/data';
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
+}
+const locale = Astro.params.lang as Locale;
+const link = (path: string) => href(locale, path);
+---
+<LegalDoc locale={locale} titleKey="footer.terms" heading="Terms of Sale">
+  <h2>1. Who we are</h2>
+  <p>The ABAWKA online toy shop is run by a private individual (not a registered company):</p>
+  <Seller />
+  <p>We answer requests and messages from {hours} (Warsaw time).</p>
+
+  <h2>2. How buying works</h2>
+  <ol>
+    <li>The website is a catalogue. Adding products to the cart and sending a request is <b>not yet a purchase</b>: it is a request for the seller to contact you. Sending a request is free and does not oblige you to buy anything.</li>
+    <li>After receiving your request, the seller contacts you by the method you chose (phone, Telegram, Viber, WhatsApp or email) and confirms availability, the total price, the delivery method and cost, and how to pay.</li>
+    <li>The contract of sale is concluded when you accept this offer from the seller, for example by replying that you agree or by paying. The seller then sends you the agreed terms in writing (by message or email).</li>
+    <li>The products are reserved for you while the seller handles your request. If the request is cancelled, the reservation is released.</li>
+  </ol>
+
+  <h2>3. Prices and payment</h2>
+  <ul>
+    <li>Prices on the website are final prices of the products, shown in {BASE_CURRENCY}.</li>
+    <li>Prices do not include delivery. Delivery is paid by the buyer; the seller tells you the exact delivery cost before you agree to buy.</li>
+    <li>There is no online payment on the website. You pay the seller directly, by the method agreed with the seller. The website never asks for your card details.</li>
+  </ul>
+
+  <h2>4. Delivery</h2>
+  <p>Orders are shipped from {shop.address.city}, {shop.address.country}, to the countries available in the request form. The carrier and the expected delivery time are agreed with you before you buy. See <a href={link('delivery/')}>Delivery &amp; payment</a>.</p>
+
+  <h2>5. Right of withdrawal (14 days)</h2>
+  <p>If you are a consumer, you can withdraw from the contract within 14 days of receiving the goods without giving any reason. How to do it and who pays for what is described on the <a href={link('returns/')}>Returns</a> page.</p>
+
+  <h2>6. Faulty goods and complaints</h2>
+  <ul>
+    <li>The seller is responsible for goods that do not conform to the contract (for example, faulty, damaged or different from the description) for 2 years from delivery, under the Polish Consumer Rights Act.</li>
+    <li>To make a complaint, contact the seller and describe the problem, ideally with photos. The seller replies within 14 days.</li>
+    <li>You can ask for repair or replacement; if that is not possible or not done in reasonable time, for a price reduction or a refund.</li>
+    <li>For faulty goods, the seller pays the cost of sending them back.</li>
+  </ul>
+
+  <h2>7. Toy safety</h2>
+  <p>Please follow the age recommendation shown on each product page and the warnings on the packaging. Toys for older children may contain small parts.</p>
+
+  <h2>8. Personal data</h2>
+  <p>How we use the data from your request is explained in the <a href={link('privacy/')}>Privacy Policy</a>.</p>
+
+  <h2>9. Disputes and applicable law</h2>
+  <ul>
+    <li>Polish law applies. If you are a consumer living in another country, you keep the protection given to you by the mandatory rules of the law of that country.</li>
+    <li>Please contact the seller first — most problems can be solved quickly.</li>
+    <li>Consumers in Poland can also ask for help from a municipal or district consumer ombudsman (rzecznik konsumentów) or the Trade Inspection (Inspekcja Handlowa). For cross-border disputes in the EU, the European Consumer Centre in your country can help.</li>
+  </ul>
+
+  <h2>10. Changes to these terms</h2>
+  <p>We may update these terms. A change does not affect contracts concluded before it: they follow the terms in force on the day of purchase.</p>
+</LegalDoc>

@@ -138,5 +138,6 @@
   "thanks.text": "El propietario te contactará pronto por el medio elegido para acordar envío y pago.",
   "thanks.continue": "Seguir comprando",
   "form.error.stock": "Algunos juguetes ya no están disponibles en esa cantidad. Actualiza el carrito y revisa las cantidades.",
-  "form.error.rate": "Demasiadas solicitudes en poco tiempo. Inténtalo en unos minutos; tus datos se conservan."
+  "form.error.rate": "Demasiadas solicitudes en poco tiempo. Inténtalo en unos minutos; tus datos se conservan.",
+  "legal.englishOnly": "Este documento está disponible en inglés."
 }

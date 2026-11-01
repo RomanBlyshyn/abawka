@@ -1,0 +1,10 @@
+---
+// Значення від клієнта або помітна позначка, якщо його ще немає (перед запуском — заповнити src/data/shop.json).
+interface Props { value: string | null | undefined; label: string; href?: string }
+const { value, label, href } = Astro.props;
+---
+{value ? (href ? <a href={href}>{value}</a> : value) : <mark class="todo" data-todo>[{label} — to be added]</mark>}
+
+<style>
+  .todo { padding: 0 4px; border-radius: 4px; background: var(--tint-yellow); outline: 2px dashed var(--ink-2); color: inherit; font-weight: 800; }
+</style>

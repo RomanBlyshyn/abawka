@@ -140,5 +140,6 @@
   "thanks.text": "Majitel se vám brzy ozve zvoleným způsobem a domluví dopravu a platbu.",
   "thanks.continue": "Pokračovat v nákupu",
   "form.error.stock": "Některé hračky už nejsou v potřebném množství. Obnovte stránku košíku a zkontrolujte množství.",
-  "form.error.rate": "Příliš mnoho žádostí v krátké době. Zkuste to za pár minut – zadané údaje zůstaly zachovány."
+  "form.error.rate": "Příliš mnoho žádostí v krátké době. Zkuste to za pár minut – zadané údaje zůstaly zachovány.",
+  "legal.englishOnly": "Tento dokument je k dispozici v angličtině."
 }

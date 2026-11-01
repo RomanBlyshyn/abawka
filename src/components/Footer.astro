@@ -5,6 +5,7 @@ import type { Locale } from '../i18n/config';
 import { useTranslations } from '../i18n';
 import { getCategories, pick } from '../lib/data';
 import { href } from '../lib/format';
+import { shop } from '../lib/shop';
 
 interface Props { locale: Locale }
 const { locale } = Astro.props;
@@ -24,7 +25,8 @@ const help = [
     <div class="brand">
       <Logo />
       <p>{t('meta.description')}</p>
-      <a class="btn btn-light tg" href="https://t.me/abawka" rel="noopener" target="_blank"><Icon name="telegram" size={20} /> {t('footer.contactUs')}</a>
+      {/* Кнопка лише зі справжнім каналом магазину (shop.json → telegram), не з вигаданим. */}
+      {shop.telegram && <a class="btn btn-light tg" href={`https://t.me/${shop.telegram}`} rel="noopener" target="_blank"><Icon name="telegram" size={20} /> {t('footer.contactUs')}</a>}
     </div>
     <nav aria-label={t('footer.shop')}>
       <h2>{t('footer.shop')}</h2>

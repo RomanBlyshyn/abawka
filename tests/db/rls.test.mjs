@@ -240,3 +240,25 @@ test('telegram: a manager cannot change someone else\'s telegram chat', async ()
   const r = await as(MANAGER, `update public.staff set telegram_chat_id = 1 where user_id = '${OWNER}' returning user_id`);
   assert.equal(r.rows.length, 0);
 });
+
+test('retention: old IPs are wiped, old requests deleted as the privacy policy says', async () => {
+  const add = async (status, age, ip = '10.9.9.9') => (await admin(
+    `insert into public.requests (locale, name, method, contact, country, delivery, currency, total, items, ip, status, created_at)
+     values ('pl', 'Old', 'call', '+48600000000', 'PL', 'inpost', 'EUR', 100, '[{"slug":"x","qty":1}]', $1, $2, now() - $3::interval) returning id`,
+    [ip, status, age])).rows[0].id;
+  const fresh = await add('new', '1 day');
+  const month = await add('done', '40 days');
+  const unsold = await add('contacted', '13 months');
+  const sold = await add('done', '13 months');
+  const ancient = await add('done', '7 years');
+  await admin('select public.cleanup_personal_data()');
+  const left = Object.fromEntries((await admin(`select id, ip from public.requests where id = any($1)`, [[fresh, month, unsold, sold, ancient]])).rows.map((r) => [r.id, r.ip]));
+  assert.equal(left[fresh], '10.9.9.9');
+  assert.equal(left[month], '');
+  assert.equal(left[unsold], undefined);
+  assert.equal(left[sold], '');
+  assert.equal(left[ancient], undefined);
+  // Стирання IP не відкриває шлях до підміни: вписати іншу адресу не можна.
+  await rejects(as(MANAGER, `update public.requests set ip = '1.2.3.4' where id = ${fresh}`), /лише статус/);
+  await rejects(as('anon', 'select public.cleanup_personal_data()'), /permission denied/);
+});

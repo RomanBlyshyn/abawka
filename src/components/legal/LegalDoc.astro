@@ -1,0 +1,36 @@
+---
+// Юридичний документ: текст англійською (ТЗ, розділ 8), обгортка й примітка — мовою сайту.
+import Base from '../../layouts/Base.astro';
+import Breadcrumbs from '../Breadcrumbs.astro';
+import type { Locale } from '../../i18n/config';
+import { useTranslations } from '../../i18n';
+import { shop } from '../../lib/shop';
+
+interface Props { locale: Locale; titleKey: string; heading: string }
+const { locale, titleKey, heading } = Astro.props;
+const t = useTranslations(locale);
+---
+<Base locale={locale} title={t(titleKey)} noindex={locale !== 'en'}>
+  <div class="wrap legal-doc">
+    <Breadcrumbs locale={locale} items={[{ label: t(titleKey) }]} />
+    {locale !== 'en' && <p class="note">{t('legal.englishOnly')}</p>}
+    <article lang="en">
+      <h1>{heading}</h1>
+      <p class="updated">Last updated: <time datetime={shop.legalUpdated}>{new Intl.DateTimeFormat('en-GB', { dateStyle: 'long' }).format(new Date(shop.legalUpdated))}</time></p>
+      <slot />
+    </article>
+  </div>
+</Base>
+
+<style>
+  .legal-doc { max-width: 780px; padding-bottom: 40px; }
+  .note { padding: 10px 14px; border-radius: var(--radius-sm); background: var(--surface); border: 2px solid var(--line); font-weight: 700; }
+  article { line-height: 1.65; }
+  article :global(h1) { font-size: clamp(28px, 5vw, 38px); font-weight: 900; margin: 12px 0 4px; }
+  article :global(h2) { font-size: 21px; font-weight: 900; margin: 28px 0 8px; }
+  article :global(p), article :global(ul), article :global(ol) { margin: 0 0 12px; }
+  article :global(ul), article :global(ol) { padding-left: 22px; }
+  article :global(li) { margin-bottom: 6px; }
+  article :global(a) { color: var(--accent-text); text-decoration: underline; }
+  .updated { color: var(--ink-2); font-weight: 600; }
+</style>

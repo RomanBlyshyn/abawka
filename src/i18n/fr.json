@@ -138,5 +138,6 @@
   "thanks.text": "Le propriétaire vous contactera bientôt par le moyen choisi pour convenir de la livraison et du paiement.",
   "thanks.continue": "Continuer mes achats",
   "form.error.stock": "Certains jouets ne sont plus disponibles en cette quantité. Rechargez le panier et vérifiez les quantités.",
-  "form.error.rate": "Trop de demandes en peu de temps. Réessayez dans quelques minutes : vos saisies sont conservées."
+  "form.error.rate": "Trop de demandes en peu de temps. Réessayez dans quelques minutes : vos saisies sont conservées.",
+  "legal.englishOnly": "Ce document est disponible en anglais."
 }
