@@ -1,6 +1,6 @@
 // Текст заявки для Telegram (функція supabase/functions/telegram) — без браузера.
 import { expect, test } from '@playwright/test';
-import { requestMessage, type RequestRow } from '../../supabase/functions/telegram/message';
+import { requestMessage, reviewMessage, type RequestRow } from '../../supabase/functions/telegram/message';
 
 const row = (over: Partial<RequestRow> = {}): RequestRow => ({
   id: 1007, locale: 'pl', name: 'Anna', method: 'telegram', contact: '@anna_k', country: 'PL', delivery: 'inpost', comment: '',
@@ -37,4 +37,12 @@ test('request message: buyer text cannot break the markup', () => {
   const text = requestMessage(row({ name: '<b>Bob</b> & Co', comment: 'Подзвоніть <після 18>' }));
   expect(text).toContain('👤 &lt;b&gt;Bob&lt;/b&gt; &amp; Co');
   expect(text).toContain('💬 Подзвоніть &lt;після 18&gt;');
+});
+
+test('review message: stars, product or shop, author and text, safe markup', () => {
+  const text = reviewMessage({ author: 'Olena <3', rating: 4, body: { uk: 'Супер & швидко' }, locale: 'uk', product: { name: { uk: 'Шахи', en: 'Chess' } } });
+  expect(text).toContain('★★★★☆ · Шахи');
+  expect(text).toContain('👤 Olena &lt;3');
+  expect(text).toContain('💬 Супер &amp; швидко');
+  expect(reviewMessage({ author: 'A', rating: 5, body: { pl: 'Świetny sklep' }, locale: 'pl', product: null })).toContain('★★★★★ · про магазин');
 });

@@ -5,7 +5,7 @@
 //   3) адмінка з токеном користувача: {action: 'link' | 'unlink' | 'test'}.
 // Розгортається без перевірки JWT (бо кличуть база й Telegram) — права перевіряємо тут.
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { requestMessage, type RequestRow } from './message.ts';
+import { requestMessage, reviewMessage, type RequestRow, type ReviewRow } from './message.ts';
 
 const TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN') ?? '';
 const SITE = (Deno.env.get('SITE_URL') ?? '').replace(/\/$/, '');
@@ -49,6 +49,24 @@ async function notify(id: number) {
     if (res.ok) sent++;
   }
   if (sent) await db.from('requests').update({ notified_at: new Date().toISOString() }).eq('id', id);
+  return reply({ sent });
+}
+
+// ── 1б) Новий відгук на перевірку ─────────────────────────────────────────────
+async function notifyReview(id: string) {
+  const { data: r } = await db.from('reviews')
+    .select('id,author,rating,body,locale,product:products(name)')
+    .eq('id', id).eq('approved', false).is('notified_at', null).gte('created_at', new Date(Date.now() - 3600e3).toISOString())
+    .maybeSingle();
+  if (!r) return reply({ sent: 0 });
+  const { data: staff } = await db.from('staff').select('telegram_chat_id').not('telegram_chat_id', 'is', null);
+  const keyboard = SITE ? { inline_keyboard: [[{ text: 'Відкрити відгуки', url: `${SITE}/admin/reviews/` }]] } : undefined;
+  let sent = 0;
+  for (const s of staff ?? []) {
+    const res = await tg('sendMessage', { chat_id: s.telegram_chat_id, text: reviewMessage(r as unknown as ReviewRow), parse_mode: 'HTML', reply_markup: keyboard });
+    if (res.ok) sent++;
+  }
+  if (sent) await db.from('reviews').update({ notified_at: new Date().toISOString() }).eq('id', id);
   return reply({ sent });
 }
 
@@ -118,6 +136,7 @@ Deno.serve(async (req) => {
     return reply({ ok: true }); // Telegram чекає 200, інакше повторюватиме
   }
   if (typeof body.request === 'number') return notify(body.request);
+  if (typeof body.review === 'string' && /^[0-9a-f-]{36}$/.test(body.review)) return notifyReview(body.review);
   if (typeof body.action === 'string') return staffAction(req, body.action);
   return reply({ error: 'bad request' }, 400);
 });

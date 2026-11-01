@@ -4,6 +4,7 @@ import Breadcrumbs from '../../../components/Breadcrumbs.astro';
 import Icon from '../../../components/Icon.astro';
 import ProductCard from '../../../components/ProductCard.astro';
 import ReviewCard from '../../../components/ReviewCard.astro';
+import ReviewForm from '../../../components/ReviewForm.astro';
 import RequestForm from '../../../components/RequestForm.astro';
 import { LOCALES, type Locale } from '../../../i18n/config';
 import { plural, useTranslations } from '../../../i18n';
@@ -130,6 +131,7 @@ const related = [...others.filter((o) => o.category === p.category), ...others.f
       ) : (
         <p class="muted">{t('product.noReviews')}</p>
       )}
+      <div class="review-cta"><ReviewForm locale={locale} product={p.slug} /></div>
     </section>
 
     {inStock && (
@@ -272,6 +274,7 @@ const related = [...others.filter((o) => o.category === p.category), ...others.f
   @media (max-width: 480px) { .quick { padding: 16px; } }
 
   .reviews { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .review-cta { margin-top: 16px; }
   .related { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
 
   @media (max-width: 960px) {

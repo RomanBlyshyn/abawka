@@ -24,7 +24,8 @@ export interface Product {
   images?: string[];
 }
 export interface Slide { title: Localized; body: Localized; cta: Localized; href: string; tint: Tint; mascot: boolean }
-export interface Review { author: string; country: string; rating: number; product: string; text: Localized }
+/** product — slug товару; немає — відгук про магазин загалом. */
+export interface Review { author: string; country: string; rating: number; product?: string; text: Localized }
 
 interface ShopData {
   baseCurrency: string;
@@ -62,7 +63,7 @@ async function fromSupabase(): Promise<ShopData> {
   const lowestOf = new Map(lowest.map((l) => [l.product_id, l.lowest_30d as number]));
 
   const stats = new Map<string, { sum: number; n: number }>();
-  for (const r of reviews) {
+  for (const r of reviews.filter((x) => x.product)) {
     const s = stats.get(r.product.slug) ?? { sum: 0, n: 0 };
     stats.set(r.product.slug, { sum: s.sum + r.rating, n: s.n + 1 });
   }
@@ -90,7 +91,7 @@ async function fromSupabase(): Promise<ShopData> {
       };
     }),
     slides: banners as Slide[],
-    reviews: reviews.map((r) => ({ author: r.author, country: r.country, rating: r.rating, product: r.product.slug, text: r.body })),
+    reviews: reviews.map((r) => ({ author: r.author, country: r.country, rating: r.rating, product: r.product?.slug, text: r.body })),
   };
 }
 

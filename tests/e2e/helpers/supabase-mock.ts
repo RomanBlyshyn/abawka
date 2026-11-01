@@ -12,7 +12,7 @@ export const session = () => {
 };
 
 type Row = Record<string, unknown> & { id?: string };
-export interface Db { products: Row[]; categories: Row[]; product_images: Row[]; banners: Row[]; requests_table: Row[]; promo_codes: Row[]; settings: Row[]; storage: string[]; telegram: { chatId: number | null; actions: string[] }; requests: { method: string; url: string; body: unknown }[] }
+export interface Db { products: Row[]; categories: Row[]; product_images: Row[]; banners: Row[]; requests_table: Row[]; promo_codes: Row[]; settings: Row[]; reviews: Row[]; storage: string[]; telegram: { chatId: number | null; actions: string[] }; requests: { method: string; url: string; body: unknown }[] }
 
 const cors = { 'access-control-allow-origin': '*', 'access-control-expose-headers': 'content-range' };
 const reply = (route: Route, body: unknown, status = 200) =>
@@ -60,11 +60,11 @@ export async function mockAdmin(page: Page, db: Db, opts: { role?: 'owner' | 'ma
     return reply(route, n);
   });
 
-  await page.route(/\/rest\/v1\/(products|categories|product_images|banners|requests|promo_codes|settings)(\?|$)/, async (route) => {
+  await page.route(/\/rest\/v1\/(products|categories|product_images|banners|requests|promo_codes|settings|reviews)(\?|$)/, async (route) => {
     const req = route.request();
     const url = new URL(req.url());
     const name = url.pathname.split('/').pop()!;
-    const table = (name === 'requests' ? 'requests_table' : name) as 'products' | 'categories' | 'product_images' | 'banners' | 'requests_table' | 'promo_codes' | 'settings';
+    const table = (name === 'requests' ? 'requests_table' : name) as 'products' | 'categories' | 'product_images' | 'banners' | 'requests_table' | 'promo_codes' | 'settings' | 'reviews';
     const rows = db[table];
     const single = (req.headers()['accept'] ?? '').includes('vnd.pgrst.object');
     // Фільтри виду col=eq.value (id, product_id …).
@@ -78,6 +78,7 @@ export async function mockAdmin(page: Page, db: Db, opts: { role?: 'owner' | 'ma
       let out = rows.filter(matches);
       if (url.searchParams.get('order')?.startsWith('position')) out = [...out].sort((a, b) => Number(a.position) - Number(b.position));
       if (table === 'products') out = out.map((p) => ({ ...p, images: db.product_images.filter((i) => i.product_id === p.id) }));
+      if (table === 'reviews') out = out.map((r) => ({ ...r, product: db.products.find((p) => p.id === r.product_id) ?? null }));
       if (table === 'categories') out = out.map((c) => ({ ...c, products: [{ count: db.products.filter((p) => p.category_id === c.id).length }] }));
       return reply(route, single ? out[0] ?? null : out);
     }
@@ -141,6 +142,7 @@ export const sampleDb = (): Db => ({
   ],
   requests_table: [],
   promo_codes: [],
+  reviews: [],
   settings: [{ base_currency: 'EUR' }],
   storage: [],
   requests: [],

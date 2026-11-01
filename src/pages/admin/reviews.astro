@@ -1,0 +1,119 @@
+---
+import Admin from '../../layouts/Admin.astro';
+---
+<Admin title="Відгуки">
+  <h1>Відгуки</h1>
+  <p class="hint">Відгуки від покупців з'являються на сайті лише після того, як ви їх опублікуєте. Зміни видно на сайті після оновлення сайту.</p>
+  <div class="tabs" role="tablist" aria-label="Відгуки">
+    <button type="button" role="tab" data-tab="pending" aria-selected="true">На перевірці <span data-tab-count="pending"></span></button>
+    <button type="button" role="tab" data-tab="approved" aria-selected="false">Опубліковані <span data-tab-count="approved"></span></button>
+  </div>
+
+  <p class="state" data-state="loading">Завантаження…</p>
+  <div class="alert" role="alert" tabindex="-1" data-state="error" hidden></div>
+  <p class="state" data-state="empty" hidden>Тут порожньо.</p>
+  <ul class="list" data-state="list" hidden></ul>
+  <p class="row-msg" role="status" data-msg></p>
+</Admin>
+
+<script>
+  import { requireStaff, supabase, dbError, type Localized } from '../../lib/admin';
+
+  type Review = { id: string; author: string; rating: number; body: Record<string, string>; locale: string; approved: boolean; created_at: string; product: { name: Localized } | null };
+  const $ = <T extends HTMLElement = HTMLElement>(s: string) => document.querySelector<T>(s)!;
+  const states = [...document.querySelectorAll<HTMLElement>('[data-state]')];
+  const show = (name: string) => states.forEach((s) => (s.hidden = s.dataset.state !== name));
+  const text = (n: Localized) => n.uk || n.pl || n.en || Object.values(n).find(Boolean) || '—';
+  const dateFmt = new Intl.DateTimeFormat('uk', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const msg = (t: string) => { $('[data-msg]').textContent = t; };
+  let reviews: Review[] = [];
+  let tab: 'pending' | 'approved' = 'pending';
+
+  async function load() {
+    const { data, error } = await supabase!.from('reviews')
+      .select('id,author,rating,body,locale,approved,created_at,product:products(name)')
+      .order('created_at', { ascending: false });
+    if (error) { $('[data-state="error"]').textContent = dbError(error); return show('error'); }
+    reviews = data as unknown as Review[];
+    render();
+  }
+
+  function render() {
+    const pending = reviews.filter((r) => !r.approved);
+    $('[data-tab-count="pending"]').textContent = pending.length ? `(${pending.length})` : '';
+    $('[data-tab-count="approved"]').textContent = `(${reviews.length - pending.length})`;
+    document.querySelectorAll<HTMLElement>('[data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
+    const rows = reviews.filter((r) => (tab === 'pending' ? !r.approved : r.approved));
+    $('[data-state="list"]').replaceChildren(...rows.map((r) => {
+      const li = document.createElement('li');
+      li.className = 'row';
+      li.dataset.reviewId = r.id;
+      li.innerHTML = '<div class="top"><span class="stars" role="img"></span><b class="who"></b><span class="sub"></span></div><p class="body"></p><div class="tools"></div>';
+      const stars = li.querySelector<HTMLElement>('.stars')!;
+      stars.textContent = `${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}`;
+      stars.setAttribute('aria-label', `${r.rating} з 5`);
+      li.querySelector('.who')!.textContent = r.author;
+      li.querySelector('.sub')!.textContent = `${r.product ? text(r.product.name) : 'про магазин'} · ${dateFmt.format(new Date(r.created_at))} · мова ${r.locale.toUpperCase()}`;
+      li.querySelector('.body')!.textContent = r.body[r.locale] ?? Object.values(r.body)[0] ?? '';
+      const tools = li.querySelector('.tools')!;
+      const btn = (label: string, cls: string, fn: () => void) => {
+        const x = document.createElement('button');
+        x.type = 'button'; x.textContent = label; x.className = cls; x.setAttribute('aria-label', `${label}: ${r.author}`);
+        x.addEventListener('click', fn);
+        tools.append(x);
+      };
+      if (r.approved) btn('Сховати', 'btn btn-light', () => setApproved(r, false));
+      else btn('Опублікувати', 'btn', () => setApproved(r, true));
+      btn('Видалити', 'danger', () => remove(r));
+      return li;
+    }));
+    show(rows.length ? 'list' : 'empty');
+  }
+
+  async function setApproved(r: Review, approved: boolean) {
+    const { error } = await supabase!.from('reviews').update({ approved }).eq('id', r.id);
+    if (error) return msg(dbError(error));
+    r.approved = approved;
+    msg(approved ? `Відгук від ${r.author} опубліковано ✓` : `Відгук від ${r.author} сховано.`);
+    render();
+  }
+
+  async function remove(r: Review) {
+    if (!confirm(`Видалити відгук від ${r.author}? Повернути його не вийде.`)) return;
+    const { error } = await supabase!.from('reviews').delete().eq('id', r.id);
+    if (error) return msg(dbError(error));
+    reviews = reviews.filter((x) => x.id !== r.id);
+    msg('Відгук видалено.');
+    render();
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((b) => b.addEventListener('click', () => {
+    tab = b.dataset.tab as typeof tab;
+    msg('');
+    render();
+  }));
+
+  requireStaff().then(load).catch(() => {});
+</script>
+
+<style>
+  h1 { font-size: 28px; font-weight: 900; }
+  .hint { color: var(--ink-2); font-weight: 600; margin: 6px 0 16px; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  .tabs button { min-height: 40px; padding: 0 16px; border: 2px solid var(--line); border-radius: 999px; background: var(--surface); font-weight: 800; cursor: pointer; color: var(--ink-2); }
+  .tabs button[aria-selected='true'] { border-color: var(--pink-600); background: var(--accent-soft); color: var(--accent-text); }
+  [data-state][hidden] { display: none; }
+  .state { color: var(--ink-2); font-weight: 700; }
+  .alert { padding: 12px 16px; border-radius: var(--radius-sm); background: var(--tint-red); border: 2px solid var(--tint-red-border); font-weight: 700; }
+  .alert[hidden] { display: none; }
+  .row-msg { font-weight: 700; color: var(--ink-2); min-height: 1.5em; }
+  .list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .list :global(.row) { display: grid; gap: 8px; padding: 16px; background: var(--surface); border: 2px solid var(--line); border-radius: var(--radius); }
+  .list :global(.top) { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+  .list :global(.stars) { color: #f5a623; font-size: 18px; letter-spacing: 1px; }
+  .list :global(.sub) { font-size: 13px; color: var(--ink-2); font-weight: 600; }
+  .list :global(.body) { margin: 0; white-space: pre-line; overflow-wrap: anywhere; }
+  .list :global(.tools) { display: flex; gap: 8px; flex-wrap: wrap; }
+  .list :global(.tools .btn-light) { border: 2px solid var(--accent-border); }
+  .list :global(.danger) { border: 2px solid var(--tint-red-border); background: var(--surface); color: var(--sale); border-radius: 999px; padding: 8px 16px; font-weight: 800; cursor: pointer; }
+</style>

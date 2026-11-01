@@ -35,3 +35,17 @@ export function requestMessage(r: RequestRow): string {
   lines.push(`🌐 мова сайту: ${r.locale.toUpperCase()}`);
   return lines.join('\n');
 }
+
+export interface ReviewRow { author: string; rating: number; body: Record<string, string>; locale: string; product: { name: Record<string, string> } | null }
+
+/** Новий відгук на перевірку: зірки, автор, товар (або «про магазин»), текст. */
+export function reviewMessage(r: ReviewRow): string {
+  const product = r.product ? (r.product.name.uk ?? r.product.name.en ?? Object.values(r.product.name)[0] ?? '') : 'про магазин';
+  return [
+    `⭐ <b>Новий відгук на перевірку</b>`,
+    `${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)} · ${esc(product)}`,
+    `👤 ${esc(r.author)}`,
+    `💬 ${esc(r.body[r.locale] ?? Object.values(r.body)[0] ?? '')}`,
+    'Опублікувати чи видалити — в адмінці, розділ «Відгуки».',
+  ].join('\n');
+}

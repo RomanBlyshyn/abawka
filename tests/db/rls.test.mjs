@@ -357,3 +357,47 @@ test('stats: owner gets the summary for a period; manager does not', async () =>
   await rejects(as(MANAGER, `select public.shop_stats(current_date - 6, current_date)`), /forbidden/);
   await rejects(as('anon', `select public.shop_stats(current_date - 6, current_date)`), /permission denied/);
 });
+
+// ── Відгуки від покупців ─────────────────────────────────────────────────────
+async function review(payload, ip = '10.1.0.1') {
+  await db.exec('reset role');
+  await db.query(`select set_config('request.headers', $1, false)`, [JSON.stringify({ 'x-forwarded-for': ip })]);
+  await db.exec(`set role anon; set request.jwt.claim.sub = ''`);
+  try { return (await db.query('select public.submit_review($1::jsonb) r', [JSON.stringify(payload)])).rows[0].r; }
+  finally { await db.exec('reset role'); }
+}
+const goodReview = (over = {}) => ({ name: 'Olena', rating: 5, text: 'Син у захваті від меча!', locale: 'uk', product: 'knight-sword', consent: true, website: '', ...over });
+
+test('reviews: buyer sends a review, it waits for moderation and is hidden until approved', async () => {
+  await admin('delete from net.calls');
+  assert.deepEqual(await review(goodReview()), { ok: true });
+  await review(goodReview({ product: '', text: 'Дуже гарний магазин, швидко відповіли.' }), '10.1.0.2');
+  const rows = (await admin(`select id, author, rating, body, locale, approved, product_id from public.reviews where author = 'Olena' order by created_at`)).rows;
+  assert.equal(rows.length, 2);
+  assert.deepEqual(rows[0].body, { uk: 'Син у захваті від меча!' });
+  assert.equal(rows[0].approved, false);
+  assert.ok(rows[0].product_id);
+  assert.equal(rows[1].product_id, null); // про магазин загалом
+  assert.equal((await as('anon', `select count(*)::int n from public.reviews where author = 'Olena'`)).rows[0].n, 0);
+  assert.equal((await admin(`select count(*)::int n from net.calls where body ? 'review'`)).rows[0].n, 2); // сигнал у Telegram
+  await as(MANAGER, `update public.reviews set approved = true where id = '${rows[0].id}'`);
+  assert.equal((await as('anon', `select count(*)::int n from public.reviews where author = 'Olena'`)).rows[0].n, 1);
+  await rejects(as(MANAGER, `update public.reviews set rating = 1 where id = '${rows[0].id}'`), /лише публікацію/);
+  assert.equal((await as(MANAGER, `delete from public.reviews where id = '${rows[1].id}' returning id`)).rows.length, 1);
+});
+
+test('reviews: server-side validation, honeypot and rate limit', async () => {
+  const bad = async (over, re) => rejects(review(goodReview(over), '10.1.0.9'), re);
+  await bad({ name: 'A' }, /invalid:name/);
+  await bad({ rating: 6 }, /invalid:rating/);
+  await bad({ rating: '4.5' }, /invalid:rating/);
+  await bad({ text: 'коротко' }, /invalid:text/);
+  await bad({ consent: false }, /invalid:consent/);
+  await bad({ product: 'no-such-toy' }, /invalid:product/);
+  const before = (await admin('select count(*)::int n from public.reviews')).rows[0].n;
+  assert.deepEqual(await review(goodReview({ website: 'http://spam' }), '10.1.0.9'), { ok: true });
+  assert.equal((await admin('select count(*)::int n from public.reviews')).rows[0].n, before);
+  for (let i = 0; i < 3; i++) await review(goodReview({ name: `Bot ${i}` }), '10.1.0.10');
+  await rejects(review(goodReview(), '10.1.0.10'), /rate_limited/);
+  await rejects(as('anon', `insert into public.reviews (author, rating, body, approved) values ('X', 5, '{"en":"fake"}', true)`), /row-level security/);
+});

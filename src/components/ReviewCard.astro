@@ -14,7 +14,7 @@ const product = showProduct ? getProducts().find((p) => p.slug === r.product) : 
   </div>
   <blockquote>{pick(r.text, locale)}</blockquote>
   <figcaption>
-    <strong>{r.author}</strong>, {r.country}
+    <strong>{r.author}</strong>{r.country && <>, {new Intl.DisplayNames([locale], { type: 'region' }).of(r.country)}</>}
     {product && <> · <a href={href(locale, `product/${product.slug}/`)}>{pick(product.name, locale)}</a></>}
   </figcaption>
 </figure>

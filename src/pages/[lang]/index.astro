@@ -4,6 +4,7 @@ import HeroSlider from '../../components/HeroSlider.astro';
 import ProductCard from '../../components/ProductCard.astro';
 import Icon from '../../components/Icon.astro';
 import ReviewCard from '../../components/ReviewCard.astro';
+import ReviewForm from '../../components/ReviewForm.astro';
 import { AGE_GROUPS } from '../../lib/age';
 import { LOCALES, type Locale } from '../../i18n/config';
 import { useTranslations } from '../../i18n';
@@ -80,14 +81,18 @@ const steps = [
       </ol>
     </section>
 
-    {reviews.length > 0 && (
-      <section class="section" aria-labelledby="rev-h">
-        <div class="section-head"><h2 id="rev-h">{t('home.reviews')}</h2></div>
+    {/* Відгуки внизу головної: завжди, з кнопкою «Залишити відгук» — навіть коли їх ще немає. */}
+    <section class="section" id="reviews" aria-labelledby="rev-h">
+      <div class="section-head"><h2 id="rev-h">{t('home.reviews')}</h2></div>
+      {reviews.length > 0 ? (
         <div class="reviews">
-          {reviews.map((r) => <ReviewCard review={r} locale={locale} />)}
+          {reviews.slice(0, 6).map((r) => <ReviewCard review={r} locale={locale} />)}
         </div>
-      </section>
-    )}
+      ) : (
+        <p class="muted">{t('home.reviews.empty')}</p>
+      )}
+      <div class="review-cta"><ReviewForm locale={locale} /></div>
+    </section>
   </div>
 </Base>
 
@@ -117,6 +122,8 @@ const steps = [
   .steps p { margin: 0; color: var(--ink-2); font-weight: 600; }
 
   .reviews { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .review-cta { margin-top: 16px; }
+  .muted { color: var(--ink-2); font-weight: 600; }
 
   @media (max-width: 960px) {
     /* Прокрутка обрізає все, що виходить за контейнер, тому запас під підйом і тінь плитки при наведенні. */

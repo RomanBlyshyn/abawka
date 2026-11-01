@@ -70,3 +70,28 @@ export async function checkPromo(code: string, lines: RequestLine[]): Promise<Pr
   if (message.startsWith('promo:min:')) throw new PromoError('min', Number(message.slice('promo:min:'.length)));
   throw new PromoError('network');
 }
+
+export interface ReviewInput { product: string; name: string; rating: number; text: string; consent: boolean; website: string; locale: string }
+
+/** Надіслати відгук на перевірку (функція бази submit_review). Без ключів Supabase — демо-режим. */
+export async function submitReview(input: ReviewInput): Promise<void> {
+  if (!requestsLive) {
+    await new Promise((r) => setTimeout(r, 300));
+    if (!navigator.onLine) throw new SubmitError('network');
+    return;
+  }
+  let res: Response;
+  try {
+    res = await fetch(`${URL_}/rest/v1/rpc/submit_review`, {
+      method: 'POST',
+      headers: { apikey: KEY!, authorization: `Bearer ${KEY}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ payload: input }),
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch {
+    throw new SubmitError('network');
+  }
+  if (res.ok) return;
+  const message = String((await res.json().catch(() => ({}))).message ?? '');
+  throw new SubmitError(message === 'rate_limited' ? 'rate' : 'network');
+}

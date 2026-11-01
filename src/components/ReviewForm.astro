@@ -1,0 +1,168 @@
+---
+// «Залишити відгук»: кнопка й вікно з формою. Без акаунтів: відгук іде на перевірку в адмінку
+// (функція бази submit_review перевіряє поля, ліміт частоти й пастку для ботів).
+import type { Locale } from '../i18n/config';
+import { useTranslations } from '../i18n';
+import { getProducts, pick } from '../lib/data';
+
+interface Props { locale: Locale; /** Відгук про цей товар; без нього — вибір товару або «про магазин». */ product?: string }
+const { locale, product } = Astro.props;
+const t = useTranslations(locale);
+const uid = product ? `rv-${product}` : 'rv-shop';
+const products = getProducts();
+---
+<button type="button" class="btn btn-light write" data-review-open={uid}>{t('review.write')}</button>
+
+<dialog class="review-dlg" aria-labelledby={`${uid}-h`} data-review-dialog={uid}>
+  <div class="head">
+    <h2 id={`${uid}-h`}>{t('review.title')}</h2>
+    <button type="button" class="close" data-review-close aria-label={t('review.close')}><span aria-hidden="true">×</span></button>
+  </div>
+  <p class="ok" role="status" tabindex="-1" data-review-ok hidden>{t('review.thanks')}</p>
+  <form class="review-form" data-review-form novalidate data-locale={locale}>
+    <div class="alert" role="alert" tabindex="-1" data-review-alert hidden></div>
+    {product ? <input type="hidden" name="product" value={product} /> : (
+      <label class="field">{t('review.about')}
+        <select name="product">
+          <option value="">{t('review.aboutShop')}</option>
+          {products.map((p) => <option value={p.slug}>{pick(p.name, locale)}</option>)}
+        </select>
+      </label>
+    )}
+    <label class="field">{t('review.name')}
+      <input name="name" type="text" maxlength="40" autocomplete="given-name" aria-describedby={`${uid}-err-name`} />
+    </label>
+    <p class="err" id={`${uid}-err-name`} data-err="name" hidden>{t('review.error.name')}</p>
+    <fieldset class="field stars" aria-describedby={`${uid}-err-rating`}>
+      <legend>{t('review.rating')}</legend>
+      <div class="star-row">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <label class="star" data-star={n}>
+            <input type="radio" name="rating" value={n} aria-label={t('review.stars').replace('{n}', String(n))} />
+            <span aria-hidden="true">★</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+    <p class="err" id={`${uid}-err-rating`} data-err="rating" hidden>{t('review.error.rating')}</p>
+    <label class="field">{t('review.text')}
+      <textarea name="text" rows="4" maxlength="1000" aria-describedby={`${uid}-err-text`}></textarea>
+    </label>
+    <p class="err" id={`${uid}-err-text`} data-err="text" hidden>{t('review.error.text')}</p>
+    <label class="consent"><input type="checkbox" name="consent" aria-describedby={`${uid}-err-consent`} /> <span>{t('review.consent')}</span></label>
+    <p class="err" id={`${uid}-err-consent`} data-err="consent" hidden>{t('review.error.consent')}</p>
+    <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
+    <button class="btn" type="submit" data-review-submit data-label={t('review.send')} data-sending={t('review.sending')}>{t('review.send')}</button>
+  </form>
+</dialog>
+
+<script is:inline type="application/json" data-review-msg set:html={JSON.stringify({ send: t('review.error.send'), rate: t('review.error.rate') })} />
+
+<script>
+  import { submitReview, SubmitError } from '../lib/request-client';
+
+  const msgs = JSON.parse(document.querySelector('[data-review-msg]')!.textContent!);
+  document.querySelectorAll<HTMLButtonElement>('[data-review-open]').forEach((open) => {
+    const dialog = document.querySelector<HTMLDialogElement>(`[data-review-dialog="${open.dataset.reviewOpen}"]`)!;
+    const form = dialog.querySelector<HTMLFormElement>('[data-review-form]')!;
+    const alertBox = form.querySelector<HTMLElement>('[data-review-alert]')!;
+    const ok = dialog.querySelector<HTMLElement>('[data-review-ok]')!;
+    const field = <T extends HTMLElement = HTMLInputElement>(n: string) => form.querySelector<T>(`[name="${n}"]`)!;
+    const stars = [...form.querySelectorAll<HTMLElement>('[data-star]')];
+    let tried = false;
+
+    const paintStars = () => {
+      const v = Number(form.querySelector<HTMLInputElement>('[name=rating]:checked')?.value ?? 0);
+      stars.forEach((s) => s.classList.toggle('on', Number(s.dataset.star) <= v));
+    };
+    const values = () => ({
+      product: field<HTMLInputElement | HTMLSelectElement>('product').value,
+      name: field('name').value.trim(),
+      rating: Number(form.querySelector<HTMLInputElement>('[name=rating]:checked')?.value ?? 0),
+      text: field<HTMLTextAreaElement>('text').value.trim(),
+      consent: field('consent').checked,
+      website: field('website').value,
+      locale: form.dataset.locale!,
+    });
+    // Ті самі правила, що в базі (submit_review).
+    const check = () => {
+      const v = values();
+      const errors = {
+        name: v.name.length < 2 || v.name.length > 40,
+        rating: v.rating < 1,
+        text: v.text.length < 10 || v.text.length > 1000,
+        consent: !v.consent,
+      };
+      for (const [k, bad] of Object.entries(errors)) {
+        form.querySelector<HTMLElement>(`[data-err="${k}"]`)!.hidden = !bad;
+        (k === 'rating' ? form.querySelector('.stars')! : field(k)).setAttribute('aria-invalid', String(bad));
+      }
+      return Object.values(errors).some(Boolean);
+    };
+
+    open.addEventListener('click', () => {
+      ok.hidden = true;
+      form.hidden = false;
+      dialog.showModal();
+    });
+    dialog.querySelector('[data-review-close]')!.addEventListener('click', () => dialog.close());
+    dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+    dialog.addEventListener('close', () => open.focus());
+    form.addEventListener('change', () => { paintStars(); if (tried) check(); });
+    form.addEventListener('input', () => { if (tried) check(); });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      tried = true;
+      alertBox.hidden = true;
+      if (check()) return form.querySelector<HTMLElement>('[aria-invalid=true]')?.focus();
+      const submit = form.querySelector<HTMLButtonElement>('[data-review-submit]')!;
+      submit.disabled = true;
+      submit.textContent = submit.dataset.sending!;
+      try {
+        await submitReview(values());
+        form.reset();
+        paintStars();
+        tried = false;
+        form.hidden = true;
+        ok.hidden = false;
+        ok.focus();
+      } catch (err) {
+        // Не надіслано: введене лишається у формі.
+        alertBox.textContent = err instanceof SubmitError && err.kind === 'rate' ? msgs.rate : msgs.send;
+        alertBox.hidden = false;
+        alertBox.focus();
+      } finally {
+        submit.disabled = false;
+        submit.textContent = submit.dataset.label!;
+      }
+    });
+  });
+</script>
+
+<style>
+  .write { border: 2px solid var(--accent-border); }
+  .review-dlg { width: min(520px, calc(100% - 24px)); max-height: calc(100dvh - 24px); padding: 24px; border: 0; border-radius: var(--radius); background: var(--surface); color: var(--ink); box-shadow: var(--shadow-hover); overflow: auto; }
+  .review-dlg::backdrop { background: rgb(23 18 31 / 0.55); }
+  .head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .head h2 { font-size: 22px; }
+  .close { width: 44px; height: 44px; border: 0; border-radius: 50%; background: none; font-size: 28px; cursor: pointer; color: var(--ink-2); }
+  .review-form { display: grid; gap: 10px; }
+  .review-form[hidden], .ok[hidden], .alert[hidden], .err[hidden] { display: none; }
+  .field { display: grid; gap: 6px; font-weight: 800; border: 0; margin: 0; padding: 0; min-width: 0; }
+  .field input, .field select, .field textarea { width: 100%; min-height: 46px; padding: 10px 14px; border: 2px solid var(--line); border-radius: 12px; background: var(--surface); font: inherit; font-weight: 600; }
+  .field textarea { resize: vertical; }
+  .field :is(input, select, textarea):focus { border-color: var(--pink-500); outline: none; }
+  legend { padding: 0; margin-bottom: 4px; }
+  .star-row { display: flex; gap: 4px; }
+  .star { position: relative; cursor: pointer; font-size: 32px; line-height: 1; color: var(--line); }
+  .star input { position: absolute; inset: 0; opacity: 0; cursor: pointer; margin: 0; }
+  .star:global(.on) { color: #f5a623; }
+  .star:has(input:focus-visible) { outline: 3px solid var(--pink-500); outline-offset: 2px; border-radius: 6px; }
+  .consent { display: flex; gap: 10px; align-items: flex-start; font-weight: 600; cursor: pointer; }
+  .consent input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--pink-600); flex: none; }
+  .err { margin: -4px 0 0; color: var(--sale); font-size: 14px; font-weight: 700; }
+  .alert { padding: 12px 16px; border-radius: var(--radius-sm); background: var(--tint-red); border: 2px solid var(--tint-red-border); font-weight: 700; }
+  .ok { padding: 14px 16px; border-radius: var(--radius-sm); background: var(--tint-green); border: 2px solid var(--tint-green-border); font-weight: 700; }
+  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; }
+</style>
