@@ -9,7 +9,9 @@
     "check": "astro check",
     "check:i18n": "node scripts/check-i18n.mjs",
     "test:e2e": "playwright test",
-    "test:db": "node --test tests/db/rls.test.mjs"
+    "test:db": "node --test tests/db/rls.test.mjs",
+    "db:push": "node scripts/db.mjs push",
+    "staff:add": "node scripts/add-staff.mjs"
   },
   "author": "Roman <rb281926@gmail.com>",
   "type": "module",

@@ -18,6 +18,7 @@
 - Перевірка типів: `npm run check`; перекладів: `npm run check:i18n`; збірка: `npm run build`
 - E2E-тести: `npm run test:e2e` (самі збирають сайт і піднімають preview на 4390).
 - Тести бази: `npm run test:db` — міграції й RLS на PGlite (Postgres у Node, без Docker), заглушки Supabase в `tests/db/supabase-stubs.sql`.
+- Жива база (Supabase `uvpoanwkoikudjdbreys`, регіон eu-west-1): `npm run db:push` застосовує нові міграції (`-- --dry-run` — лише показати); `npm run staff:add -- email owner|manager` — додати людину в команду. Обидва читають секрети з `.env` і не виводять їх.
 
 ## Структура
 - `src/pages/[lang]/` — сторінки, по одній копії на кожну з 9 мов
