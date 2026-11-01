@@ -111,11 +111,6 @@
   "form.contact.phoneHint": "Con prefijo, p. ej. +34 600 000 000",
   "form.country": "País",
   "form.country.choose": "Elige un país",
-  "form.delivery": "Envío preferido",
-  "form.delivery.discuss": "Lo acordamos con el propietario",
-  "form.delivery.courier-wroclaw": "Mensajero en Breslavia",
-  "form.delivery.nova-poshta": "Nova Poshta",
-  "form.delivery.ukrposhta": "Ukrposhta",
   "form.comment": "Comentario (opcional)",
   "form.consent": "Acepto las {terms} y la {privacy}",
   "form.consent.terms": "condiciones de venta",
@@ -139,5 +134,6 @@
   "thanks.continue": "Seguir comprando",
   "form.error.stock": "Algunos juguetes ya no están disponibles en esa cantidad. Actualiza el carrito y revisa las cantidades.",
   "form.error.rate": "Demasiadas solicitudes en poco tiempo. Inténtalo en unos minutos; tus datos se conservan.",
-  "legal.englishOnly": "Este documento está disponible en inglés."
+  "legal.englishOnly": "Este documento está disponible en inglés.",
+  "form.deliveryNote": "El propietario acordará contigo personalmente el método y el coste de envío."
 }

@@ -113,11 +113,6 @@
   "form.contact.phoneHint": "S předvolbou, např. +420 600 000 000",
   "form.country": "Země",
   "form.country.choose": "Vyberte zemi",
-  "form.delivery": "Preferovaná doprava",
-  "form.delivery.discuss": "Domluvíme s majitelem",
-  "form.delivery.courier-wroclaw": "Kurýr po Vratislavi",
-  "form.delivery.nova-poshta": "Nova Poshta",
-  "form.delivery.ukrposhta": "Ukrposhta",
   "form.comment": "Poznámka (nepovinné)",
   "form.consent": "Souhlasím s {terms} a {privacy}",
   "form.consent.terms": "obchodními podmínkami",
@@ -141,5 +136,6 @@
   "thanks.continue": "Pokračovat v nákupu",
   "form.error.stock": "Některé hračky už nejsou v potřebném množství. Obnovte stránku košíku a zkontrolujte množství.",
   "form.error.rate": "Příliš mnoho žádostí v krátké době. Zkuste to za pár minut – zadané údaje zůstaly zachovány.",
-  "legal.englishOnly": "Tento dokument je k dispozici v angličtině."
+  "legal.englishOnly": "Tento dokument je k dispozici v angličtině.",
+  "form.deliveryNote": "Způsob a cenu doručení s vámi majitel domluví osobně."
 }

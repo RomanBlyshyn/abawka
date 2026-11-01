@@ -74,7 +74,11 @@ import Icon from '../../components/Icon.astro';
     <section class="tg" aria-labelledby="tg-title" data-tg hidden>
       <h2 id="tg-title">Сповіщення в Telegram</h2>
       <p data-tg-state="off">Нові заявки можуть приходити вам у Telegram одразу, як покупець їх надішле.</p>
-      <p data-tg-state="pending" hidden>Відкрийте бота й натисніть <b>Start</b> — ця сторінка сама побачить, коли все готово.</p>
+      <div data-tg-state="pending" hidden>
+        <p>Відкрийте бота й натисніть <b>Start</b> — ця сторінка сама побачить, коли все готово.</p>
+        <p class="muted">Бот не відповів «✅ Готово»? Надішліть йому цей код повідомленням:</p>
+        <p class="tg-code"><code data-tg-code></code> <button class="btn btn-light" type="button" data-tg-copy>Копіювати</button></p>
+      </div>
       <p data-tg-state="on" hidden>✅ Підключено: нові заявки приходять вам у Telegram.</p>
       <div class="tg-actions">
         <button class="btn" type="button" data-tg-state="off" data-tg-link>Підключити Telegram</button>
@@ -163,6 +167,7 @@ import Icon from '../../components/Icon.astro';
       btn.disabled = false;
       if (!res?.url) { msg.textContent = 'Не вдалося отримати посилання. Спробуйте ще раз за хвилину.'; return; }
       $<HTMLAnchorElement>('[data-tg-open]').href = res.url;
+      $('[data-tg-code]').textContent = new URL(res.url).searchParams.get('start') ?? '';
       view('pending');
       // Чекаємо, поки людина натисне Start (до 10 хвилин).
       const started = Date.now();
@@ -171,6 +176,10 @@ import Icon from '../../components/Icon.astro';
         if (Date.now() - started > 600e3) { clearInterval(poll); view('off'); msg.textContent = 'Час вийшов. Натисніть «Підключити Telegram» ще раз.'; return; }
         if (await linked().catch(() => false)) { clearInterval(poll); view('on'); msg.textContent = ''; }
       }, 2000);
+    });
+    box.querySelector('[data-tg-copy]')!.addEventListener('click', async () => {
+      const ok = await navigator.clipboard.writeText($('[data-tg-code]').textContent!).then(() => true, () => false);
+      msg.textContent = ok ? 'Код скопійовано — вставте його в чат з ботом.' : 'Не вдалося скопіювати — виділіть код і скопіюйте вручну.';
     });
     box.querySelector('[data-tg-test]')!.addEventListener('click', async () => {
       msg.textContent = 'Надсилаємо…';
@@ -302,5 +311,7 @@ import Icon from '../../components/Icon.astro';
   .tg[hidden], .tg [hidden] { display: none; }
   .tg h2 { font-size: 20px; font-weight: 900; margin-bottom: 8px; }
   .tg-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 4px; }
-  .tg-actions .btn-light { border: 2px solid var(--accent-border); }
+  .tg-actions .btn-light, .tg-code .btn-light { border: 2px solid var(--accent-border); }
+  .tg-code { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .tg-code code { padding: 6px 10px; border-radius: 8px; background: var(--accent-soft); font-size: 14px; word-break: break-all; user-select: all; }
 </style>

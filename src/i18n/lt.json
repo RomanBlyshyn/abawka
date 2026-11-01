@@ -113,11 +113,6 @@
   "form.contact.phoneHint": "Su šalies kodu, pvz. +370 600 00000",
   "form.country": "Šalis",
   "form.country.choose": "Pasirinkite šalį",
-  "form.delivery": "Pageidaujamas pristatymas",
-  "form.delivery.discuss": "Aptarsime su savininku",
-  "form.delivery.courier-wroclaw": "Kurjeris Vroclave",
-  "form.delivery.nova-poshta": "Nova Poshta",
-  "form.delivery.ukrposhta": "Ukrposhta",
   "form.comment": "Komentaras (neprivaloma)",
   "form.consent": "Sutinku su {terms} ir {privacy}",
   "form.consent.terms": "pirkimo taisyklėmis",
@@ -141,5 +136,6 @@
   "thanks.continue": "Tęsti apsipirkimą",
   "form.error.stock": "Kai kurių žaislų nebeturime tokio kiekio. Atnaujinkite krepšelio puslapį ir patikrinkite kiekius.",
   "form.error.rate": "Per daug užklausų per trumpą laiką. Bandykite po kelių minučių – įvesti duomenys išsaugoti.",
-  "legal.englishOnly": "Šis dokumentas pateikiamas anglų kalba."
+  "legal.englishOnly": "Šis dokumentas pateikiamas anglų kalba.",
+  "form.deliveryNote": "Pristatymo būdą ir kainą savininkas suderins su jumis asmeniškai."
 }

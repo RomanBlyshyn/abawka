@@ -111,11 +111,6 @@
   "form.contact.phoneHint": "Avec indicatif, ex. +33 6 00 00 00 00",
   "form.country": "Pays",
   "form.country.choose": "Choisissez un pays",
-  "form.delivery": "Livraison souhaitée",
-  "form.delivery.discuss": "À convenir avec le propriétaire",
-  "form.delivery.courier-wroclaw": "Coursier à Wrocław",
-  "form.delivery.nova-poshta": "Nova Poshta",
-  "form.delivery.ukrposhta": "Ukrposhta",
   "form.comment": "Commentaire (facultatif)",
   "form.consent": "J’accepte les {terms} et la {privacy}",
   "form.consent.terms": "conditions de vente",
@@ -139,5 +134,6 @@
   "thanks.continue": "Continuer mes achats",
   "form.error.stock": "Certains jouets ne sont plus disponibles en cette quantité. Rechargez le panier et vérifiez les quantités.",
   "form.error.rate": "Trop de demandes en peu de temps. Réessayez dans quelques minutes : vos saisies sont conservées.",
-  "legal.englishOnly": "Ce document est disponible en anglais."
+  "legal.englishOnly": "Ce document est disponible en anglais.",
+  "form.deliveryNote": "Le propriétaire conviendra personnellement avec vous du mode et du coût de livraison."
 }

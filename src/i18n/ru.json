@@ -113,11 +113,6 @@
   "form.contact.phoneHint": "С кодом страны, напр. +48 600 000 000",
   "form.country": "Страна",
   "form.country.choose": "Выберите страну",
-  "form.delivery": "Желаемая доставка",
-  "form.delivery.discuss": "Обсудим с владельцем",
-  "form.delivery.courier-wroclaw": "Курьер по Вроцлаву",
-  "form.delivery.nova-poshta": "Новая почта",
-  "form.delivery.ukrposhta": "Укрпочта",
   "form.comment": "Комментарий (необязательно)",
   "form.consent": "Согласен(на) с {terms} и {privacy}",
   "form.consent.terms": "условиями продажи",
@@ -141,5 +136,6 @@
   "thanks.continue": "Продолжить покупки",
   "form.error.stock": "Некоторых игрушек уже нет в нужном количестве. Обновите страницу корзины и проверьте количество.",
   "form.error.rate": "Слишком много заявок за короткое время. Попробуйте через несколько минут — введённые данные сохранены.",
-  "legal.englishOnly": "Этот документ доступен на английском языке."
+  "legal.englishOnly": "Этот документ доступен на английском языке.",
+  "form.deliveryNote": "Способ и стоимость доставки владелец согласует с вами лично."
 }

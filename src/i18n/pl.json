@@ -113,11 +113,6 @@
   "form.contact.phoneHint": "Z kodem kraju, np. +48 600 000 000",
   "form.country": "Kraj",
   "form.country.choose": "Wybierz kraj",
-  "form.delivery": "Preferowana dostawa",
-  "form.delivery.discuss": "Ustalimy z właścicielem",
-  "form.delivery.courier-wroclaw": "Kurier po Wrocławiu",
-  "form.delivery.nova-poshta": "Nova Poshta",
-  "form.delivery.ukrposhta": "Ukrposzta",
   "form.comment": "Komentarz (opcjonalnie)",
   "form.consent": "Akceptuję {terms} i {privacy}",
   "form.consent.terms": "Regulaminem",
@@ -141,5 +136,6 @@
   "thanks.continue": "Kontynuuj zakupy",
   "form.error.stock": "Części zabawek nie ma już w potrzebnej ilości. Odśwież stronę koszyka i sprawdź ilości.",
   "form.error.rate": "Za dużo zgłoszeń w krótkim czasie. Spróbuj ponownie za kilka minut — wpisane dane zostały zachowane.",
-  "legal.englishOnly": "Ten dokument jest dostępny w języku angielskim."
+  "legal.englishOnly": "Ten dokument jest dostępny w języku angielskim.",
+  "form.deliveryNote": "Sposób i koszt dostawy właściciel ustali z Tobą osobiście."
 }

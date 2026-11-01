@@ -12,6 +12,8 @@ test.describe('admin: Telegram notifications', () => {
     const open = box.getByRole('link', { name: 'Відкрити бота ↗' });
     await expect(open).toHaveAttribute('href', /^https:\/\/t\.me\/abawka_test_bot\?start=[a-f0-9]{32}$/);
     await expect(open).toHaveAttribute('target', '_blank');
+    // Запасний шлях: код видно, його можна надіслати боту вручну.
+    await expect(box.locator('[data-tg-code]')).toHaveText('0123456789abcdef0123456789abcdef');
     db.telegram.chatId = 555; // людина натиснула Start у боті
     await expect(box).toContainText('✅ Підключено', { timeout: 6000 });
     await box.getByRole('button', { name: 'Надіслати перевірку' }).click();

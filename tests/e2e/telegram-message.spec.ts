@@ -24,6 +24,10 @@ test('request message: items, total, contact and delivery in Ukrainian', () => {
   expect(text).not.toContain('💬');
 });
 
+test('request message: delivery arranged personally shows just the country', () => {
+  expect(requestMessage(row({ delivery: 'discuss' }))).toContain('📦 Польща\n');
+});
+
 test('request message: buyer text cannot break the markup', () => {
   const text = requestMessage(row({ name: '<b>Bob</b> & Co', comment: 'Подзвоніть <після 18>' }));
   expect(text).toContain('👤 &lt;b&gt;Bob&lt;/b&gt; &amp; Co');

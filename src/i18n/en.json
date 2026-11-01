@@ -109,11 +109,6 @@
   "form.contact.phoneHint": "With country code, e.g. +48 600 000 000",
   "form.country": "Country",
   "form.country.choose": "Choose a country",
-  "form.delivery": "Preferred delivery",
-  "form.delivery.discuss": "Discuss with the owner",
-  "form.delivery.courier-wroclaw": "Courier in Wrocław",
-  "form.delivery.nova-poshta": "Nova Poshta",
-  "form.delivery.ukrposhta": "Ukrposhta",
   "form.comment": "Comment (optional)",
   "form.consent": "I agree to the {terms} and the {privacy}",
   "form.consent.terms": "Terms of Sale",
@@ -137,5 +132,6 @@
   "thanks.continue": "Continue shopping",
   "form.error.stock": "Some toys are no longer available in that quantity. Refresh the cart page and check the quantities.",
   "form.error.rate": "Too many requests in a short time. Please try again in a few minutes — what you entered is kept.",
-  "legal.englishOnly": "This document is available in English."
+  "legal.englishOnly": "This document is available in English.",
+  "form.deliveryNote": "The owner will arrange the delivery method and cost with you personally."
 }

@@ -106,16 +106,11 @@ test.describe('request form', () => {
     await expect(page.getByText(/Enter a @username/)).toBeHidden();
   });
 
-  test('delivery options depend on the country', async ({ page }) => {
+  test('no carrier choice: the owner arranges delivery personally', async ({ page }) => {
     await setCart(page, [{ slug: 'toy-sword', qty: 1 }]);
     await page.goto('/en/cart/');
-    const delivery = page.getByLabel('Preferred delivery');
-    await page.getByLabel('Country').selectOption('PL');
-    await expect(delivery.locator('option')).toContainText(['Discuss with the owner', 'InPost (Paczkomat)', 'Courier in Wrocław']);
-    await delivery.selectOption('courier-wroclaw');
-    await page.getByLabel('Country').selectOption('DE');
-    await expect(delivery).toHaveValue('discuss'); // кур'єра по Вроцлаву в Німеччині немає
-    await expect(delivery.locator('option', { hasText: 'Wrocław' })).toHaveCount(0);
+    await expect(page.getByLabel('Preferred delivery')).toHaveCount(0);
+    await expect(page.getByText('The owner will arrange the delivery method and cost with you personally.')).toBeVisible();
   });
 
   test('network error: "not sent, try again", nothing typed is lost', async ({ page }) => {
@@ -140,11 +135,10 @@ test.describe('request form', () => {
     await page.getByLabel('Name').fill('Olena');
     await page.getByRole('radio', { name: 'Viber' }).check();
     await page.getByLabel('Country').selectOption('UA');
-    await page.getByLabel('Preferred delivery').selectOption('nova-poshta');
     await page.reload();
     await expect(page.getByLabel('Name')).toHaveValue('Olena');
     await expect(page.getByRole('radio', { name: 'Viber' })).toBeChecked();
-    await expect(page.getByLabel('Preferred delivery')).toHaveValue('nova-poshta');
+    await expect(page.getByLabel('Country')).toHaveValue('UA');
   });
 
   test('successful request empties the cart and shows the thank-you page', async ({ page }) => {

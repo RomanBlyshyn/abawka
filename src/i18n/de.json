@@ -109,11 +109,6 @@
   "form.contact.phoneHint": "Mit Ländervorwahl, z. B. +49 151 0000000",
   "form.country": "Land",
   "form.country.choose": "Land wählen",
-  "form.delivery": "Gewünschter Versand",
-  "form.delivery.discuss": "Mit dem Inhaber klären",
-  "form.delivery.courier-wroclaw": "Kurier in Breslau",
-  "form.delivery.nova-poshta": "Nova Poshta",
-  "form.delivery.ukrposhta": "Ukrposhta",
   "form.comment": "Kommentar (optional)",
   "form.consent": "Ich akzeptiere die {terms} und die {privacy}",
   "form.consent.terms": "AGB",
@@ -137,5 +132,6 @@
   "thanks.continue": "Weiter einkaufen",
   "form.error.stock": "Einige Spielsachen sind nicht mehr in dieser Menge verfügbar. Laden Sie den Warenkorb neu und prüfen Sie die Mengen.",
   "form.error.rate": "Zu viele Anfragen in kurzer Zeit. Bitte versuchen Sie es in ein paar Minuten erneut – Ihre Eingaben bleiben erhalten.",
-  "legal.englishOnly": "Dieses Dokument ist auf Englisch verfügbar."
+  "legal.englishOnly": "Dieses Dokument ist auf Englisch verfügbar.",
+  "form.deliveryNote": "Versandart und -kosten bespricht der Inhaber persönlich mit Ihnen."
 }

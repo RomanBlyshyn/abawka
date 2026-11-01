@@ -27,7 +27,8 @@ export function requestMessage(r: RequestRow): string {
     '',
     `👤 ${esc(r.name)}`,
     `📞 ${METHOD[r.method] ?? esc(r.method)}: ${esc(r.contact)}`,
-    `📦 ${esc(country)} · ${esc(DELIVERY[r.delivery] ?? r.delivery)}`,
+    // Доставку власник узгоджує з покупцем сам; старі заявки могли мати вибраного перевізника.
+    `📦 ${esc(country)}${r.delivery === 'discuss' ? '' : ` · ${esc(DELIVERY[r.delivery] ?? r.delivery)}`}`,
   ];
   if (r.comment) lines.push(`💬 ${esc(r.comment)}`);
   lines.push(`🌐 мова сайту: ${r.locale.toUpperCase()}`);

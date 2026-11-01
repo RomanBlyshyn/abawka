@@ -57,7 +57,10 @@ async function onUpdate(update: { message?: { text?: string; chat?: { id: number
   const chat = update.message?.chat;
   const text = update.message?.text ?? '';
   if (!chat || chat.type !== 'private') return;
-  const code = /^\/start\s+([a-f0-9]{32})$/.exec(text.trim())?.[1];
+  // Код приходить з посилання (/start <код>) або вставлений вручну — деякі клієнти Telegram
+  // не передають код, якщо чат з ботом уже відкритий.
+  const code = /^(?:\/start(?:@\w+)?\s+)?([a-f0-9]{32})$/i.exec(text.trim())?.[1]?.toLowerCase();
+  console.log(`update: ${code ? 'code' : text.startsWith('/start') ? 'start without code' : 'other'}`);
   if (code) {
     const { data: who } = await db.from('staff').select('user_id,telegram_code_at').eq('telegram_code', code).maybeSingle();
     if (who && Date.now() - Date.parse(who.telegram_code_at) < CODE_TTL_MS) {
@@ -70,7 +73,7 @@ async function onUpdate(update: { message?: { text?: string; chat?: { id: number
   }
   await tg('sendMessage', {
     chat_id: chat.id,
-    text: 'Привіт! Це службовий бот магазину ABAWKA: він надсилає команді нові заявки. Щоб отримувати їх, відкрийте адмінку й натисніть «Підключити Telegram».',
+    text: 'Привіт! Це службовий бот магазину ABAWKA: він надсилає команді нові заявки. Щоб отримувати їх, відкрийте адмінку, натисніть «Підключити Telegram» і надішліть сюди код, який там з’явиться.',
   });
 }
 

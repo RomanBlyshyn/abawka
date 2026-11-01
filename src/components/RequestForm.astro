@@ -24,13 +24,6 @@ const countries = [
 ].map((code) => ({ code, name: regionNames.of(code)! }));
 const defaultCountry = (delivery.defaultCountry as Record<string, string>)[locale] ?? '';
 
-// Назви перевізників: бренди як є, а Нова пошта / Укрпошта / кур'єр — перекладені.
-const carrierName = (c: string) => (delivery.brandNames as Record<string, string>)[c] ?? t(`form.delivery.${c}`);
-const carrierNames = Object.fromEntries(
-  [...new Set(Object.values(delivery.carriers).flat())].map((c) => [c, carrierName(c)]),
-);
-const carriersFor = (country: string) => (delivery.carriers as Record<string, string[]>)[country] ?? delivery.carriers['*'];
-
 const methodLabel: Record<string, string> = {
   call: t('form.method.call'), telegram: 'Telegram', viber: 'Viber', whatsapp: 'WhatsApp', email: t('form.contact.email'),
 };
@@ -41,9 +34,6 @@ const cfg = {
   mode,
   locale,
   countries: delivery.countries,
-  carriers: delivery.carriers,
-  carrierNames,
-  discuss: t('form.delivery.discuss'),
   thanks: href(locale, 'thanks/'),
   labels: { phone: t('form.contact.phone'), telegram: t('form.contact.telegram'), email: t('form.contact.email') },
   errors: {
@@ -79,27 +69,19 @@ const cfg = {
     <p class="err" id={id('contact-err')} data-err="contact" hidden></p>
   </div>
 
-  <div class="row">
-    <div class="field">
-      <label for={id('country')}>{t('form.country')}</label>
-      <select id={id('country')} name="country" required autocomplete="country" aria-describedby={id('country-err')}>
-        <option value="">{t('form.country.choose')}</option>
-        {countries.map((c, i) => (
-          <>
-            <option value={c.code} selected={c.code === defaultCountry}>{c.name}</option>
-            {i === delivery.priority.length - 1 && <option disabled>──────────</option>}
-          </>
-        ))}
-      </select>
-      <p class="err" id={id('country-err')} data-err="country" hidden></p>
-    </div>
-    <div class="field">
-      <label for={id('delivery')}>{t('form.delivery')}</label>
-      <select id={id('delivery')} name="delivery">
-        <option value="discuss">{t('form.delivery.discuss')}</option>
-        {carriersFor(defaultCountry).map((c) => <option value={c}>{carrierNames[c]}</option>)}
-      </select>
-    </div>
+  <div class="field">
+    <label for={id('country')}>{t('form.country')}</label>
+    <select id={id('country')} name="country" required autocomplete="country" aria-describedby={id('country-err')}>
+      <option value="">{t('form.country.choose')}</option>
+      {countries.map((c, i) => (
+        <>
+          <option value={c.code} selected={c.code === defaultCountry}>{c.name}</option>
+          {i === delivery.priority.length - 1 && <option disabled>──────────</option>}
+        </>
+      ))}
+    </select>
+    <p class="err" id={id('country-err')} data-err="country" hidden></p>
+    <p class="hint">{t('form.deliveryNote')}</p>
   </div>
 
   <div class="field">
@@ -138,14 +120,13 @@ const cfg = {
   import { submitRequest, SubmitError } from '../lib/request-client';
 
   const DRAFT_KEY = 'request-draft';
-  const FIELDS = ['name', 'method', 'contact', 'country', 'delivery', 'comment'] as const;
+  const FIELDS = ['name', 'method', 'contact', 'country', 'comment'] as const;
 
   document.querySelectorAll<HTMLFormElement>('[data-request-form]').forEach((form) => {
     const cfg = JSON.parse(form.nextElementSibling!.textContent!);
     const el = <T extends Element = HTMLInputElement>(sel: string) => form.querySelector<T>(sel)!;
     const contact = el('[name=contact]');
     const country = el<HTMLSelectElement>('[name=country]');
-    const deliverySel = el<HTMLSelectElement>('[name=delivery]');
     const alertBox = el<HTMLElement>('[data-alert]');
     let tried = false;
 
@@ -160,17 +141,6 @@ const cfg = {
       el<HTMLElement>('[data-contact-hint]').hidden = kind !== 'phone';
     }
 
-    // Способи доставки залежать від країни (кур'єр по Вроцлаву — лише для Польщі).
-    function syncDelivery() {
-      const list: string[] = cfg.carriers[country.value] ?? cfg.carriers['*'];
-      const keep = deliverySel.value;
-      deliverySel.replaceChildren(
-        new Option(cfg.discuss, 'discuss'),
-        ...list.map((c) => new Option(cfg.carrierNames[c], c)),
-      );
-      deliverySel.value = list.includes(keep) ? keep : 'discuss';
-    }
-
     // Чернетка: якщо сторінку оновили чи закрили вкладку — введене не пропадає.
     const saveDraft = () => {
       const data = Object.fromEntries(FIELDS.map((f) => [f, f === 'method' ? method() : el<HTMLInputElement>(`[name=${f}]`).value]));
@@ -182,11 +152,8 @@ const cfg = {
         for (const f of FIELDS) {
           if (typeof draft[f] !== 'string') continue;
           if (f === 'method') { const r = form.querySelector<HTMLInputElement>(`[name=method][value="${CSS.escape(draft.method)}"]`); if (r) r.checked = true; }
-          else if (f === 'delivery') continue; // відновимо після списку для країни
           else el<HTMLInputElement>(`[name=${f}]`).value = draft[f];
         }
-        syncDelivery();
-        if ([...deliverySel.options].some((o) => o.value === draft.delivery)) deliverySel.value = draft.delivery;
       }
     } catch { /* зіпсована чернетка — ігноруємо */ }
     syncContact();
@@ -204,7 +171,7 @@ const cfg = {
         method: method(),
         contact: contact.value,
         country: country.value,
-        delivery: deliverySel.value,
+        delivery: 'discuss', // доставку власник узгоджує з покупцем особисто
         comment: el<HTMLTextAreaElement>('[name=comment]').value.trim(),
         consent: el('[name=consent]').checked,
         lines: lines(),
@@ -234,7 +201,6 @@ const cfg = {
     form.addEventListener('change', (e) => {
       const name = (e.target as HTMLInputElement).name;
       if (name === 'method') syncContact();
-      if (name === 'country') syncDelivery();
       saveDraft();
       if (tried) showErrors(validateRequest(collect(), cfg.countries));
     });
@@ -306,7 +272,6 @@ const cfg = {
   .chip input:checked + span { border-color: var(--pink-600); background: var(--accent-soft); color: var(--accent-text); }
   .chip input:focus-visible + span { outline: 3px solid var(--pink-500); outline-offset: 2px; }
 
-  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .consent { display: flex; gap: 10px; align-items: flex-start; font-weight: 600; cursor: pointer; }
   .consent input { width: 22px; height: 22px; flex: none; margin-top: 1px; accent-color: var(--pink-600); }
   .consent a { color: var(--accent-text); text-decoration: underline; }
@@ -315,5 +280,4 @@ const cfg = {
   .submit[disabled] { opacity: 0.7; cursor: progress; }
   .demo { margin: 0; font-size: 13px; color: var(--ink-2); font-weight: 600; text-align: center; }
 
-  @media (max-width: 560px) { .row { grid-template-columns: 1fr; } }
 </style>
