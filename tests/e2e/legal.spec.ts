@@ -25,13 +25,16 @@ test('legal pages: footer links open real pages in the site language, with a lin
   await expect(page).toHaveURL(/\/uk\/returns\/$/); // посилання всередині документа ведуть на ту саму мову
 });
 
-test('legal pages: seller from shop data in every language; missing details are clearly marked', async ({ page }) => {
-  for (const [locale, country, todo, phone] of [['en', 'Poland', '[to be added]', 'Phone'], ['uk', 'Польща', '[буде додано]', 'Телефон'], ['de', 'Polen', '[wird ergänzt]', 'Telefon']]) {
+test('legal pages: seller from shop data in every language, with clickable email and phone', async ({ page }) => {
+  for (const [locale, country, phone] of [['en', 'Poland', 'Phone'], ['uk', 'Польща', 'Телефон'], ['de', 'Polen', 'Telefon']]) {
     await page.goto(`/${locale}/returns/`);
     const seller = page.locator('address').first();
     await expect(seller).toContainText('Viktor Marchenko');
     await expect(seller).toContainText(`ul. Wojrowicka 48, 54-436 Wrocław, ${country}`);
-    await expect(seller).toContainText(`${phone}: ${todo}`);
+    await expect(seller).toContainText(`${phone}: +48 515 379 848`);
+    await expect(seller.locator('a[href="tel:+48515379848"]')).toBeVisible();
+    await expect(seller.locator('a[href="mailto:abawkashop@gmail.com"]')).toBeVisible();
+    await expect(seller).not.toContainText('[');
   }
   await page.goto('/en/privacy/');
   // Строки — ті самі, що чистить база (cleanup_personal_data).

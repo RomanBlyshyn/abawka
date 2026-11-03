@@ -1,9 +1,9 @@
 {
-  "_note": "Дані продавця для юридичних і інфо-сторінок — лише те, що дав клієнт. null = ще не дав: на сторінці буде позначка «to be added», перед запуском заповнити.",
+  "_note": "Дані продавця для юридичних і інфо-сторінок — лише те, що дав клієнт. null = ще не дав: на сторінці буде позначка «to be added».",
   "seller": "Viktor Marchenko",
   "address": { "street": "ul. Wojrowicka 48", "postcode": "54-436", "city": "Wrocław", "country": "Poland" },
-  "email": null,
-  "phone": null,
+  "email": "abawkashop@gmail.com",
+  "phone": "+48 515 379 848",
   "telegram": null,
   "hours": { "from": "10:00", "to": "18:00", "timezone": "Europe/Warsaw" },
   "shippingPaidBy": "buyer",

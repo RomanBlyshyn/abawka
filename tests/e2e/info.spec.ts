@@ -19,7 +19,7 @@ test('how to order: steps use the real button name and reply hours', async ({ pa
   await expect(page.locator('.steps')).toContainText('during 10:00–18:00 (Warsaw time)');
 });
 
-test('delivery and contacts: what is agreed personally, seller address, no invented email or phone', async ({ page }) => {
+test('delivery and contacts: what is agreed personally, seller address, email and phone from the owner', async ({ page }) => {
   await page.goto('/uk/delivery/');
   await expect(page.locator('.info')).toContainText('Спосіб і вартість доставки власник узгоджує з вами особисто');
   await page.getByRole('link', { name: 'Як повернути товар' }).click();
@@ -28,7 +28,8 @@ test('delivery and contacts: what is agreed personally, seller address, no inven
   const seller = page.locator('address');
   await expect(seller).toContainText('Viktor Marchenko');
   await expect(seller).toContainText('ul. Wojrowicka 48, 54-436 Wrocław, Польща');
-  await expect(seller.locator('a[href^="mailto:"], a[href^="tel:"]')).toHaveCount(0); // клієнт ще не дав
+  await expect(seller.getByRole('link', { name: 'abawkashop@gmail.com' })).toHaveAttribute('href', 'mailto:abawkashop@gmail.com');
+  await expect(seller.getByRole('link', { name: '+48 515 379 848' })).toHaveAttribute('href', 'tel:+48515379848');
 });
 
 test('info pages: no overflow or errors in any language', async ({ page }) => {
